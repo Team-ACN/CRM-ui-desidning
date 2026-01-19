@@ -1,8 +1,8 @@
 import React from 'react';
 
-const StatsCards = ({ stats }) => {
+const RequirementsStatsCards = ({ stats }) => {
   return (
-    <div className="grid grid-cols-8 gap-4 mb-6">
+    <div className="grid grid-cols-4 gap-4 mb-6">
       {stats.map((stat, index) => (
         <div key={index} className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
           <p className="text-xs font-medium text-gray-500 mb-1">{stat.label}</p>
@@ -13,4 +13,4 @@ const StatsCards = ({ stats }) => {
   );
 };
 
-export default StatsCards;
+export default RequirementsStatsCards;

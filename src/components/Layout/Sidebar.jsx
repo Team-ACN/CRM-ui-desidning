@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { Users, User, Building2, FileText, LayoutDashboard, ChevronDown } from 'lucide-react';
 
 const Sidebar = () => {
@@ -20,28 +21,35 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
-        <NavItem icon={<Users size={20} />} label="Agents" active />
-        <NavItem icon={<User size={20} />} label="Leads" />
-        <NavItem icon={<Building2 size={20} />} label="Properties" />
-        <NavItem icon={<FileText size={20} />} label="Requirements" />
-        <NavItem icon={<LayoutDashboard size={20} />} label="QC Dashboard" />
+        <NavItem to="/agents" icon={<Users size={20} />} label="Agents" />
+        <NavItem to="/leads" icon={<User size={20} />} label="Leads" />
+        <NavItem to="/properties" icon={<Building2 size={20} />} label="Properties" />
+        <NavItem to="/requirements" icon={<FileText size={20} />} label="Requirements" />
+        <NavItem to="/qc-dashboard" icon={<LayoutDashboard size={20} />} label="QC Dashboard" />
       </nav>
     </div>
   );
 };
 
-const NavItem = ({ icon, label, active = false }) => {
+const NavItem = ({ to, icon, label }) => {
   return (
-    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
-      active 
-        ? 'bg-gray-100 text-gray-900' 
-        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-    }`}>
-      <span className={active ? 'text-gray-900' : 'text-gray-500'}>
-        {icon}
-      </span>
-      {label}
-    </div>
+    <NavLink 
+      to={to}
+      className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
+        isActive 
+          ? 'bg-gray-100 text-gray-900' 
+          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+      }`}
+    >
+      {({ isActive }) => (
+        <>
+          <span className={isActive ? 'text-gray-900' : 'text-gray-500'}>
+            {icon}
+          </span>
+          {label}
+        </>
+      )}
+    </NavLink>
   );
 };
 
