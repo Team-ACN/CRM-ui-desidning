@@ -5,6 +5,7 @@ import LeadsPage from './components/Leads/LeadsPage';
 import PropertiesPage from './components/Properties/PropertiesPage';
 import RequirementsPage from './components/Requirements/RequirementsPage';
 import QCDashboardPage from './components/QCDashboard/QCDashboardPage';
+import FinancePage from './components/Finance/FinancePage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/properties" element={<PropertiesPage />} />
           <Route path="/requirements" element={<RequirementsPage />} />
           <Route path="/qc-dashboard" element={<QCDashboardPage />} />
+          <Route path="/finance" element={<FinancePage />} />
           <Route path="*" element={<Navigate to="/agents" replace />} />
         </Routes>
       </Layout>
