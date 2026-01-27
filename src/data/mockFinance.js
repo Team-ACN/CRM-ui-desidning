@@ -6,7 +6,7 @@ export const mockPaymentHistory = [
     amount: '₹5,000',
     date: '19 Jan 2026',
     status: 'Success',
-    type: 'Subscription',
+    plan: 'Premium Yearly',
     method: 'UPI',
     source: 'Platform Direct'
   },
@@ -17,7 +17,7 @@ export const mockPaymentHistory = [
     amount: '₹2,500',
     date: '19 Jan 2026',
     status: 'Failed',
-    type: 'Subscription',
+    plan: 'Premium Monthly',
     method: 'Card',
     source: 'Payment Link'
   },
@@ -28,7 +28,7 @@ export const mockPaymentHistory = [
     amount: '₹5,000',
     date: '18 Jan 2026',
     status: 'Pending',
-    type: 'Subscription',
+    plan: 'Premium Yearly',
     method: 'Net Banking',
     source: 'Platform Direct'
   },
@@ -39,7 +39,7 @@ export const mockPaymentHistory = [
     amount: '₹1,000',
     date: '17 Jan 2026',
     status: 'Success',
-    type: 'Add-on',
+    plan: 'Booster Credits',
     method: 'UPI',
     source: 'Payment Link'
   },
@@ -50,7 +50,7 @@ export const mockPaymentHistory = [
     amount: '₹5,000',
     date: '16 Jan 2026',
     status: 'Success',
-    type: 'Subscription',
+    plan: 'Premium Monthly',
     method: 'Card',
     source: 'Platform Direct'
   }
@@ -138,4 +138,11 @@ export const mockSubscriptions = [
     status: 'Active',
     paymentMode: 'Net Banking'
   }
+];
+
+export const mockInvoices = [
+  { id: 'INV001', user: 'Samarth Jangir', amount: '₹5,000', date: '19 Jan 2026', dueDate: '26 Jan 2026', status: 'Paid', plan: 'Premium Yearly' },
+  { id: 'INV002', user: 'Amit Daga', amount: '₹2,500', date: '15 Jan 2026', dueDate: '22 Jan 2026', status: 'Pending', plan: 'Premium Monthly' },
+  { id: 'INV003', user: 'Swamy', amount: '₹5,000', date: '10 Jan 2026', dueDate: '17 Jan 2026', status: 'Overdue', plan: 'Booster Credits' },
+  { id: 'INV004', user: 'Nazir', amount: '₹1,000', date: '05 Jan 2026', dueDate: '12 Jan 2026', status: 'Paid', plan: 'Booster Credits' },
 ];

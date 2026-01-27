@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BadgeIndianRupeeIcon, Receipt, Tag, Link as LinkIcon, Wallet, Crown, Search } from 'lucide-react';
 import PaymentHistory from './PaymentHistory';
 import CouponGenerator from './CouponGenerator';
+import InvoiceGenerator from './InvoiceGenerator';
 import PaymentLinkGenerator from './PaymentLinkGenerator';
 import Subscriptions from './Subscriptions';
 import { mockPaymentHistory, mockCoupons, mockSubscriptions } from '../../data/mockFinance';
@@ -14,6 +15,7 @@ const FinancePage = () => {
     'Payment History': <PaymentHistory payments={mockPaymentHistory} searchQuery={searchQuery} />,
     'Subscriptions': <Subscriptions subscriptions={mockSubscriptions} />,
     'Coupons': <CouponGenerator coupons={mockCoupons} />,
+    'Invoices': <InvoiceGenerator />,
     'Payment Links': <PaymentLinkGenerator />
   };
 
@@ -21,6 +23,7 @@ const FinancePage = () => {
     { id: 'Payment History', icon: <Wallet size={18} /> },
     { id: 'Subscriptions', icon: <Crown size={18} /> },
     { id: 'Coupons', icon: <Tag size={18} /> },
+    { id: 'Invoices', icon: <Receipt size={18} /> },
     { id: 'Payment Links', icon: <LinkIcon size={18} /> },
   ];
 

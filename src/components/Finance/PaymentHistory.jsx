@@ -68,10 +68,11 @@ const PaymentHistory = ({ payments, searchQuery }) => {
                 <th className="p-4">Transaction Details</th>
                 <th className="p-4">User</th>
                 <th className="p-4">Date</th>
-                <th className="p-4">Type</th>
+                <th className="p-4">Plan</th>
                 <th className="p-4">Source</th>
                 <th className="p-4">Amount</th>
                 <th className="p-4">Status</th>
+                <th className="p-4">Invoice</th>
                 </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -86,7 +87,13 @@ const PaymentHistory = ({ payments, searchQuery }) => {
                 <td className="px-4 py-3 font-medium text-gray-900">{payment.user}</td>
                 <td className="px-4 py-3 text-gray-600">{payment.date}</td>
                  <td className="px-4 py-3">
-                     <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">{payment.type}</span>
+                     <span className={`px-2 py-1 rounded text-xs font-medium border ${
+                        payment.plan && payment.plan.includes('Yearly') ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                        payment.plan && payment.plan.includes('Monthly') ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        'bg-amber-50 text-amber-700 border-amber-200'
+                     }`}>
+                        {payment.plan}
+                     </span>
                  </td>
                  <td className="px-4 py-3">
                      {payment.source === 'Payment Link' ? (
@@ -115,6 +122,19 @@ const PaymentHistory = ({ payments, searchQuery }) => {
                     }`}></span>
                     {payment.status}
                   </span>
+                </td>
+                <td className="px-4 py-3">
+                    <button 
+                        disabled={payment.status === 'Failed' || payment.status === 'Pending'}
+                        className={`p-1.5 rounded transition-colors ${
+                            payment.status === 'Failed' || payment.status === 'Pending'
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                        }`}
+                        title="Download Invoice"
+                    >
+                        <Download size={16} />
+                    </button>
                 </td>
               </tr>
             ))}
