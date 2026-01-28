@@ -1,34 +1,145 @@
-import React, { useState } from 'react';
-import { Search, Filter, Download, MoveDownLeft, Link2, ChevronDown } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Search, Filter, Download, MoveDownLeft, Link2, ChevronDown, Calendar, ArrowRight, IndianRupee } from 'lucide-react';
 
 const PaymentHistory = ({ payments, searchQuery }) => {
   const [activeTab, setActiveTab] = useState('All');
   const [sourceFilter, setSourceFilter] = useState('All');
+  
+  // Date Filtering State
+  const [dateFilter, setDateFilter] = useState('This Month');
+  const [customDateRange, setCustomDateRange] = useState({
+    from: '',
+    to: ''
+  });
 
   const tabs = ['All', 'Success', 'Pending', 'Failed'];
   const sources = ['All', 'Payment Link', 'Platform Direct'];
+  const dateOptions = ['This Month', 'Last Month', 'This Year', 'All Time', 'Custom Range'];
 
-  const filteredPayments = payments.filter(p => {
-    const statusMatch = activeTab === 'All' ? true : p.status === activeTab;
-    const sourceMatch = sourceFilter === 'All' ? true : p.source === sourceFilter;
-    const searchMatch = searchQuery 
-        ? p.user.toLowerCase().includes(searchQuery.toLowerCase()) || 
-          p.transactionId.toLowerCase().includes(searchQuery.toLowerCase())
-        : true;
-    return statusMatch && sourceMatch && searchMatch;
-  });
+  // Helper to parse "DD MMM YYYY" to Date object
+  const parseDate = (dateStr) => {
+    const months = {
+      'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+      'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+    };
+    const parts = dateStr.split(' ');
+    if (parts.length !== 3) return new Date();
+    const day = parseInt(parts[0], 10);
+    const month = months[parts[1]];
+    const year = parseInt(parts[2], 10);
+    return new Date(year, month, day);
+  };
+
+  const filteredPayments = useMemo(() => {
+    return payments.filter(p => {
+      const paymentDate = parseDate(p.date);
+      const now = new Date();
+      
+      // Date Logic
+      let dateMatch = true;
+      if (dateFilter === 'This Month') {
+        dateMatch = paymentDate.getMonth() === now.getMonth() && 
+                    paymentDate.getFullYear() === now.getFullYear();
+      } else if (dateFilter === 'Last Month') {
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        dateMatch = paymentDate.getMonth() === lastMonth.getMonth() && 
+                    paymentDate.getFullYear() === lastMonth.getFullYear();
+      } else if (dateFilter === 'This Year') {
+        dateMatch = paymentDate.getFullYear() === now.getFullYear();
+      } else if (dateFilter === 'Custom Range') {
+        if (customDateRange.from && customDateRange.to) {
+            const fromDate = new Date(customDateRange.from);
+            const toDate = new Date(customDateRange.to);
+            // Set to end of day for inclusive comparison on 'to' date
+            toDate.setHours(23, 59, 59, 999);
+            dateMatch = paymentDate >= fromDate && paymentDate <= toDate;
+        }
+      }
+
+      const statusMatch = activeTab === 'All' ? true : p.status === activeTab;
+      const sourceMatch = sourceFilter === 'All' ? true : p.source === sourceFilter;
+      const searchMatch = searchQuery 
+          ? p.user.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            p.transactionId.toLowerCase().includes(searchQuery.toLowerCase())
+          : true;
+      
+      return statusMatch && sourceMatch && searchMatch && dateMatch;
+    });
+  }, [payments, activeTab, sourceFilter, searchQuery, dateFilter, customDateRange]);
+
+  // Calculate Revenue from visible payments (only Success status)
+  const totalRevenue = useMemo(() => {
+    return filteredPayments
+        .filter(p => p.status === 'Success')
+        .reduce((sum, p) => {
+            const amount = parseFloat(p.amount.replace(/[^0-9.-]+/g,""));
+            return sum + amount;
+        }, 0);
+  }, [filteredPayments]);
 
   return (
     <div className="space-y-6">
+      {/* Revenue Card */}
+      <div className="mb-6">
+        <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm inline-block min-w-[240px]">
+            <p className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-2">
+                Total Revenue ({dateFilter})
+            </p>
+            <p className="text-2xl font-bold text-gray-900">₹{totalRevenue.toLocaleString('en-IN')}</p>
+
+        </div>
+      </div>
+
       {/* Filters Bar */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-             <div className="flex items-center gap-3">
+             <div className="flex flex-wrap items-center gap-3">
+                 
+                 {/* Date Filter Dropdown */}
+                 <div className="relative">
+                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Calendar size={14} className="text-gray-500" />
+                     </div>
+                     <select
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                        className="appearance-none bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 block pl-9 pr-8 py-2 cursor-pointer min-w-[140px]"
+                     >
+                        {dateOptions.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                     </select>
+                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                        <ChevronDown size={14} />
+                     </div>
+                 </div>
+
+                 {/* Custom Date Range Inputs */}
+                 {dateFilter === 'Custom Range' && (
+                     <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-2 py-1">
+                         <input 
+                            type="date"
+                            value={customDateRange.from}
+                            onChange={(e) => setCustomDateRange(prev => ({...prev, from: e.target.value}))}
+                            className="text-sm text-gray-600 focus:outline-none"
+                         />
+                         <ArrowRight size={12} className="text-gray-400" />
+                         <input 
+                            type="date"
+                            value={customDateRange.to}
+                            onChange={(e) => setCustomDateRange(prev => ({...prev, to: e.target.value}))}
+                            className="text-sm text-gray-600 focus:outline-none"
+                         />
+                     </div>
+                 )}
+
+                 <div className="h-6 w-px bg-gray-200 mx-1 hidden sm:block"></div>
+
                  {/* Payment Status Dropdown */}
                  <div className="relative">
                      <select
                         value={activeTab}
                         onChange={(e) => setActiveTab(e.target.value)}
-                         className="appearance-none bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 block pl-3 pr-8 py-2 cursor-pointer min-w-[160px]"
+                        className="appearance-none bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 block pl-3 pr-8 py-2 cursor-pointer min-w-[160px]"
                      >
                         <option value="All">Payment Status: All</option>
                         {tabs.filter(t => t !== 'All').map(tab => (
@@ -45,7 +156,7 @@ const PaymentHistory = ({ payments, searchQuery }) => {
                      <select
                         value={sourceFilter}
                         onChange={(e) => setSourceFilter(e.target.value)}
-                         className="appearance-none bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 block pl-3 pr-8 py-2 cursor-pointer min-w-[140px]"
+                        className="appearance-none bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 block pl-3 pr-8 py-2 cursor-pointer min-w-[140px]"
                      >
                         <option value="All">Source: All</option>
                         {sources.filter(s => s !== 'All').map(source => (

@@ -53,6 +53,40 @@ export const mockPaymentHistory = [
     plan: 'Premium Monthly',
     method: 'Card',
     source: 'Platform Direct'
+  },
+  // Previous Months Data for testing filters
+  {
+    id: 6,
+    transactionId: 'TXN555444333',
+    user: 'Rishik',
+    amount: '₹5,000',
+    date: '15 Dec 2025',
+    status: 'Success',
+    plan: 'Premium Yearly',
+    method: 'UPI',
+    source: 'Platform Direct'
+  },
+  {
+    id: 7,
+    transactionId: 'TXN999888777',
+    user: 'Sandeep',
+    amount: '₹2,500',
+    date: '10 Dec 2025',
+    status: 'Success',
+    plan: 'Premium Monthly',
+    method: 'Card',
+    source: 'Payment Link'
+  },
+  {
+    id: 8,
+    transactionId: 'TXN111222333',
+    user: 'Venkatesh',
+    amount: '₹5,000',
+    date: '05 Nov 2025',
+    status: 'Success',
+    plan: 'Premium Yearly',
+    method: 'Net Banking',
+    source: 'Platform Direct'
   }
 ];
 
