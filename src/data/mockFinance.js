@@ -178,6 +178,30 @@ export const mockSubscriptions = [
     endDate: '01 Mar 2027',
     status: 'Active',
     paymentMode: 'Net Banking'
+  },
+  
+  // Cancelled
+  {
+    id: 8,
+    user: 'Karthik',
+    plan: 'Premium Monthly',
+    amount: '₹5,000',
+    startDate: '10 Jan 2025',
+    nextRenewal: '10 Feb 2025', 
+    endDate: '10 Feb 2025',
+    status: 'Cancelled',
+    paymentMode: 'UPI'
+  },
+  {
+    id: 9,
+    user: 'Vikram',
+    plan: 'Pro Yearly',
+    amount: '₹25,000',
+    startDate: '01 Jan 2025',
+    nextRenewal: '01 Jan 2026', 
+    endDate: '01 Jan 2026',
+    status: 'Cancelled',
+    paymentMode: 'Card'
   }
 ];
 

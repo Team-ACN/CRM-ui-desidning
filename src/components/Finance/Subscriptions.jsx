@@ -13,7 +13,17 @@ const Subscriptions = ({ subscriptions }) => {
     return diffDays;
   };
 
+  // Calculate Stats
+  const activeCount = subscriptions.filter(s => s.status === 'Active').length;
+  const renewingCount = subscriptions.filter(s => {
+      const d = getDaysDiff(s.nextRenewal); 
+      return d >= 0 && d <= 3;
+  }).length;
+  const pastDueCount = subscriptions.filter(s => s.status === 'Past Due').length;
+  const cancelledCount = subscriptions.filter(s => s.status === 'Cancelled').length;
+
   const getStatusBadge = (days, status) => {
+    if (status === 'Cancelled') return <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium border border-gray-200">Cancelled</span>;
     if (status === 'Past Due') {
        return <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-medium border border-red-200">Overdue by {Math.abs(days)} days</span>;
     }
@@ -24,7 +34,11 @@ const Subscriptions = ({ subscriptions }) => {
     return <span className="bg-green-50 text-green-700 px-2 py-1 rounded text-xs font-medium border border-green-200">Active</span>;
   };
 
-  const filteredSubscriptions = subscriptions.filter(sub => {
+    const filteredSubscriptions = subscriptions.filter(sub => {
+      if (filter === 'Cancelled') return sub.status === 'Cancelled';
+      if (filter === 'Active') return sub.status === 'Active';
+      if (sub.status === 'Cancelled') return false; 
+
       const days = getDaysDiff(sub.nextRenewal);
       if (filter === 'Upcoming') return days >= 0 && days <= 3;
       if (filter === 'Past Due') return days < 0;
@@ -34,11 +48,39 @@ const Subscriptions = ({ subscriptions }) => {
   return (
     <div className="space-y-6">
        {/* Summary Stats */}
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-           <StatCard icon={<Crown />} color="bg-indigo-50 text-indigo-600" label="Total Active" value="1,248" />
-           <StatCard icon={<Clock />} color="bg-amber-50 text-amber-600" label="Renewing (3 Days)" value="4" />
-           <StatCard icon={<AlertCircle />} color="bg-red-50 text-red-600" label="Past Due" value="12" />
-
+       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+           <StatCard 
+               icon={<Crown />} 
+               color="bg-indigo-50 text-indigo-600" 
+               label="Total Active" 
+               value={activeCount} 
+               onClick={() => setFilter('Active')}
+               isActive={filter === 'Active'}
+           />
+           <StatCard 
+               icon={<Clock />} 
+               color="bg-amber-50 text-amber-600" 
+               label="Renewing (3 Days)" 
+               value={renewingCount} 
+               onClick={() => setFilter('Upcoming')}
+               isActive={filter === 'Upcoming'}
+           />
+           <StatCard 
+               icon={<AlertCircle />} 
+               color="bg-red-50 text-red-600" 
+               label="Past Due" 
+               value={pastDueCount} 
+               onClick={() => setFilter('Past Due')}
+               isActive={filter === 'Past Due'}
+           />
+           <StatCard 
+               icon={<XCircle />} 
+               color="bg-gray-50 text-gray-600" 
+               label="Cancelled" 
+               value={cancelledCount} 
+               onClick={() => setFilter('Cancelled')}
+               isActive={filter === 'Cancelled'}
+           />
        </div>
 
       {/* Filters */}
@@ -50,8 +92,10 @@ const Subscriptions = ({ subscriptions }) => {
                    className="appearance-none bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 block pl-3 pr-8 py-2 cursor-pointer min-w-[140px]"
                 >
                     <option value="All">All Renewals</option>
+                    <option value="Active">Active Subscription</option>
                     <option value="Upcoming">Upcoming</option>
                     <option value="Past Due">Past Due</option>
+                    <option value="Cancelled">Cancelled</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
                    <ChevronDown size={14} />
@@ -112,8 +156,11 @@ const Subscriptions = ({ subscriptions }) => {
   );
 };
 
-const StatCard = ({ label, value }) => (
-    <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+const StatCard = ({ label, value, onClick }) => (
+    <div 
+        onClick={onClick}
+        className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+    >
         <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>
         <p className="text-2xl font-bold text-gray-900">{value}</p>
     </div>
