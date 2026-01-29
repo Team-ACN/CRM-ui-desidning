@@ -150,26 +150,24 @@ const PaymentLinkGenerator = () => {
                             <div>
                                  <label className="block text-sm font-medium text-gray-700 mb-1">Select Plan</label>
                                  <div className="relative">
-                                    <select 
-                                        className="w-full appearance-none bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 outline-none block p-2.5 pr-8"
-                                        onChange={(e) => {
-                                            const plan = e.target.value;
-                                            let amount = '';
-                                            let purpose = '';
-                                            
-                                            if (plan === 'Premium Yearly') { amount = '14999'; purpose = 'ACN Annual Membership'; }
-                                            else if (plan === 'Premium Monthly') { amount = '1999'; purpose = 'ACN Monthly Membership'; }
-                                            else if (plan === 'Booster Credits') { amount = '249'; purpose = 'Booster Credits Pack'; }
-                                            
-                                            setFormData(prev => ({ ...prev, amount, purpose }));
-                                        }}
-                                        defaultValue=""
-                                    >
-                                        <option value="" disabled>Select a Plan...</option>
-                                        <option value="Premium Yearly">Premium Yearly</option>
-                                        <option value="Premium Monthly">Premium Monthly</option>
-                                        <option value="Booster Credits">Booster Credits</option>
-                                    </select>
+                                        <select 
+                                            className="w-full appearance-none bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 outline-none block p-2.5 pr-8"
+                                            onChange={(e) => {
+                                                const plan = e.target.value;
+                                                let amount = '';
+                                                let purpose = '';
+                                                
+                                                if (plan === 'Premium Yearly') { amount = '14999'; purpose = 'ACN Annual Membership'; }
+                                                else if (plan === 'Booster Credits') { amount = '249'; purpose = 'Booster Credits Pack'; }
+                                                
+                                                setFormData(prev => ({ ...prev, amount, purpose }));
+                                            }}
+                                            defaultValue=""
+                                        >
+                                            <option value="" disabled>Select a Plan...</option>
+                                            <option value="Premium Yearly">Premium Yearly</option>
+                                            <option value="Booster Credits">Booster Credits</option>
+                                        </select>
                                  </div>
                             </div>
 
