@@ -68,6 +68,7 @@ const Subscriptions = ({ subscriptions }) => {
                 <th className="p-4">User</th>
                 <th className="p-4">Plan Type</th>
                 <th className="p-4">Start Date</th>
+                <th className="p-4">End Date</th>
                 <th className="p-4">Next Renewal</th>
                 <th className="p-4">Renewal Status</th>
                 <th className="p-4">Payment Mode</th>
@@ -89,6 +90,7 @@ const Subscriptions = ({ subscriptions }) => {
                         </div>
                     </td>
                     <td className="px-4 py-3 text-gray-600">{sub.startDate}</td>
+                    <td className="px-4 py-3 text-gray-600">{sub.endDate}</td>
                     <td className="px-4 py-3 font-bold text-gray-900">{sub.nextRenewal}</td>
                     <td className="px-4 py-3">
                         {getStatusBadge(days, sub.status)}

@@ -105,6 +105,7 @@ export const mockSubscriptions = [
     amount: '₹50,000',
     startDate: '19 Jan 2025',
     nextRenewal: '19 Jan 2026', // Today (assuming current date is 19 Jan)
+    endDate: '19 Jan 2027',
     status: 'Active',
     paymentMode: 'Net Banking'
   },
@@ -115,6 +116,7 @@ export const mockSubscriptions = [
     amount: '₹5,000',
     startDate: '20 Dec 2025',
     nextRenewal: '20 Jan 2026', // Tomorrow (1 day)
+    endDate: '20 Dec 2026',
     status: 'Active',
     paymentMode: 'Credit Card'
   },
@@ -125,6 +127,7 @@ export const mockSubscriptions = [
     amount: '₹5,000',
     startDate: '21 Dec 2025',
     nextRenewal: '21 Jan 2026', // Day after tomorrow (2 days)
+    endDate: '21 Dec 2026',
     status: 'Active',
     paymentMode: 'UPI'
   },
@@ -135,6 +138,7 @@ export const mockSubscriptions = [
     amount: '₹50,000',
     startDate: '22 Jan 2025',
     nextRenewal: '22 Jan 2026', // 3 days
+    endDate: '22 Jan 2027',
     status: 'Active',
     paymentMode: 'UPI'
   },
@@ -147,6 +151,7 @@ export const mockSubscriptions = [
     amount: '₹5,000',
     startDate: '18 Dec 2025',
     nextRenewal: '18 Jan 2026', // Past 1 day
+    endDate: '18 Dec 2026',
     status: 'Past Due',
     paymentMode: 'Debit Card'
   },
@@ -157,6 +162,7 @@ export const mockSubscriptions = [
     amount: '₹5,000',
     startDate: '17 Dec 2025',
     nextRenewal: '17 Jan 2026', // Past 2 days
+    endDate: '17 Dec 2026',
     status: 'Past Due',
     paymentMode: 'Card'
   },
@@ -169,8 +175,46 @@ export const mockSubscriptions = [
     amount: '₹50,000',
     startDate: '01 Mar 2025',
     nextRenewal: '01 Mar 2026', // Future
+    endDate: '01 Mar 2027',
     status: 'Active',
     paymentMode: 'Net Banking'
+  }
+];
+
+
+export const mockPaymentLinks = [
+  { 
+    id: 1, 
+    amount: '2,500', 
+    name: 'Vedamurthy N', 
+    phone: '+91 9886...', 
+    status: 'Paid', 
+    date: '2 hours ago',
+    plan: 'Premium Monthly',
+    expiry: '20 Jan 2026',
+    linkUrl: 'https://pay.acn.com/l/veda123'
+  },
+  { 
+    id: 2, 
+    amount: '5,000', 
+    name: 'Amit Daga', 
+    phone: '+91 9876...', 
+    status: 'Pending', 
+    date: '5 hours ago',
+    plan: 'Premium Yearly',
+    expiry: '21 Jan 2026',
+    linkUrl: 'https://pay.acn.com/l/amit456'
+  },
+  { 
+    id: 3, 
+    amount: '1,000', 
+    name: 'Sandeep', 
+    phone: '+91 9123...', 
+    status: 'Expired', 
+    date: '1 day ago',
+    plan: 'Booster Credits',
+    expiry: '18 Jan 2026',
+    linkUrl: 'https://pay.acn.com/l/san789'
   }
 ];
 

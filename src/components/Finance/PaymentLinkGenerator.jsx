@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Copy, Search, UserCheck, AlertCircle } from 'lucide-react';
 import { mockAgents } from '../../data/mockAgents';
+import { mockPaymentLinks } from '../../data/mockFinance';
+import { Link, Copy, Search, UserCheck, AlertCircle, Check } from 'lucide-react';
 
 const PaymentLinkGenerator = () => {
     const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ const PaymentLinkGenerator = () => {
     const [showForm, setShowForm] = useState(false);
     const [foundAgent, setFoundAgent] = useState(null);
     const [error, setError] = useState('');
+    const [copiedIndex, setCopiedIndex] = useState(null);
 
     // Handle number change and agent search
     useEffect(() => {
@@ -47,6 +49,12 @@ const PaymentLinkGenerator = () => {
         console.log('Generating link for:', formData);
         alert('Payment link generated! (Mock)');
         setShowForm(false);
+    };
+
+    const handleCopy = (link, index) => {
+        navigator.clipboard.writeText(link);
+        setCopiedIndex(index);
+        setTimeout(() => setCopiedIndex(null), 2000);
     };
 
     return (
@@ -227,17 +235,15 @@ const PaymentLinkGenerator = () => {
                                 <tr>
                                     <th className="p-4">Amount</th>
                                     <th className="p-4">User</th>
+                                    <th className="p-4">Plan</th>
                                     <th className="p-4">Status</th>
+                                    <th className="p-4">Expiry Date</th>
                                     <th className="p-4">Created At</th>
                                     <th className="p-4">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {[
-                                    { id: 1, amount: '2,500', name: 'Vedamurthy N', phone: '+91 9886...', status: 'Paid', date: '2 hours ago' },
-                                    { id: 2, amount: '5,000', name: 'Amit Daga', phone: '+91 9876...', status: 'Pending', date: '5 hours ago' },
-                                    { id: 3, amount: '1,000', name: 'Sandeep', phone: '+91 9123...', status: 'Expired', date: '1 day ago' },
-                                ].map((link) => (
+                                {(mockPaymentLinks || []).map((link, index) => (
                                     <tr key={link.id} className="hover:bg-gray-50">
                                         <td className="px-4 py-3 font-bold text-gray-900">₹{link.amount}</td>
                                         <td className="px-4 py-3">
@@ -248,6 +254,15 @@ const PaymentLinkGenerator = () => {
                                         </td>
                                         <td className="px-4 py-3">
                                             <span className={`px-2 py-1 rounded text-xs font-medium border ${
+                                                link.plan?.includes('Yearly') ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                                link.plan?.includes('Monthly') ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                                'bg-amber-50 text-amber-700 border-amber-200'
+                                            }`}>
+                                                {link.plan || 'N/A'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span className={`px-2 py-1 rounded text-xs font-medium border ${
                                                 link.status === 'Paid' ? 'bg-green-50 text-green-700 border-green-200' :
                                                 link.status === 'Pending' ? 'bg-orange-50 text-orange-700 border-orange-200' :
                                                 'bg-gray-50 text-gray-600 border-gray-200'
@@ -255,10 +270,25 @@ const PaymentLinkGenerator = () => {
                                                 {link.status}
                                             </span>
                                         </td>
+                                        <td className="px-4 py-3 text-gray-600">{link.expiry}</td>
                                         <td className="px-4 py-3 text-gray-600">{link.date}</td>
                                         <td className="px-4 py-3">
-                                            <button className="text-gray-400 hover:text-blue-600 p-1.5 rounded hover:bg-blue-50 transition-colors">
-                                                <Copy size={16} />
+                                            <button 
+                                                onClick={() => handleCopy(link.linkUrl, index)}
+                                                className={`flex items-center gap-1.5 px-2 py-1.5 rounded transition-all ${
+                                                    copiedIndex === index 
+                                                    ? 'bg-green-50 text-green-700' 
+                                                    : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                                                }`}
+                                            >
+                                                {copiedIndex === index ? (
+                                                    <>
+                                                        <Check size={14} />
+                                                        <span className="text-xs font-medium">Copied</span>
+                                                    </>
+                                                ) : (
+                                                    <Copy size={16} />
+                                                )}
                                             </button>
                                         </td>
                                     </tr>

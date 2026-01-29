@@ -12,7 +12,7 @@ const FinancePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const content = {
-    'Payment History': <PaymentHistory payments={mockPaymentHistory} searchQuery={searchQuery} />,
+    'Payment History': <PaymentHistory payments={mockPaymentHistory} subscriptions={mockSubscriptions} searchQuery={searchQuery} />,
     'Subscriptions': <Subscriptions subscriptions={mockSubscriptions} />,
     'Coupons': <CouponGenerator coupons={mockCoupons} />,
     'Invoices': <InvoiceGenerator />,

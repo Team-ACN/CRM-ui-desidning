@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, Download, MoveDownLeft, Link2, ChevronDown, Calendar, ArrowRight, IndianRupee } from 'lucide-react';
 
-const PaymentHistory = ({ payments, searchQuery }) => {
+const PaymentHistory = ({ payments, subscriptions = [], searchQuery }) => {
   const [activeTab, setActiveTab] = useState('All');
   const [sourceFilter, setSourceFilter] = useState('All');
   
@@ -11,6 +11,14 @@ const PaymentHistory = ({ payments, searchQuery }) => {
     from: '',
     to: ''
   });
+
+  // Calculate Subscription Stats
+  const subscriptionStats = useMemo(() => {
+      const activeSubs = subscriptions.filter(s => s.status === 'Active');
+      const yearly = activeSubs.filter(s => s.plan.includes('Yearly')).length;
+      const monthly = activeSubs.filter(s => s.plan.includes('Monthly')).length;
+      return { totalActive: activeSubs.length, yearly, monthly };
+  }, [subscriptions]);
 
   const tabs = ['All', 'Success', 'Pending', 'Failed'];
   const sources = ['All', 'Payment Link', 'Platform Direct'];
@@ -79,13 +87,34 @@ const PaymentHistory = ({ payments, searchQuery }) => {
 
   return (
     <div className="space-y-6">
-      {/* Revenue Card */}
-      <div className="mb-6">
-        <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm inline-block min-w-[240px]">
+      {/* Stats Cards Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Revenue Card */}
+        <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
             <p className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-2">
                 Total Revenue ({dateFilter})
             </p>
             <p className="text-2xl font-bold text-gray-900">₹{totalRevenue.toLocaleString('en-IN')}</p>
+
+        </div>
+
+        {/* Active Subscribers Card */}
+        <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+            <p className="text-xs font-medium text-gray-500 mb-1">Total Active Subscribers</p>
+            <p className="text-2xl font-bold text-gray-900">{subscriptionStats.totalActive}</p>
+
+        </div>
+
+        {/* Plan Distribution Card */}
+        <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+            <p className="text-xs font-medium text-gray-500 mb-1">Plan Distribution</p>
+            <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-gray-900">{subscriptionStats.yearly}</p>
+                <span className="text-xs text-gray-500 font-medium">Yearly</span>
+                <span className="text-gray-300">|</span>
+                <p className="text-2xl font-bold text-gray-900">{subscriptionStats.monthly}</p>
+                <span className="text-xs text-gray-500 font-medium">Monthly</span>
+            </div>
 
         </div>
       </div>
