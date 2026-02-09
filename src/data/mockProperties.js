@@ -34,7 +34,7 @@ export const mockProperties = [
     plotSize: 'N/A',
     facing: 'south',
     micromarket: 'Kannamangala',
-    status: 'Available',
+    status: 'Delisted',
     lastCheck: '4 hours ago',
     agentId: 'CPC676',
     agentName: 'Md Fuzail'
@@ -50,7 +50,7 @@ export const mockProperties = [
     plotSize: '1200',
     facing: 'west',
     micromarket: 'Hoskote',
-    status: 'Available',
+    status: 'Hold',
     lastCheck: '4 hours ago',
     agentId: 'CPC676',
     agentName: 'Md Fuzail'
@@ -66,7 +66,7 @@ export const mockProperties = [
     plotSize: 'N/A',
     facing: 'south',
     micromarket: 'Garudachar Palya',
-    status: 'Available',
+    status: 'Delisted',
     lastCheck: '4 hours ago',
     agentId: 'CPB064',
     agentName: 'Anil Reddy'
@@ -82,9 +82,42 @@ export const mockProperties = [
     plotSize: '1200',
     facing: 'east',
     micromarket: 'Adigondanahalli',
-    status: 'Available',
+    status: 'Hold',
     lastCheck: '4 hours ago',
     agentId: 'CPC725',
     agentName: 'Bir Dreamhome'
+  },
+  {
+    id: 6,
+    propertyId: 'PB2055',
+    name: 'Prestige Lakeside Habitat',
+    assetType: 'Apartment',
+    price: '₹2.10 Cr',
+    sbua: '1450 sq ft',
+    floor: '14',
+    plotSize: 'N/A',
+    facing: 'north',
+    micromarket: 'Whitefield',
+    status: 'Available',
+    lastCheck: '1 hour ago',
+    agentId: 'CPA789',
+    agentName: 'Ramesh Verma'
+  },
+  {
+    id: 7,
+    propertyId: 'PB2054',
+    name: 'Brigade Exotica',
+    assetType: 'Apartment',
+    price: '₹4.50 Cr',
+    sbua: '2800 sq ft',
+    floor: '22',
+    plotSize: 'N/A',
+    facing: 'east',
+    micromarket: 'Old Airport Road',
+    status: 'Sold',
+    lastCheck: '2 days ago',
+    agentId: 'CPA456',
+    agentName: 'Suresh Patel'
   }
 ];
+

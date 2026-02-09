@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Users, User, Building2, FileText, LayoutDashboard, ChevronDown, IndianRupee } from 'lucide-react';
+import { Home, Users, User, Building2, FileText, LayoutDashboard, ChevronDown, IndianRupee } from 'lucide-react';
 
 const Sidebar = () => {
   return (
@@ -21,6 +21,7 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
+        <NavItem to="/home" icon={<Home size={20} />} label="Home" />
         <NavItem to="/agents" icon={<Users size={20} />} label="Agents" />
         <NavItem to="/leads" icon={<User size={20} />} label="Leads" />
         <NavItem to="/properties" icon={<Building2 size={20} />} label="Properties" />
