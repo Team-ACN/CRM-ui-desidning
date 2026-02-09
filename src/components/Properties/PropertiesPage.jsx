@@ -19,6 +19,8 @@ const PropertiesPage = () => {
     if (statusFilter) {
       const statusMap = {
         'delisted': (p) => p.status === 'De-Listed' || p.status === 'Delisted',
+        'delisted_resale': (p) => (p.status === 'De-Listed' || p.status === 'Delisted') && p.listingType === 'Resale',
+        'delisted_rental': (p) => (p.status === 'De-Listed' || p.status === 'Delisted') && p.listingType === 'Rental',
         'to_be_delisted': (p) => p.status === 'Hold', // Simulating "to be delisted" as Hold
         'available': (p) => p.status === 'Available',
         'sold': (p) => p.status === 'Sold',

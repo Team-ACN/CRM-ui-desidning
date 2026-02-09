@@ -22,7 +22,12 @@ export const activityCards = [
     filterKey: 'status',
     filterValue: 'delisted',
     color: 'text-red-600',
-    bgColor: 'bg-red-50'
+    bgColor: 'bg-red-50',
+    // Sub-sections for resale and rental
+    subSections: [
+      { label: 'Resale', count: 8, filterValue: 'delisted_resale' },
+      { label: 'Rental', count: 4, filterValue: 'delisted_rental' }
+    ]
   },
   {
     id: 'to_be_delisted',
@@ -33,7 +38,11 @@ export const activityCards = [
     filterKey: 'status',
     filterValue: 'to_be_delisted',
     color: 'text-orange-600',
-    bgColor: 'bg-orange-50'
+    bgColor: 'bg-orange-50',
+    subSections: [
+      { label: 'Resale', count: 3, filterValue: 'to_be_delisted_resale' },
+      { label: 'Rental', count: 2, filterValue: 'to_be_delisted_rental' }
+    ]
   },
   {
     id: 't3_calling',
