@@ -249,3 +249,31 @@ export const mockTemplates = [
     ],
   }
 ];
+
+// Mock pre-configured components (Saved Widgets)
+export const mockComponents = [
+  {
+    id: 'CMP001',
+    name: 'Diwali Festive Banner',
+    type: 'banner_carousel',
+    pageType: 'HOME',
+    createdAt: '2023-11-01T10:00:00Z',
+    config: {
+      items: [
+        { id: 'b1', imageUrl: 'https://placehold.co/600x200/png?text=Diwali+Offer+1', linkUrl: '' },
+        { id: 'b2', imageUrl: 'https://placehold.co/600x200/png?text=Diwali+Offer+2', linkUrl: '' }
+      ]
+    }
+  },
+  {
+    id: 'CMP002',
+    name: 'Premium North Blr Filters',
+    type: 'inventory_discovery',
+    pageType: 'PROPERTIES',
+    createdAt: '2023-10-15T09:30:00Z',
+    config: {
+      assetType: 'Villa',
+      zone: 'North'
+    }
+  }
+];

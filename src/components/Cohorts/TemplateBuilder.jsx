@@ -14,7 +14,7 @@ import PhoneCanvas from './PhoneCanvas';
 import WidgetSettingsPanel from './WidgetSettingsPanel';
 import { availableWidgets } from '../../data/mockCohorts';
 
-const TemplateBuilder = ({ template, pageType, cohorts, onSave, onBack, onOpenCohortModal, setCohortIdRef }) => {
+const TemplateBuilder = ({ template, pageType, cohorts, components, onSave, onBack, onOpenCohortModal, setCohortIdRef }) => {
   const isEditing = !!template?.name;
   const [name, setName] = useState(template?.name || '');
   const [description, setDescription] = useState(template?.description || '');
@@ -46,10 +46,12 @@ const TemplateBuilder = ({ template, pageType, cohorts, onSave, onBack, onOpenCo
     if (active.data?.current?.fromLibrary && isOverCanvas) {
       if (widgets.length >= 5) return;
       const widgetType = active.data.current.type;
+      const widgetConfig = active.data.current.config || {};
+      
       const newWidget = {
         id: `w-${Date.now()}`,
         type: widgetType,
-        config: {},
+        config: widgetConfig,
       };
       
       // Place the new widget at the correct index if dropped over another widget
@@ -150,7 +152,7 @@ const TemplateBuilder = ({ template, pageType, cohorts, onSave, onBack, onOpenCo
         {/* Builder body */}
         <div className="flex flex-1 overflow-hidden">
           {/* Left: Widget library */}
-          <WidgetLibrary />
+          <WidgetLibrary components={components} pageType={pageType} />
 
           {/* Center: Phone canvas */}
           <PhoneCanvas 

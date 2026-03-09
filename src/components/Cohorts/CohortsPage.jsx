@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Search, Plus, ArrowUpDown, LayoutTemplate, Activity, Users } from 'lucide-react';
+import { Search, Plus, ArrowUpDown, LayoutTemplate, Activity, Users, Layers } from 'lucide-react';
 import CohortCard from './CohortCard';
 import CreateCohortModal from './CreateCohortModal';
 import LiveOverview from './LiveOverview';
@@ -8,11 +8,14 @@ import TemplateBuilder from './TemplateBuilder';
 import PriorityManager from './PriorityManager';
 import CohortViewModal from './CohortViewModal';
 import TemplateViewModal from './TemplateViewModal';
-import { mockCohorts as initialCohorts, mockTemplates as initialTemplates } from '../../data/mockCohorts';
+import ComponentsTab from './ComponentsTab';
+import ComponentBuilderModal from './ComponentBuilderModal';
+import { mockCohorts as initialCohorts, mockTemplates as initialTemplates, mockComponents as initialComponents } from '../../data/mockCohorts';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: <Activity size={18} /> },
   { id: 'templates', label: 'Templates', icon: <LayoutTemplate size={18} /> },
+  { id: 'components', label: 'Components', icon: <Layers size={18} /> },
   { id: 'cohorts', label: 'Cohorts', icon: <Users size={18} /> },
 ];
 
@@ -21,8 +24,15 @@ const CohortsPage = () => {
   const [pageType, setPageType] = useState('HOME');
   const [cohorts, setCohorts] = useState(initialCohorts);
   const [templates, setTemplates] = useState(initialTemplates);
+  const [components, setComponents] = useState(initialComponents);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
 
   // View state: 'tabs' | 'builder' | 'priority'
   const [currentView, setCurrentView] = useState('tabs');
@@ -104,6 +114,7 @@ const CohortsPage = () => {
           template={editingTemplate}
           pageType={pageType}
           cohorts={cohorts}
+          components={components}
           onSave={handleSaveTemplate}
           onBack={() => {
             setCurrentView('tabs');
@@ -279,6 +290,15 @@ const CohortsPage = () => {
             searchQuery={searchQuery}
           />
         )}
+
+        {activeTab === 'components' && (
+          <ComponentsTab 
+            components={components}
+            pageType={pageType}
+            searchQuery={searchQuery}
+            onCreateComponent={() => setCurrentView('componentBuilder')}
+          />
+        )}
       </main>
 
       {/* Create Cohort Modal */}
@@ -301,6 +321,28 @@ const CohortsPage = () => {
         onClose={() => setViewingTemplate(null)}
         template={viewingTemplate}
       />
+
+      <ComponentBuilderModal
+        isOpen={currentView === 'componentBuilder'}
+        onClose={() => setCurrentView('tabs')}
+        pageType={pageType}
+        existingComponents={components}
+        onSave={(newComponent) => {
+          setComponents((prev) => [...prev, newComponent]);
+          setCurrentView('tabs');
+          showToast(`Component ${newComponent.id} saved successfully`);
+        }}
+      />
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-[100] flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-xl shadow-xl animate-in fade-in slide-in-from-bottom-5">
+          <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-white" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span className="text-sm font-medium">{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };
