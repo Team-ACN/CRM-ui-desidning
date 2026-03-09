@@ -10,7 +10,9 @@ const LiveOverview = ({ cohorts, templates, onCreateTemplate }) => {
   const templateByCohort = {};
   templates.forEach((t) => {
     if (t.status === 'Live') {
-      templateByCohort[t.cohortId] = t;
+      t.cohortIds?.forEach(id => {
+        templateByCohort[id] = t;
+      });
     }
   });
 
@@ -70,7 +72,7 @@ const LiveOverview = ({ cohorts, templates, onCreateTemplate }) => {
           {liveTemplates
             .sort((a, b) => a.priority - b.priority)
             .map((template) => {
-              const targetCohort = cohorts.find((c) => c.id === template.cohortId);
+              const targetCohorts = template.cohortIds?.map(id => cohorts.find(c => c.id === id)).filter(Boolean) || [];
 
               return (
                 <div
@@ -79,7 +81,7 @@ const LiveOverview = ({ cohorts, templates, onCreateTemplate }) => {
                 >
                   <div className="flex items-center gap-4 flex-1">
                     {/* Live indicator & Rank */}
-                    <div className="relative">
+                    <div className="relative shrink-0">
                       <div className="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-xl flex flex-col items-center justify-center">
                         <span className="text-[8px] text-emerald-600 font-bold uppercase tracking-wider leading-none mb-0.5">Priority</span>
                         <span className="text-sm text-emerald-700 font-bold leading-none">#{template.priority}</span>
@@ -90,8 +92,8 @@ const LiveOverview = ({ cohorts, templates, onCreateTemplate }) => {
                     {/* Template info */}
                     <div className="min-w-[200px] flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-base font-bold text-gray-900">{template.name}</h3>
-                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase rounded-full border border-emerald-200">
+                        <h3 className="text-base font-bold text-gray-900 truncate">{template.name}</h3>
+                        <span className="shrink-0 px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase rounded-full border border-emerald-200">
                           Live
                         </span>
                       </div>
@@ -100,36 +102,36 @@ const LiveOverview = ({ cohorts, templates, onCreateTemplate }) => {
                           {template.widgets.length} widgets
                         </span>
                         <span className="text-xs text-gray-300">•</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 truncate max-w-[250px] inline-block">
                           {template.widgets.map((w) => getWidgetLabel(w.type)).join(', ')}
                         </span>
                       </div>
                     </div>
 
                     {/* Arrow */}
-                    <div className="text-gray-300 mx-4">→</div>
+                    <div className="text-gray-300 mx-4 shrink-0">→</div>
 
                     {/* Target Cohort info */}
-                    <div className="w-1/3">
-                      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Target Cohort</p>
-                      {targetCohort ? (
-                        <>
-                          <h4 className="text-sm font-semibold text-gray-800">{targetCohort.name}</h4>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            {targetCohort.tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[9px] font-bold uppercase rounded tracking-wider"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </>
+                    <div className="w-1/3 min-w-[250px]">
+                      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Target Cohorts ({targetCohorts.length})</p>
+                      {targetCohorts.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {targetCohorts.map((tc) => (
+                              <div key={tc.id} className="bg-gray-50 border border-gray-200 rounded-lg py-1.5 px-3 flex flex-col gap-0.5">
+                                <h4 className="text-xs font-bold text-gray-800">{tc.name}</h4>
+                                <div className="flex items-center gap-1">
+                                  {tc.tags.slice(0,2).map((tag) => (
+                                    <span key={tag} className="text-[9px] text-gray-500 font-medium uppercase">{tag}</span>
+                                  ))}
+                                  {tc.tags.length > 2 && <span className="text-[9px] text-gray-400">+{tc.tags.length - 2}</span>}
+                                </div>
+                              </div>
+                          ))}
+                        </div>
                       ) : (
                         <div className="flex items-center gap-1.5 text-amber-600">
                           <AlertCircle size={14} />
-                          <span className="text-xs font-medium">No valid cohort linked</span>
+                          <span className="text-xs font-medium">No valid cohorts linked</span>
                         </div>
                       )}
                     </div>

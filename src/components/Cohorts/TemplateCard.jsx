@@ -37,9 +37,11 @@ const TemplateCard = ({ template, onToggle, onEdit, onPreview }) => {
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
             template.status === 'Live'
               ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
-              : template.status === 'Draft'
+              : template.status === 'Not Live'
               ? 'text-amber-600 bg-amber-50 border-amber-200'
-              : 'text-gray-500 bg-gray-50 border-gray-200'
+              : template.status === 'Draft'
+              ? 'text-gray-500 bg-gray-50 border-gray-200'
+              : 'text-gray-400 bg-gray-50 border-gray-100'
           }`}
         >
           {template.status}

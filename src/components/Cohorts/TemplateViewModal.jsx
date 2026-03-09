@@ -1,12 +1,12 @@
 import React from 'react';
-import { X, Smartphone } from 'lucide-react';
+import { X, Smartphone, CheckCircle } from 'lucide-react';
 import { mockCohorts, availableWidgets } from '../../data/mockCohorts';
 import WidgetInner from './WidgetInner';
 
-const TemplateViewModal = ({ isOpen, onClose, template }) => {
+const TemplateViewModal = ({ isOpen, onClose, template, onMakeLive }) => {
   if (!isOpen || !template) return null;
 
-  const cohort = mockCohorts.find((c) => c.id === template.cohortId);
+  const targetCohorts = template.cohortIds?.map(id => mockCohorts.find(c => c.id === id)).filter(Boolean) || [];
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) onClose();
@@ -36,7 +36,7 @@ const TemplateViewModal = ({ isOpen, onClose, template }) => {
               </span>
             </div>
             <p className="text-sm text-gray-500 mt-0.5">
-              {cohort?.name || 'Unknown cohort'} • Priority #{template.priority} • {template.widgets.length} widgets
+              {targetCohorts.map(tc => tc.name).join(', ') || 'Unknown cohort(s)'} • Priority #{template.priority} • {template.widgets.length} widgets
             </p>
           </div>
           <button
@@ -112,14 +112,21 @@ const TemplateViewModal = ({ isOpen, onClose, template }) => {
               </h3>
               <div className="space-y-3">
                 <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Cohort</p>
-                  <p className="text-sm font-medium text-gray-900">{cohort?.name || 'Unknown'}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    {cohort?.tags?.map((tag) => (
-                      <span key={tag} className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[9px] font-bold uppercase rounded">
-                        {tag}
-                      </span>
+                  <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-2">Target Cohorts ({targetCohorts.length})</p>
+                  <div className="flex flex-col gap-3">
+                    {targetCohorts.map(tc => (
+                      <div key={tc.id}>
+                        <p className="text-sm font-medium text-gray-900">{tc.name}</p>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          {tc.tags?.map((tag) => (
+                            <span key={tag} className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[9px] font-bold uppercase rounded">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     ))}
+                    {targetCohorts.length === 0 && <p className="text-sm text-gray-500">None</p>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -133,6 +140,23 @@ const TemplateViewModal = ({ isOpen, onClose, template }) => {
                   </div>
                 </div>
               </div>
+
+              {/* QC Approval Banner */}
+              {template.status === 'Not Live' && onMakeLive && (
+                <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
+                      <CheckCircle className="text-amber-600" size={16} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-amber-900">Mandatory QC Preview</h4>
+                      <p className="text-xs text-amber-700 mt-1">
+                        Please review the layout and configuration on the mockup phone. If everything is correct, you can approve this template for production.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Widgets list */}
@@ -164,13 +188,23 @@ const TemplateViewModal = ({ isOpen, onClose, template }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end px-6 py-4 border-t border-gray-100 shrink-0">
+        <div className="flex items-center justify-end px-6 py-4 border-t border-gray-100 shrink-0 gap-3">
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors"
+            className="px-5 py-2 text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors"
           >
-            Close
+            {template.status === 'Not Live' ? 'Cancel' : 'Close'}
           </button>
+          
+          {template.status === 'Not Live' && onMakeLive && (
+            <button
+              onClick={() => onMakeLive(template.id)}
+              className="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-emerald-200"
+            >
+              <CheckCircle size={16} />
+              Approve & Make Live
+            </button>
+          )}
         </div>
       </div>
     </div>

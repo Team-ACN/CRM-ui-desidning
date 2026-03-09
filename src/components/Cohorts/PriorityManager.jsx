@@ -13,11 +13,11 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, X, Save, ArrowLeft, Check, Power } from 'lucide-react';
+import { GripVertical, X, Save, ArrowLeft, Check, Power, Eye } from 'lucide-react';
 import { mockCohorts as allCohorts, availableWidgets } from '../../data/mockCohorts';
 
-const SortableItem = ({ template, index, cohorts, onToggleActive }) => {
-  const cohort = cohorts.find((c) => c.id === template.cohortId);
+const SortableItem = ({ template, index, cohorts, onToggleActive, onPreview }) => {
+  const targetCohorts = template.cohortIds?.map(id => cohorts.find(c => c.id === id)).filter(Boolean) || [];
   const widgetIcons = template.widgets.map((w) => {
     const aw = availableWidgets.find((a) => a.type === w.type);
     return aw?.icon || '';
@@ -58,7 +58,7 @@ const SortableItem = ({ template, index, cohorts, onToggleActive }) => {
       {/* Template info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-gray-900 truncate">{template.name}</p>
-        <p className="text-xs text-gray-400 truncate">{cohort?.name || 'Unknown cohort'}</p>
+        <p className="text-xs text-gray-400 truncate">{targetCohorts.map(tc => tc.name).join(', ') || 'No valid cohorts'}</p>
       </div>
 
       {/* Widget icons */}
@@ -68,23 +68,35 @@ const SortableItem = ({ template, index, cohorts, onToggleActive }) => {
         ))}
       </div>
 
-      {/* Active toggle */}
-      <button
-        onClick={() => onToggleActive(template.id)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-          template.isActive
-            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-            : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
-        }`}
-      >
-        <Power size={12} />
-        {template.isActive ? 'Live' : 'Draft'}
-      </button>
+      {/* Active toggle / Preview */}
+      {template.status === 'Not Live' ? (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onPreview(template);
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 transition-colors"
+        >
+          <Eye size={12} />
+          Preview to Activate
+        </button>
+      ) : (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleActive(template.id);
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 transition-colors"
+        >
+          <Power size={12} />
+          Live
+        </button>
+      )}
     </div>
   );
 };
 
-const PriorityManager = ({ templates, cohorts, onSave, onBack }) => {
+const PriorityManager = ({ templates, cohorts, onSave, onBack, onPreview }) => {
   const [items, setItems] = useState(
     [...templates].sort((a, b) => a.priority - b.priority)
   );
@@ -111,7 +123,7 @@ const PriorityManager = ({ templates, cohorts, onSave, onBack }) => {
     setItems((prev) =>
       prev.map((t) =>
         t.id === id
-          ? { ...t, isActive: !t.isActive, status: t.isActive ? 'Draft' : 'Live' }
+          ? { ...t, isActive: !t.isActive, status: t.isActive ? 'Not Live' : 'Live' }
           : t
       )
     );
@@ -139,7 +151,7 @@ const PriorityManager = ({ templates, cohorts, onSave, onBack }) => {
             <div>
               <h1 className="text-lg font-bold text-gray-900">Manage Priority</h1>
               <p className="text-xs text-gray-400">
-                Drag to reorder • Toggle to activate • {liveCount} live, {items.length - liveCount} draft
+                Drag to reorder • Toggle to activate • {liveCount} live, {items.length - liveCount} not live
               </p>
             </div>
           </div>
@@ -181,6 +193,7 @@ const PriorityManager = ({ templates, cohorts, onSave, onBack }) => {
                   index={index}
                   cohorts={cohorts}
                   onToggleActive={handleToggleActive}
+                  onPreview={onPreview}
                 />
               ))}
             </div>

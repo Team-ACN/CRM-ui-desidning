@@ -10,6 +10,8 @@ const DraggableWidget = ({ widget, title, subtitle, icon, isComponent, config })
       type: widget.type, 
       fromLibrary: true, 
       isComponent: !!isComponent,
+      componentId: isComponent ? widget.id : null,
+      componentName: isComponent ? widget.name : null,
       config: config || {}
     },
   });
@@ -39,42 +41,17 @@ const DraggableWidget = ({ widget, title, subtitle, icon, isComponent, config })
   );
 };
 
-const WidgetLibrary = ({ components = [], pageType }) => {
-  const [activeTab, setActiveTab] = useState('base'); // 'base' | 'saved'
-  
-  const relevantComponents = components.filter(c => c.pageType === pageType);
+const WidgetLibrary = ({ pageType }) => {
 
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col h-full overflow-hidden">
       <div className="p-4 border-b border-gray-200 bg-white shrink-0">
         <h3 className="text-sm font-semibold text-gray-900">Builder Library</h3>
-        <p className="text-xs text-gray-400 mt-0.5">Drag items to the canvas</p>
-        
-        {/* Toggle between Base Widgets and Saved Components */}
-        <div className="flex bg-gray-100 p-1 rounded-lg mt-4">
-          <button
-            onClick={() => setActiveTab('base')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-md transition-all ${
-              activeTab === 'base' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Puzzle size={13} />
-            Widgets
-          </button>
-          <button
-            onClick={() => setActiveTab('saved')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-md transition-all ${
-              activeTab === 'saved' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Layers size={13} />
-            Saved ({relevantComponents.length})
-          </button>
-        </div>
+        <p className="text-xs text-gray-400 mt-0.5">Drag widgets to the canvas</p>
       </div>
       
       <div className="p-3 space-y-2 flex-1 overflow-y-auto custom-scrollbar">
-        {activeTab === 'base' && availableWidgets.map((widget) => (
+        {availableWidgets.map((widget) => (
           <DraggableWidget 
             key={widget.type} 
             widget={widget} 
@@ -83,31 +60,6 @@ const WidgetLibrary = ({ components = [], pageType }) => {
             icon={widget.icon}
           />
         ))}
-        
-        {activeTab === 'saved' && (
-          relevantComponents.length > 0 ? (
-            relevantComponents.map((comp) => {
-              const bW = availableWidgets.find(w => w.type === comp.type);
-              return (
-                <DraggableWidget 
-                  key={comp.id} 
-                  widget={comp} 
-                  isComponent={true}
-                  config={comp.config}
-                  title={comp.name}
-                  subtitle={bW?.label || 'Preset Component'}
-                  icon={bW?.icon}
-                />
-              );
-            })
-          ) : (
-             <div className="text-center py-10 px-4">
-               <Layers className="mx-auto text-gray-300 mb-2" size={24} />
-               <p className="text-xs text-gray-500 font-medium">No saved components</p>
-               <p className="text-[10px] text-gray-400 mt-1">Create predefined widgets in the Components tab.</p>
-             </div>
-          )
-        )}
       </div>
     </div>
   );

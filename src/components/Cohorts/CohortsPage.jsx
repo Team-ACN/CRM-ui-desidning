@@ -27,7 +27,12 @@ const CohortsPage = () => {
   const [components, setComponents] = useState(initialComponents);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isComponentModalOpen, setIsComponentModalOpen] = useState(false);
+  const [selectedBaseWidget, setSelectedBaseWidget] = useState('');
   const [toastMessage, setToastMessage] = useState('');
+  
+  // Ref to communicate back to the template builder active widget
+  const onInlineComponentCreatedRef = useRef(null);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -56,7 +61,7 @@ const CohortsPage = () => {
 
   const handleCreateCohort = (newCohort) => {
     const cohort = {
-      id: Date.now(),
+      id: `COH${String(Date.now()).slice(-6)}`,
       name: newCohort.name,
       description: newCohort.description || 'No description',
       tags: [newCohort.type.toUpperCase()],
@@ -76,7 +81,7 @@ const CohortsPage = () => {
   };
 
   const handleCreateTemplate = (presetCohortId) => {
-    setEditingTemplate({ cohortId: presetCohortId, pageType });
+    setEditingTemplate({ cohortIds: presetCohortId ? [presetCohortId] : [], pageType });
     setCurrentView('builder');
   };
 
@@ -101,6 +106,17 @@ const CohortsPage = () => {
     setActiveTab('templates');
   };
 
+  const handleMakeLive = (templateId) => {
+    setTemplates((prev) =>
+      prev.map((t) =>
+        t.id === templateId
+          ? { ...t, status: 'Live', isActive: true }
+          : t
+      )
+    );
+    setViewingTemplate(null);
+  };
+
   // Filter templates by selected pageType
   const activeTemplates = useMemo(() => {
     return templates.filter((t) => t.pageType === pageType);
@@ -122,32 +138,69 @@ const CohortsPage = () => {
           }}
           onOpenCohortModal={() => setIsModalOpen(true)}
           setCohortIdRef={setCohortIdRef}
+          onOpenComponentBuilder={(widgetType, onCreatedCallback) => {
+            setSelectedBaseWidget(widgetType);
+            setIsComponentModalOpen(true);
+            onInlineComponentCreatedRef.current = onCreatedCallback;
+          }}
         />
         <CreateCohortModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onCreate={handleCreateCohort}
         />
+        <ComponentBuilderModal
+          isOpen={isComponentModalOpen}
+          onClose={() => {
+            setIsComponentModalOpen(false);
+            setSelectedBaseWidget('');
+          }}
+          pageType={pageType}
+          initialSelectedType={selectedBaseWidget}
+          existingComponents={components}
+          onSave={(newComponent) => {
+            setComponents((prev) => [...prev, newComponent]);
+            setIsComponentModalOpen(false);
+            showToast(`Component ${newComponent.id} saved successfully`);
+            
+            // If opened from a template widget, notify the widget to use this new component
+            if (onInlineComponentCreatedRef.current) {
+              onInlineComponentCreatedRef.current(newComponent);
+              onInlineComponentCreatedRef.current = null;
+            }
+          }}
+        />
       </>
     );
   }
 
   if (currentView === 'priority') {
+    const priorityTemplates = activeTemplates.filter(t => t.status !== 'Draft');
     return (
-      <PriorityManager
-        templates={activeTemplates}
-        cohorts={cohorts}
-        onSave={(reordered) => {
-          // Merge reordered subset back into the master list
-          setTemplates((prev) => {
-            const others = prev.filter(t => t.pageType !== pageType);
-            return [...others, ...reordered];
-          });
-          setCurrentView('tabs');
-          setActiveTab('templates');
-        }}
-        onBack={() => setCurrentView('tabs')}
-      />
+      <>
+        <PriorityManager
+          templates={priorityTemplates}
+          cohorts={cohorts}
+          onSave={(reordered) => {
+            // Merge reordered subset back into the master list
+            setTemplates((prev) => {
+              const others = prev.filter(t => t.pageType !== pageType);
+              return [...others, ...reordered];
+            });
+            setCurrentView('tabs');
+            setActiveTab('templates');
+          }}
+          onBack={() => setCurrentView('tabs')}
+          onPreview={(template) => setViewingTemplate(template)}
+        />
+        
+        <TemplateViewModal
+          isOpen={!!viewingTemplate}
+          onClose={() => setViewingTemplate(null)}
+          template={viewingTemplate}
+          onMakeLive={handleMakeLive}
+        />
+      </>
     );
   }
 
@@ -320,6 +373,7 @@ const CohortsPage = () => {
         isOpen={!!viewingTemplate}
         onClose={() => setViewingTemplate(null)}
         template={viewingTemplate}
+        onMakeLive={handleMakeLive}
       />
 
       <ComponentBuilderModal

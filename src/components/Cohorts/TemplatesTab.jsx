@@ -14,7 +14,7 @@ const TemplatesTab = ({ templates, setTemplates, onEditTemplate, onPreviewTempla
           ? {
               ...t,
               isActive: !t.isActive,
-              status: t.isActive ? 'Draft' : 'Live',
+              status: t.isActive ? 'Not Live' : 'Live',
             }
           : t
       )

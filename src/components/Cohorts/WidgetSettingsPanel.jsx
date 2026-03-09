@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { availableWidgets } from '../../data/mockCohorts';
-import { Trash2, Plus, ArrowLeft, Upload, Check, Puzzle, Layers } from 'lucide-react';
+import { Trash2, Plus, ArrowLeft, Upload, Check, Puzzle, Layers, Search } from 'lucide-react';
 
-const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponentBuilder, isComponent, componentName, onOpenComponentBuilder }) => {
+const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponentBuilder, isComponent, componentName, onOpenComponentBuilder, components = [], pageType }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
   if (!widget) return null;
 
   const widgetDef = availableWidgets.find((w) => w.type === widget.type);
@@ -27,22 +29,81 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
     // If it's a configurable widget inside the Template Builder (not the Component Builder)
     if (widgetDef?.hasConfig && !isComponentBuilder) {
       if (!isComponent) {
+        const filteredComponents = components.filter(c => 
+          c.type === widget.type && 
+          (c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.id.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+
         return (
-          <div className="flex flex-col items-center justify-center p-6 text-center bg-emerald-50/50 border border-emerald-100 rounded-xl mt-4">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-emerald-600">
-               <Puzzle size={20} />
+          <div className="flex flex-col mt-4 space-y-4">
+            <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                 <Puzzle size={16} className="text-emerald-600" />
+                 <h4 className="text-sm font-semibold text-gray-900">Link Component</h4>
+              </div>
+              <p className="text-xs text-gray-500 mb-4">
+                {widgetDef.label} widgets require a pre-configured component. Search for an existing one below.
+              </p>
+              
+              {/* Search Autocomplete */}
+              <div className="relative mb-3">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search size={14} className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search by name or ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50 focus:bg-white transition-colors"
+                />
+              </div>
+
+              {/* Search Results */}
+              {searchQuery.trim() && (
+                <div className="mb-4 max-h-40 overflow-y-auto custom-scrollbar border border-gray-100 rounded-lg divide-y divide-gray-100">
+                  {filteredComponents.length > 0 ? (
+                    filteredComponents.map(comp => (
+                      <button
+                        key={comp.id}
+                        onClick={() => {
+                          onUpdate(widget.id, {
+                            ...widget,
+                            isComponent: true,
+                            componentId: comp.id,
+                            componentName: comp.name,
+                            config: comp.config || {}
+                          });
+                          setSearchQuery('');
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-emerald-50 focus:bg-emerald-50 transition-colors flex flex-col gap-0.5"
+                      >
+                        <span className="text-sm font-medium text-gray-900 truncate">{comp.name}</span>
+                        <span className="text-[10px] text-gray-400 font-mono">{comp.id}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 px-3">
+                      <p className="text-xs text-gray-500">No matching components found.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="relative flex items-center py-2">
+                <div className="flex-grow border-t border-gray-100"></div>
+                <span className="flex-shrink-0 flex items-center justify-center px-3 text-[10px] uppercase tracking-wider font-semibold text-gray-400 bg-white">Or</span>
+                <div className="flex-grow border-t border-gray-100"></div>
+              </div>
+
+              <button
+                onClick={() => onOpenComponentBuilder && onOpenComponentBuilder(widget.type)}
+                className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium transition-colors border border-emerald-200"
+              >
+                <Plus size={16} />
+                Create New Component
+              </button>
             </div>
-            <h4 className="text-sm font-semibold text-gray-900 mb-1">Reusable Component Required</h4>
-            <p className="text-xs text-gray-500 mb-4 max-w-[200px]">
-              {widgetDef.label} widgets must be created as reusable components first.
-            </p>
-            <button
-              onClick={() => onOpenComponentBuilder && onOpenComponentBuilder(widget.type)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              <Plus size={16} />
-              Create Component
-            </button>
           </div>
         );
       } else {

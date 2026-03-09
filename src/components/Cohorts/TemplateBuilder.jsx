@@ -8,23 +8,24 @@ import {
   DragOverlay,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { ArrowLeft, Save, Plus } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Search } from 'lucide-react';
 import WidgetLibrary from './WidgetLibrary';
 import PhoneCanvas from './PhoneCanvas';
 import WidgetSettingsPanel from './WidgetSettingsPanel';
 import { availableWidgets } from '../../data/mockCohorts';
 
-const TemplateBuilder = ({ template, pageType, cohorts, components, onSave, onBack, onOpenCohortModal, setCohortIdRef }) => {
+const TemplateBuilder = ({ template, pageType, cohorts, components, onSave, onBack, onOpenCohortModal, setCohortIdRef, onOpenComponentBuilder }) => {
   const isEditing = !!template?.name;
   const [name, setName] = useState(template?.name || '');
   const [description, setDescription] = useState(template?.description || '');
-  const [cohortId, setCohortId] = useState(template?.cohortId || '');
+  const [cohortIds, setCohortIds] = useState(template?.cohortIds || []);
+  const [cohortSearch, setCohortSearch] = useState('');
   const [widgets, setWidgets] = useState(template?.widgets || []);
   const [activeId, setActiveId] = useState(null);
   const [selectedWidgetId, setSelectedWidgetId] = useState(null);
 
-  // Expose setCohortId to parent so it can auto-select newly created cohort
-  if (setCohortIdRef) setCohortIdRef.current = setCohortId;
+  // Expose setCohortIds to parent so it can auto-select newly created cohort
+  if (setCohortIdRef) setCohortIdRef.current = (id) => setCohortIds(prev => [...prev, id]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -47,10 +48,16 @@ const TemplateBuilder = ({ template, pageType, cohorts, components, onSave, onBa
       if (widgets.length >= 5) return;
       const widgetType = active.data.current.type;
       const widgetConfig = active.data.current.config || {};
+      const isComponent = active.data.current.isComponent;
+      const componentId = active.data.current.componentId;
+      const componentName = active.data.current.componentName;
       
       const newWidget = {
         id: `w-${Date.now()}`,
         type: widgetType,
+        isComponent,
+        componentId,
+        componentName,
         config: widgetConfig,
       };
       
@@ -89,14 +96,14 @@ const TemplateBuilder = ({ template, pageType, cohorts, components, onSave, onBa
     setWidgets((prev) => prev.map((w) => w.id === widgetId ? updatedWidget : w));
   };
 
-  const handleSave = () => {
+  const handleSave = (saveStatus) => {
     const templateData = {
-      id: template?.id || `t-${Date.now()}`,
+      id: template?.id || `T${Date.now()}`,
       name,
       description,
-      cohortId: Number(cohortId),
+      cohortIds,
       priority: template?.priority || 999, // unranked by default
-      status: 'Draft',
+      status: saveStatus,
       isActive: false,
       pageType: template?.pageType || pageType, // inherit from prop if new
       widgets,
@@ -133,18 +140,26 @@ const TemplateBuilder = ({ template, pageType, cohorts, components, onSave, onBa
                 {isEditing ? 'Edit Template' : 'Create Template'}
               </h2>
               <p className="text-[11px] text-gray-400">
-                {name || 'Untitled template'} • Saves as Draft
+                {name || 'Untitled template'}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
-              onClick={handleSave}
-              disabled={!name.trim() || !cohortId || widgets.length === 0}
-              className="flex items-center gap-1.5 px-5 py-2 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+              onClick={() => handleSave('Draft')}
+              disabled={!name.trim() || cohortIds.length === 0 || widgets.length === 0}
+              className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors"
             >
               <Save size={16} />
-              Save Template
+              Save as Draft
+            </button>
+            <button
+              onClick={() => handleSave('Not Live')}
+              disabled={!name.trim() || cohortIds.length === 0 || widgets.length === 0}
+              className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <Save size={16} />
+              Save & Request Approval
             </button>
           </div>
         </div>
@@ -165,13 +180,22 @@ const TemplateBuilder = ({ template, pageType, cohorts, components, onSave, onBa
 
           {/* Right: Settings */}
           <div className="w-72 bg-white border-l border-gray-200 flex flex-col">
-            {selectedWidgetId ? (
-              <WidgetSettingsPanel
-                widget={widgets.find((w) => w.id === selectedWidgetId)}
-                onUpdate={handleUpdateWidget}
-                onBack={() => setSelectedWidgetId(null)}
-              />
-            ) : (
+            {selectedWidgetId ? (() => {
+               const activeW = widgets.find((w) => w.id === selectedWidgetId);
+               return (
+                 <WidgetSettingsPanel
+                   widget={activeW}
+                   isComponentBuilder={false}
+                   isComponent={activeW.isComponent}
+                   componentName={activeW.componentName}
+                   onUpdate={handleUpdateWidget}
+                   onBack={() => setSelectedWidgetId(null)}
+                   onOpenComponentBuilder={onOpenComponentBuilder} /* passed from CohortsPage */
+                   components={components}
+                   pageType={pageType}
+                 />
+               );
+             })() : (
               <>
                 <div className="p-4 border-b border-gray-200">
                   <h3 className="text-sm font-semibold text-gray-900">Template Settings</h3>
@@ -205,38 +229,83 @@ const TemplateBuilder = ({ template, pageType, cohorts, components, onSave, onBa
                     />
                   </div>
 
-                  {/* Cohort — select or create inline */}
+                  {/* Cohorts — Multi-select */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                      Target Cohort
-                    </label>
-                    <select
-                      value={cohortId}
-                      onChange={(e) => setCohortId(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white"
-                    >
-                      <option value="">Select a cohort...</option>
-                      {cohorts.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      onClick={onOpenCohortModal}
-                      className="mt-2 flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900 font-medium transition-colors"
-                    >
-                      <Plus size={12} />
-                      Create new cohort
-                    </button>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="block text-xs font-medium text-gray-600">
+                        Target Cohorts
+                      </label>
+                      <button
+                        onClick={onOpenCohortModal}
+                        className="flex items-center gap-1 text-[10px] text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+                      >
+                        <Plus size={10} />
+                        Create New
+                      </button>
+                    </div>
+                    
+                    <div className="relative mb-2">
+                      <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                        <Search size={12} className="text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Search by name or ID..."
+                        value={cohortSearch}
+                        onChange={(e) => setCohortSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-gray-50 focus:bg-white transition-colors"
+                      />
+                    </div>
+                    
+                    <div className="w-full max-h-40 overflow-y-auto custom-scrollbar border border-gray-200 rounded-lg bg-white divide-y divide-gray-50">
+                      {cohorts
+                        .filter(c => 
+                          c.name.toLowerCase().includes(cohortSearch.toLowerCase()) || 
+                          c.id.toString().toLowerCase().includes(cohortSearch.toLowerCase())
+                        )
+                        .map((c) => {
+                        const isSelected = cohortIds.includes(c.id);
+                        return (
+                          <label key={c.id} className={`flex items-start gap-2 p-2.5 cursor-pointer hover:bg-gray-50 transition-colors ${isSelected ? 'bg-emerald-50/30' : ''}`}>
+                            <input
+                              type="checkbox"
+                              className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300 shrink-0"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setCohortIds([...cohortIds, c.id]);
+                                } else {
+                                  setCohortIds(cohortIds.filter(id => id !== c.id));
+                                }
+                              }}
+                            />
+                            <div className="flex flex-col w-full min-w-0">
+                              <div className="flex justify-between items-start gap-2 w-full">
+                                <span className={`text-xs truncate ${isSelected ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>{c.name}</span>
+                                <span className="text-[9px] font-mono text-gray-500 bg-gray-100 border border-gray-200 px-1 py-0.5 rounded shrink-0 leading-none">{c.id}</span>
+                              </div>
+                              <span className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{c.description || 'No description'}</span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                      {cohorts.filter(c => 
+                          c.name.toLowerCase().includes(cohortSearch.toLowerCase()) || 
+                          c.id.toString().toLowerCase().includes(cohortSearch.toLowerCase())
+                        ).length === 0 && (
+                        <div className="p-3 text-center text-xs text-gray-500">No matching cohorts.</div>
+                      )}
+                    </div>
+                    {cohortIds.length > 0 && (
+                       <p className="mt-1.5 text-[10px] text-gray-500">{cohortIds.length} cohort(s) selected.</p>
+                    )}
                   </div>
 
                   {/* Status hint */}
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-[11px] text-amber-700 font-medium">Draft Mode</p>
+                    <p className="text-[11px] text-amber-700 font-medium">Not Live</p>
                     <p className="text-[10px] text-amber-600 mt-0.5">
-                      Templates are saved as drafts. Set priority and activate them from the "Manage Priority" section.
+                      Templates are saved as Not Live. Set priority and use the Preview to activate them from the "Manage Priority" section.
                     </p>
                   </div>
 

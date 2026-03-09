@@ -1,6 +1,6 @@
 export const mockCohorts = [
   {
-    id: 1,
+    id: 'COH001',
     name: 'Whitefield Premium Agents',
     description: 'High value premium resale agents in East Bangalore',
     tags: ['AREA', 'PLAN'],
@@ -9,7 +9,7 @@ export const mockCohorts = [
     agentCount: 338,
   },
   {
-    id: 2,
+    id: 'COH002',
     name: 'Rental Focus – Bangalore',
     description: 'Agents primarily focused on long-term leasing',
     tags: ['FOCUS'],
@@ -18,7 +18,7 @@ export const mockCohorts = [
     agentCount: 845,
   },
   {
-    id: 3,
+    id: 'COH003',
     name: 'Low Pricing Behavior',
     description: 'Agents listing properties under 50L',
     tags: ['PRICING', 'AREA'],
@@ -27,7 +27,7 @@ export const mockCohorts = [
     agentCount: 152,
   },
   {
-    id: 4,
+    id: 'COH004',
     name: 'Manual Selection Cohort',
     description: 'Hand-picked agents from recent event',
     tags: ['MANUAL'],
@@ -36,7 +36,7 @@ export const mockCohorts = [
     agentCount: 12,
   },
   {
-    id: 5,
+    id: 'COH005',
     name: 'New Launch Specialists',
     description: 'Agents tied to Tier-1 developer pre-launches',
     tags: ['FOCUS', 'PLAN'],
@@ -45,7 +45,7 @@ export const mockCohorts = [
     agentCount: 420,
   },
   {
-    id: 6,
+    id: 'COH006',
     name: 'South Bangalore Expats',
     description: 'Specialists in Koramangala and Indiranagar luxury',
     tags: ['AREA'],
@@ -54,7 +54,7 @@ export const mockCohorts = [
     agentCount: 185,
   },
   {
-    id: 7,
+    id: 'COH007',
     name: 'Commercial Realty Pros',
     description: 'Office space and retail leasing network',
     tags: ['FOCUS', 'PRICING'],
@@ -63,7 +63,7 @@ export const mockCohorts = [
     agentCount: 94,
   },
   {
-    id: 8,
+    id: 'COH008',
     name: 'Dormant Accounts',
     description: 'Agents with no login in 90 days',
     tags: ['MANUAL'],
@@ -160,7 +160,7 @@ export const mockTemplates = [
   {
     id: 't1',
     name: 'Premium Whitefield Home',
-    cohortId: 1,
+    cohortIds: ['COH001'],
     priority: 1,
     status: 'Live',
     isActive: true,
@@ -174,7 +174,7 @@ export const mockTemplates = [
   {
     id: 't2',
     name: 'Rental Discovery',
-    cohortId: 2,
+    cohortIds: ['COH002'],
     priority: 2,
     status: 'Live',
     isActive: true,
@@ -197,9 +197,9 @@ export const mockTemplates = [
   {
     id: 't3',
     name: 'Budget Deals Navigation',
-    cohortId: 3,
+    cohortIds: ['COH003'],
     priority: 3,
-    status: 'Draft',
+    status: 'Not Live',
     isActive: false,
     pageType: 'HOME',
     widgets: [
@@ -210,7 +210,7 @@ export const mockTemplates = [
   {
     id: 't4',
     name: 'New Launch Blast',
-    cohortId: 5,
+    cohortIds: ['COH005'],
     priority: 1,
     status: 'Live',
     isActive: true,
@@ -224,7 +224,7 @@ export const mockTemplates = [
   {
     id: 't5',
     name: 'Commercial Pipeline',
-    cohortId: 7,
+    cohortIds: ['COH007'],
     priority: 2,
     status: 'Live',
     isActive: true,
@@ -238,9 +238,9 @@ export const mockTemplates = [
   {
     id: 't6',
     name: 'Expat Luxury Showcase',
-    cohortId: 6,
+    cohortIds: ['COH006'],
     priority: 3,
-    status: 'Draft',
+    status: 'Not Live',
     isActive: false,
     pageType: 'PROPERTIES',
     widgets: [
@@ -259,9 +259,11 @@ export const mockComponents = [
     pageType: 'HOME',
     createdAt: '2023-11-01T10:00:00Z',
     config: {
+      heading: 'Festive Offers',
       items: [
         { id: 'b1', imageUrl: 'https://placehold.co/600x200/png?text=Diwali+Offer+1', linkUrl: '' },
-        { id: 'b2', imageUrl: 'https://placehold.co/600x200/png?text=Diwali+Offer+2', linkUrl: '' }
+        { id: 'b2', imageUrl: 'https://placehold.co/600x200/png?text=Diwali+Offer+2', linkUrl: '' },
+        { id: 'b3', imageUrl: 'https://placehold.co/600x200/png?text=Diwali+Offer+3', linkUrl: '' }
       ]
     }
   },
@@ -272,8 +274,71 @@ export const mockComponents = [
     pageType: 'PROPERTIES',
     createdAt: '2023-10-15T09:30:00Z',
     config: {
+      heading: 'Discover Premium Villas',
       assetType: 'Villa',
-      zone: 'North'
+      zone: 'North',
+      priceMin: '20000000',
+      priceMax: '50000000',
+      areaMin: '3000',
+      hasImages: true
+    }
+  },
+  {
+    id: 'CMP003',
+    name: 'Flash Sale Ad',
+    type: 'advertisement',
+    pageType: 'HOME',
+    createdAt: '2023-11-10T14:20:00Z',
+    config: {
+      heading: 'Limited Time Offer',
+      items: [
+        { id: 'a1', imageUrl: 'https://placehold.co/600x300/png?text=Flash+Sale+20%OFF', linkUrl: 'https://acn.com/sale' },
+        { id: 'a2', imageUrl: 'https://placehold.co/600x300/png?text=Zero+Brokerage', linkUrl: 'https://acn.com/zerobrokerage' },
+        { id: 'a3', imageUrl: 'https://placehold.co/600x300/png?text=Free+Site+Visit', linkUrl: 'https://acn.com/visit' }
+      ]
+    }
+  },
+  {
+    id: 'CMP004',
+    name: 'New Launch Spotlight',
+    type: 'advertisement',
+    pageType: 'PROPERTIES',
+    createdAt: '2023-11-12T09:15:00Z',
+    config: {
+      heading: 'Project of the Month',
+      items: [
+        { id: 'a1', imageUrl: 'https://placehold.co/600x300/png?text=Godrej+Splendour', linkUrl: '' },
+        { id: 'a2', imageUrl: 'https://placehold.co/600x300/png?text=Launch+Price+Guaranteed', linkUrl: '' },
+        { id: 'a3', imageUrl: 'https://placehold.co/600x300/png?text=Book+Now', linkUrl: '' }
+      ]
+    }
+  },
+  {
+    id: 'CMP005',
+    name: 'Commercial Properties Hub',
+    type: 'inventory_discovery',
+    pageType: 'HOME',
+    createdAt: '2023-11-05T11:45:00Z',
+    config: {
+      heading: 'Top Commercial Spaces',
+      assetType: 'Commercial',
+      zone: 'Central',
+      hasImages: true
+    }
+  },
+  {
+    id: 'CMP006',
+    name: 'Budget Apartments Banner',
+    type: 'banner_carousel',
+    pageType: 'PROPERTIES',
+    createdAt: '2023-10-28T16:00:00Z',
+    config: {
+      heading: 'Affordable Homes',
+      items: [
+        { id: 'b1', imageUrl: 'https://placehold.co/600x200/png?text=Under+50L', linkUrl: '' },
+        { id: 'b2', imageUrl: 'https://placehold.co/600x200/png?text=Ready+To+Move', linkUrl: '' },
+        { id: 'b3', imageUrl: 'https://placehold.co/600x200/png?text=EMI+Offers', linkUrl: '' }
+      ]
     }
   }
 ];

@@ -3,7 +3,7 @@ import { X, Save, Box } from 'lucide-react';
 import { availableWidgets } from '../../data/mockCohorts';
 import WidgetSettingsPanel from './WidgetSettingsPanel';
 
-const ComponentBuilderModal = ({ isOpen, onClose, onSave, pageType, existingComponents = [] }) => {
+const ComponentBuilderModal = ({ isOpen, onClose, onSave, pageType, existingComponents = [], initialSelectedType }) => {
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [widgetData, setWidgetData] = useState(null);
@@ -14,10 +14,21 @@ const ComponentBuilderModal = ({ isOpen, onClose, onSave, pageType, existingComp
   useEffect(() => {
     if (isOpen) {
       setName('');
-      setSelectedType('');
-      setWidgetData(null);
+      
+      if (initialSelectedType) {
+        setSelectedType(initialSelectedType);
+        // Pre-fill a shell for the selected type
+        setWidgetData({
+          id: `temp-${Date.now()}`,
+          type: initialSelectedType,
+          config: {}
+        });
+      } else {
+        setSelectedType('');
+        setWidgetData(null);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialSelectedType]);
 
   const handleTypeChange = (e) => {
     const newType = e.target.value;
@@ -181,6 +192,7 @@ const ComponentBuilderModal = ({ isOpen, onClose, onSave, pageType, existingComp
                       widget={widgetData}
                       onUpdate={handleSettingsUpdate}
                       hideHeader={true}
+                      isComponentBuilder={true}
                     />
                   </div>
                 </div>
