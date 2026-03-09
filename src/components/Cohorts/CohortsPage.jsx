@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Search, Plus, ArrowUpDown, LayoutTemplate } from 'lucide-react';
+import { Search, Plus, ArrowUpDown, LayoutTemplate, Activity, Users } from 'lucide-react';
 import CohortCard from './CohortCard';
 import CreateCohortModal from './CreateCohortModal';
 import LiveOverview from './LiveOverview';
@@ -11,9 +11,9 @@ import TemplateViewModal from './TemplateViewModal';
 import { mockCohorts as initialCohorts, mockTemplates as initialTemplates } from '../../data/mockCohorts';
 
 const TABS = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'templates', label: 'Templates' },
-  { id: 'cohorts', label: 'Cohorts' },
+  { id: 'overview', label: 'Overview', icon: <Activity size={18} /> },
+  { id: 'templates', label: 'Templates', icon: <LayoutTemplate size={18} /> },
+  { id: 'cohorts', label: 'Cohorts', icon: <Users size={18} /> },
 ];
 
 const CohortsPage = () => {
@@ -221,23 +221,27 @@ const CohortsPage = () => {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="px-6 flex items-center gap-1">
+      </header>
+      
+      {/* Tabs Menu */}
+      <div className="bg-white border-b border-gray-200 px-6 mb-6 sticky top-0 z-10">
+        <div className="flex gap-6">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 py-4 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.id
                   ? 'border-gray-900 text-gray-900'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
+              {tab.icon}
               {tab.label}
             </button>
           ))}
         </div>
-      </header>
+      </div>
 
       {/* Main Content Area */}
       <main className="max-w-6xl mx-auto mt-6">
