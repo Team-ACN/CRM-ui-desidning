@@ -77,8 +77,14 @@ const WidgetInner = ({ widget }) => {
       );
 
     case 'inventory_discovery':
+      const propertyIds = config.propertyIds || [];
       return (
         <div className="p-2 space-y-1.5">
+          {propertyIds.length > 0 && (
+            <div className="flex items-center gap-1 px-1.5 py-1 bg-amber-50 border border-amber-200 rounded">
+              <span className="text-[7px] text-amber-700 font-semibold">📌 {propertyIds.length} pinned {propertyIds.length === 1 ? 'property' : 'properties'}</span>
+            </div>
+          )}
           <div className="flex gap-1">
             <div className="flex-1 h-5 bg-gray-50 border border-gray-200 rounded flex items-center px-1.5">
               <span className="text-[7px] text-gray-500 truncate">{config.assetType || 'Asset Type'}</span>

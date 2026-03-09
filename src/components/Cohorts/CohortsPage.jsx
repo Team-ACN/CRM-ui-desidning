@@ -206,85 +206,11 @@ const CohortsPage = () => {
 
   return (
     <div className="pb-8">
-      {/* Header with tabs */}
+      {/* Header - simplified */}
       <header className="bg-white border-b border-gray-200">
-        <div className="h-16 px-6 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <h1 className="text-xl font-bold text-gray-900">CMS</h1>
-            
-            {/* Page Context Switcher (Segmented Control) */}
-            <div className="flex items-center p-1 bg-gray-100 rounded-xl">
-              <button
-                onClick={() => setPageType('HOME')}
-                className={`flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
-                  pageType === 'HOME'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Home Page
-              </button>
-              <button
-                onClick={() => setPageType('PROPERTIES')}
-                className={`flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
-                  pageType === 'PROPERTIES'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Properties Page
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {(activeTab === 'cohorts' || activeTab === 'templates') && (
-              <>
-                <div className="relative">
-                  <Search
-                    size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={activeTab === 'cohorts' ? "Search cohorts..." : "Search templates..."}
-                    className="pl-10 pr-4 py-2 w-56 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                  />
-                </div>
-                
-                {activeTab === 'cohorts' ? (
-                  <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    <Plus size={18} />
-                    Create Cohort
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setCurrentView('priority')}
-                      className="flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                    >
-                      <ArrowUpDown size={16} />
-                      Manage Priority
-                    </button>
-                    <button
-                      onClick={() => handleCreateTemplate()}
-                      className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                    >
-                      <Plus size={18} />
-                      Create Template
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+        <div className="h-16 px-6 flex items-center">
+          <h1 className="text-xl font-bold text-gray-900">CMS</h1>
         </div>
-
       </header>
       
       {/* Tabs Menu */}
@@ -309,6 +235,97 @@ const CohortsPage = () => {
 
       {/* Main Content Area */}
       <main className="max-w-6xl mx-auto mt-6">
+        {/* In-page toolbar: Page Switcher + Actions */}
+        <div className="px-6 mb-6 flex items-center justify-between">
+          {/* Page Context Switcher (Segmented Control) — hidden on Cohorts tab */}
+          {activeTab !== 'cohorts' ? (
+            <div className="flex items-center p-1 bg-gray-100 rounded-xl">
+              <button
+                onClick={() => setPageType('HOME')}
+                className={`flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                  pageType === 'HOME'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Home Page
+              </button>
+              <button
+                onClick={() => setPageType('PROPERTIES')}
+                className={`flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                  pageType === 'PROPERTIES'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Properties Page
+              </button>
+            </div>
+          ) : <div />}
+
+          {/* Right side: search + tab-specific actions */}
+          <div className="flex items-center gap-3">
+            {/* Search — shown for templates and cohorts */}
+            {(activeTab === 'templates' || activeTab === 'cohorts') && (
+              <div className="relative">
+                <Search
+                  size={18}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={activeTab === 'cohorts' ? "Search cohorts..." : "Search templates..."}
+                  className="pl-10 pr-4 py-2 w-56 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                />
+              </div>
+            )}
+
+            {/* Template actions */}
+            {activeTab === 'templates' && (
+              <>
+                <button
+                  onClick={() => setCurrentView('priority')}
+                  className="flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                >
+                  <ArrowUpDown size={16} />
+                  Manage Priority
+                </button>
+                <button
+                  onClick={() => handleCreateTemplate()}
+                  className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                >
+                  <Plus size={18} />
+                  Create Template
+                </button>
+              </>
+            )}
+
+            {/* Cohort actions */}
+            {activeTab === 'cohorts' && (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+              >
+                <Plus size={18} />
+                Create Cohort
+              </button>
+            )}
+
+            {/* Component actions */}
+            {activeTab === 'components' && (
+              <button
+                onClick={() => setCurrentView('componentBuilder')}
+                className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+              >
+                <Plus size={18} />
+                Create Component
+              </button>
+            )}
+          </div>
+        </div>
+
         {activeTab === 'overview' && (
           <LiveOverview
             cohorts={cohorts}

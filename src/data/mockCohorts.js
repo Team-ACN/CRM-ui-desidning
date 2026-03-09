@@ -280,7 +280,8 @@ export const mockComponents = [
       priceMin: '20000000',
       priceMax: '50000000',
       areaMin: '3000',
-      hasImages: true
+      hasImages: true,
+      propertyIds: ['PB3864', 'PB4201', 'PB5102']
     }
   },
   {
@@ -323,7 +324,8 @@ export const mockComponents = [
       heading: 'Top Commercial Spaces',
       assetType: 'Commercial',
       zone: 'Central',
-      hasImages: true
+      hasImages: true,
+      propertyIds: ['PB7891', 'PB6543']
     }
   },
   {

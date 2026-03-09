@@ -26,22 +26,12 @@ const ComponentsTab = ({ components, pageType, searchQuery, onCreateComponent })
 
   return (
     <div className="p-6">
-      
-      {/* Header action for components specific tab */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Saved Components</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Pre-configured widgets you can reuse across multiple {pageType === 'HOME' ? 'Home' : 'Properties'} templates.
-          </p>
-        </div>
-        <button
-          onClick={onCreateComponent}
-          className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-        >
-          <Plus size={18} />
-          Create Component
-        </button>
+      {/* Subtitle */}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-gray-900">Saved Components</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Pre-configured widgets you can reuse across multiple {pageType === 'HOME' ? 'Home' : 'Properties'} templates.
+        </p>
       </div>
 
       {/* Component list */}

@@ -6,6 +6,9 @@ import {
 } from '@dnd-kit/sortable';
 import { Smartphone } from 'lucide-react';
 import WidgetPreview from './WidgetPreview';
+import AppHeaderMock from './AppHeaderMock';
+import PropertiesHeaderMock from './PropertiesHeaderMock';
+import MockPropertyCard from './MockPropertyCard';
 
 const PhoneCanvas = ({ widgets, onRemoveWidget, selectedWidgetId, onSelectWidget, pageType }) => {
   const { setNodeRef, isOver } = useDroppable({ id: 'phone-canvas' });
@@ -14,33 +17,19 @@ const PhoneCanvas = ({ widgets, onRemoveWidget, selectedWidgetId, onSelectWidget
   return (
     <div className="flex-1 flex items-start justify-center py-6 bg-gray-50 overflow-y-auto">
       {/* Phone frame */}
-      <div className="w-[320px] min-h-[580px] bg-white rounded-[2.5rem] border-[3px] border-gray-800 shadow-xl relative flex flex-col">
-        {/* Notch */}
-        <div className="flex justify-center pt-3 pb-2">
-          <div className="w-20 h-5 bg-gray-900 rounded-full" />
-        </div>
-
-        {/* Status bar mockup */}
-        <div className="px-6 py-1 flex items-center justify-between text-[10px] text-gray-400">
-          <span>9:41</span>
-          <div className="flex items-center gap-1">
-            <span>📶</span>
-            <span>🔋</span>
-          </div>
-        </div>
-
-        {/* App header */}
-        <div className="px-5 py-3 border-b border-gray-100">
-          <p className="text-xs font-bold text-gray-900">
-            {pageType === 'PROPERTIES' ? 'ACN Properties' : 'ACN Home'}
-          </p>
-          <p className="text-[10px] text-gray-400">Powered by your CMS template</p>
-        </div>
+      <div className="w-[390px] h-[844px] bg-[#FAFAFA] rounded-[40px] shadow-2xl overflow-hidden border-[8px] border-gray-800 relative flex flex-col items-center">
+        
+        {/* New Match-Design App Header */}
+        {pageType === 'PROPERTIES' ? (
+          <PropertiesHeaderMock pageType={pageType} />
+        ) : (
+          <AppHeaderMock pageType={pageType} />
+        )}
 
         {/* Drop zone */}
         <div
           ref={setNodeRef}
-          className={`flex-1 px-3 py-3 space-y-2.5 transition-colors ${
+          className={`flex-1 w-full overflow-y-auto no-scrollbar relative flex flex-col px-3 py-3 space-y-2.5 transition-colors ${
             isOver ? 'bg-emerald-50' : ''
           }`}
         >
@@ -78,16 +67,6 @@ const PhoneCanvas = ({ widgets, onRemoveWidget, selectedWidgetId, onSelectWidget
             </SortableContext>
           )}
 
-          {widgets.length >= 5 && (
-            <div className="text-center py-2">
-              <p className="text-[10px] text-amber-500 font-medium">Maximum 5 widgets reached</p>
-            </div>
-          )}
-        </div>
-
-        {/* Bottom home indicator */}
-        <div className="flex justify-center py-2">
-          <div className="w-24 h-1 bg-gray-300 rounded-full" />
         </div>
       </div>
     </div>

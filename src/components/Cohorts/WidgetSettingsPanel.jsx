@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { availableWidgets } from '../../data/mockCohorts';
-import { Trash2, Plus, ArrowLeft, Upload, Check, Puzzle, Layers, Search } from 'lucide-react';
+import { Trash2, Plus, ArrowLeft, Upload, Check, Puzzle, Layers, Search, X, Hash } from 'lucide-react';
 
 const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponentBuilder, isComponent, componentName, onOpenComponentBuilder, components = [], pageType }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [propertyIdInput, setPropertyIdInput] = useState('');
 
   if (!widget) return null;
 
@@ -204,6 +205,7 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
               />
             </div>
 
+
             <label className="flex items-center gap-2 cursor-pointer mt-2">
               <input
                 type="checkbox"
@@ -213,6 +215,84 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
               />
               <span className="text-sm font-medium text-gray-700">Must have images / video</span>
             </label>
+
+            {/* Divider */}
+            <div className="relative flex items-center py-3 mt-4">
+              <div className="flex-grow border-t border-gray-200"></div>
+              <span className="flex-shrink-0 flex items-center gap-1 px-3 text-[10px] uppercase tracking-wider font-semibold text-gray-400 bg-white">
+                <Hash size={10} /> Manual Override
+              </span>
+              <div className="flex-grow border-t border-gray-200"></div>
+            </div>
+
+            {/* Manual Property IDs */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Property IDs</label>
+              <p className="text-[11px] text-gray-400 mb-2">
+                Add specific property IDs to show only these properties. When IDs are specified, filters above are ignored.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="e.g. PB3864"
+                  value={propertyIdInput}
+                  onChange={(e) => setPropertyIdInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && propertyIdInput.trim()) {
+                      e.preventDefault();
+                      const currentIds = config.propertyIds || [];
+                      const newId = propertyIdInput.trim();
+                      if (!currentIds.includes(newId)) {
+                        handleUpdate({ propertyIds: [...currentIds, newId] });
+                      }
+                      setPropertyIdInput('');
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (propertyIdInput.trim()) {
+                      const currentIds = config.propertyIds || [];
+                      const newId = propertyIdInput.trim();
+                      if (!currentIds.includes(newId)) {
+                        handleUpdate({ propertyIds: [...currentIds, newId] });
+                      }
+                      setPropertyIdInput('');
+                    }
+                  }}
+                  className="px-3 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+                >
+                  <Plus size={14} />
+                  Add
+                </button>
+              </div>
+
+              {/* Chips / Tags */}
+              {config.propertyIds && config.propertyIds.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {config.propertyIds.map((id) => (
+                    <span
+                      key={id}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium rounded-full"
+                    >
+                      {id}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newIds = config.propertyIds.filter((pid) => pid !== id);
+                          handleUpdate({ propertyIds: newIds });
+                        }}
+                        className="p-0.5 rounded-full hover:bg-amber-200 text-amber-500 hover:text-amber-700 transition-colors"
+                      >
+                        <X size={10} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         );
 
