@@ -1,4 +1,5 @@
 import React from 'react';
+import { Pin } from 'lucide-react';
 
 const WidgetInner = ({ widget }) => {
   const config = widget.config || {};
@@ -82,7 +83,7 @@ const WidgetInner = ({ widget }) => {
         <div className="p-2 space-y-1.5">
           {propertyIds.length > 0 && (
             <div className="flex items-center gap-1 px-1.5 py-1 bg-amber-50 border border-amber-200 rounded">
-              <span className="text-[7px] text-amber-700 font-semibold">📌 {propertyIds.length} pinned {propertyIds.length === 1 ? 'property' : 'properties'}</span>
+              <span className="text-[7px] text-amber-700 font-semibold flex items-center gap-0.5"><Pin size={8} /> {propertyIds.length} pinned {propertyIds.length === 1 ? 'property' : 'properties'}</span>
             </div>
           )}
           <div className="flex gap-1">

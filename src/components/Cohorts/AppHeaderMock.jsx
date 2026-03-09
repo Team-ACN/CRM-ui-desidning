@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Bell, Battery, Wifi, Signal } from 'lucide-react';
+import { Search, Bell, Battery, Wifi, Signal, Coins } from 'lucide-react';
 
 const AppHeaderMock = ({ pageType }) => {
   return (
@@ -25,7 +25,7 @@ const AppHeaderMock = ({ pageType }) => {
           <div className="flex flex-row items-center gap-3">
             {/* Coins */}
             <div className="h-[40px] bg-[#FAFAFA] border-[1.5px] border-[#D4D4D4] rounded-full flex flex-row items-center px-4 gap-1.5 shadow-sm">
-              <span className="text-xl">💰</span>
+              <Coins size={20} className="text-amber-500" />
               <span className="text-[#0F766E] text-[16px] font-semibold font-['Outfit']">100</span>
             </div>
 

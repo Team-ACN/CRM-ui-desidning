@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Share2, Phone, MessageCircle } from 'lucide-react';
+import { Eye, Share2, Phone, MessageCircle, Sofa, Handshake } from 'lucide-react';
 
 const MockPropertyCard = () => {
   return (
@@ -72,11 +72,11 @@ const MockPropertyCard = () => {
             {/* Amenities Row */}
             <div className="w-full flex flex-row justify-between items-center h-[21px] mt-1">
                <div className="flex flex-row items-center gap-1.5 mx-auto h-[21px]">
-                  <span className="text-[14px]">🛋️</span>
+                  <Sofa size={14} className="text-gray-600" />
                   <span className="font-['Inter'] font-normal text-[14px] text-[#262626]">Semi Furnished</span>
                </div>
                <div className="flex flex-row items-center gap-1.5 mx-auto h-[21px]">
-                  <span className="text-[14px]">🤝</span>
+                  <Handshake size={14} className="text-gray-600" />
                   <span className="font-['Inter'] font-normal text-[14px] text-[#262626]">Side by Side</span>
                </div>
             </div>

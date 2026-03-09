@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Smartphone, CheckCircle, Play, Copy, Check, Info, Lock } from 'lucide-react';
+import { X, Smartphone, CheckCircle, Play, Copy, Check, Info, Lock, Package } from 'lucide-react';
 import { mockCohorts, availableWidgets } from '../../data/mockCohorts';
 import WidgetInner from './WidgetInner';
 import AppHeaderMock from './AppHeaderMock';
@@ -172,7 +172,7 @@ const TemplateViewModal = ({ isOpen, onClose, template, onMakeLive }) => {
                   return (
                     <div key={idx} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
                       <div className="w-8 h-8 rounded bg-gray-50 flex items-center justify-center border border-gray-100 shrink-0">
-                        <span className="text-sm">{wType?.icon || '📦'}</span>
+                        <span className="text-sm text-gray-500">{wType?.icon || <Package size={14} />}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-gray-900 truncate">{wType?.label || widget.type}</p>

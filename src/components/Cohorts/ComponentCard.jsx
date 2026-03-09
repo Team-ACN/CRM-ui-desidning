@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Puzzle } from 'lucide-react';
 import { availableWidgets } from '../../data/mockCohorts';
 
 const ComponentCard = ({ component, onEdit, onDelete }) => {
@@ -9,8 +9,8 @@ const ComponentCard = ({ component, onEdit, onDelete }) => {
     <div className="grid items-center px-6 py-4 border border-gray-200 rounded-xl bg-white hover:border-gray-300 transition-colors" style={{ gridTemplateColumns: '280px 120px 1fr auto' }}>
       {/* Left: Icon & Name */}
       <div className="flex items-center gap-4 pr-4 overflow-hidden">
-        <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-gray-50 border border-gray-100 rounded-lg text-lg">
-          {widgetDefinition?.icon || '🧩'}
+        <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-gray-50 border border-gray-100 rounded-lg text-gray-600">
+          {widgetDefinition?.icon || <Puzzle size={16} />}
         </div>
         <div className="overflow-hidden">
           <div className="flex items-center gap-2">

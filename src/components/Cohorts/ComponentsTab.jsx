@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Puzzle } from 'lucide-react';
 import ComponentCard from './ComponentCard';
 import { availableWidgets } from '../../data/mockCohorts';
 
@@ -38,7 +38,7 @@ const ComponentsTab = ({ components, pageType, searchQuery, onCreateComponent })
       <div className="space-y-8 pb-10">
         {filteredComponents.length === 0 ? (
           <div className="text-center py-12 bg-white border border-gray-200 border-dashed rounded-xl mt-4">
-             <div className="text-4xl mb-3">🧩</div>
+             <div className="flex items-center justify-center text-gray-300 mb-3"><Puzzle size={40} /></div>
              <h3 className="text-sm font-semibold text-gray-900 mb-1">No components saved yet</h3>
              <p className="text-sm text-gray-500">
                Build a widget configuration once, and use it everywhere.

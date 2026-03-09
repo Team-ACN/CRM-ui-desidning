@@ -1,3 +1,6 @@
+import React from 'react';
+import { Trash2, BarChart3, Mail, MessageSquare, Image, Search, Building2, Key, Megaphone, Sparkles } from 'lucide-react';
+
 export const mockCohorts = [
   {
     id: 'COH001',
@@ -87,70 +90,70 @@ export const availableWidgets = [
     type: 'delist_inventories',
     label: 'Delist Inventories',
     description: 'Allows users to quickly manage delisted listings',
-    icon: '🗑️',
+    icon: <Trash2 size={16} />,
     hasConfig: false,
   },
   {
     type: 'analytics_cards',
     label: 'Property & Edge Cards',
     description: 'Stat cards for Property, My Business, Edge',
-    icon: '📊',
+    icon: <BarChart3 size={16} />,
     hasConfig: false,
   },
   {
     type: 'enquiry_received',
     label: 'Enquiry Received',
     description: 'Summary of incoming enquiries',
-    icon: '📬',
+    icon: <Mail size={16} />,
     hasConfig: false,
   },
   {
     type: 'enquiry_feedback',
     label: 'Enquiry Feedback',
     description: 'Collection and readouts of feedback',
-    icon: '💬',
+    icon: <MessageSquare size={16} />,
     hasConfig: false,
   },
   {
     type: 'banner_carousel',
     label: 'Banner Carousel',
     description: 'Multiple sliding promotional banners',
-    icon: '🖼️',
+    icon: <Image size={16} />,
     hasConfig: true,
   },
   {
     type: 'inventory_discovery',
     label: 'Inventory Discovery',
     description: 'Asset Type, Configuration, Zone filters',
-    icon: '🔍',
+    icon: <Search size={16} />,
     hasConfig: true,
   },
   {
     type: 'new_resale',
     label: 'Resale Inventory',
     description: 'Showcase of new resale inventory',
-    icon: '🏢',
+    icon: <Building2 size={16} />,
     hasConfig: false,
   },
   {
     type: 'new_rental',
     label: 'Rental Inventory',
     description: 'Showcase of new rental inventory',
-    icon: '🔑',
+    icon: <Key size={16} />,
     hasConfig: false,
   },
   {
     type: 'advertisement',
     label: 'Advertisement Banner',
     description: 'Single large banner unit',
-    icon: '📢',
+    icon: <Megaphone size={16} />,
     hasConfig: true,
   },
   {
     type: 'suggested_properties',
     label: 'Suggested Properties',
     description: 'AI-driven contextual suggestions',
-    icon: '✨',
+    icon: <Sparkles size={16} />,
     hasConfig: false,
   },
 ];
