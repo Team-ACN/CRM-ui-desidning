@@ -22,7 +22,7 @@ function App() {
           <Route path="/requirements" element={<RequirementsPage />} />
           <Route path="/qc-dashboard" element={<QCDashboardPage />} />
           <Route path="/finance" element={<FinancePage />} />
-          <Route path="/cohorts" element={<CohortsPage />} />
+          <Route path="/cms" element={<CohortsPage />} />
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </Layout>

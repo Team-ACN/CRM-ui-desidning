@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Search, Plus, ArrowUpDown, LayoutTemplate, Activity, Users, Layers } from 'lucide-react';
+import { Search, Plus, ArrowUpDown, LayoutTemplate, Activity, Users, Layers, Lock } from 'lucide-react';
 import CohortCard from './CohortCard';
 import CreateCohortModal from './CreateCohortModal';
 import LiveOverview from './LiveOverview';
@@ -13,14 +13,14 @@ import ComponentBuilderModal from './ComponentBuilderModal';
 import { mockCohorts as initialCohorts, mockTemplates as initialTemplates, mockComponents as initialComponents } from '../../data/mockCohorts';
 
 const TABS = [
-  { id: 'overview', label: 'Overview', icon: <Activity size={18} /> },
   { id: 'templates', label: 'Templates', icon: <LayoutTemplate size={18} /> },
   { id: 'components', label: 'Components', icon: <Layers size={18} /> },
   { id: 'cohorts', label: 'Cohorts', icon: <Users size={18} /> },
+  { id: 'overview', label: 'Overview', icon: <Activity size={18} />, locked: true },
 ];
 
 const CohortsPage = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('templates');
   const [pageType, setPageType] = useState('HOME');
   const [cohorts, setCohorts] = useState(initialCohorts);
   const [templates, setTemplates] = useState(initialTemplates);
@@ -219,15 +219,19 @@ const CohortsPage = () => {
           {TABS.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => !tab.locked && setActiveTab(tab.id)}
+              disabled={tab.locked}
               className={`flex items-center gap-2 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? 'border-gray-900 text-gray-900'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                tab.locked
+                  ? 'border-transparent text-gray-300 cursor-not-allowed'
+                  : activeTab === tab.id
+                    ? 'border-gray-900 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               {tab.icon}
               {tab.label}
+              {tab.locked && <Lock size={14} className="text-gray-300" />}
             </button>
           ))}
         </div>

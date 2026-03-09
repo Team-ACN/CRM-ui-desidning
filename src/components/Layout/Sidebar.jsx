@@ -28,7 +28,7 @@ const Sidebar = () => {
         <NavItem to="/requirements" icon={<FileText size={20} />} label="Requirements" />
         <NavItem to="/qc-dashboard" icon={<LayoutDashboard size={20} />} label="QC Dashboard" />
         <NavItem to="/finance" icon={<IndianRupee size={20} />} label="Finance" />
-        <NavItem to="/cohorts" icon={<Layers size={20} />} label="CMS" />
+        <NavItem to="/cms" icon={<Layers size={20} />} label="CMS" />
       </nav>
     </div>
   );
