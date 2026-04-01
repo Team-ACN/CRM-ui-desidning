@@ -9,10 +9,26 @@ import WidgetPreview from './WidgetPreview';
 import AppHeaderMock from './AppHeaderMock';
 import PropertiesHeaderMock from './PropertiesHeaderMock';
 import MockPropertyCard from './MockPropertyCard';
+import WebsiteCanvas from './WebsiteCanvas';
 
 const PhoneCanvas = ({ widgets, onRemoveWidget, selectedWidgetId, onSelectWidget, pageType }) => {
   const { setNodeRef, isOver } = useDroppable({ id: 'phone-canvas' });
   const widgetIds = widgets.map((w) => w.id);
+
+  if (pageType === 'WEBSITE') {
+    return (
+      <div className="flex-1 flex items-start justify-center py-6 bg-gray-50 overflow-y-auto">
+        <WebsiteCanvas
+          widgets={widgets}
+          isOver={isOver}
+          setNodeRef={setNodeRef}
+          selectedWidgetId={selectedWidgetId}
+          onSelectWidget={onSelectWidget}
+          onRemoveWidget={onRemoveWidget}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex items-start justify-center py-6 bg-gray-50 overflow-y-auto">

@@ -38,7 +38,7 @@ const AppHeaderMock = ({ pageType }) => {
 
         {/* Navigation Pills */}
         <div className="w-full flex flex-row items-center justify-between px-4 mb-4">
-          <div className={`flex-1 h-[48px] rounded-[13px] flex items-center justify-center mx-1 transition-colors ${pageType === 'HOME' || !pageType ? 'bg-[#EA580C] text-[#FAFAFA]' : 'bg-[#FAFAFA] text-[#262626]'}`}>
+          <div className={`flex-1 h-[48px] rounded-[13px] flex items-center justify-center mx-1 transition-colors ${pageType === 'HOME' || !pageType || pageType === 'WEBSITE' ? 'bg-[#EA580C] text-[#FAFAFA]' : 'bg-[#FAFAFA] text-[#262626]'}`}>
             <span className="text-[14px] font-semibold font-['Outfit']">Home</span>
           </div>
           <div className={`flex-1 h-[48px] rounded-[13px] flex items-center justify-center mx-1 transition-colors ${pageType === 'PROPERTIES' ? 'bg-[#EA580C] text-[#FAFAFA]' : 'bg-[#FAFAFA] text-[#262626]'}`}>

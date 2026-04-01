@@ -264,6 +264,16 @@ const CohortsPage = () => {
               >
                 Properties Page
               </button>
+              <button
+                onClick={() => setPageType('WEBSITE')}
+                className={`flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                  pageType === 'WEBSITE'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Website Page
+              </button>
             </div>
           ) : <div />}
 

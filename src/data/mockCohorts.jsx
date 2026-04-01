@@ -250,6 +250,20 @@ export const mockTemplates = [
       { id: 'w15', type: 'banner_carousel', config: { items: [{ id: 1, imageUrl: 'https://placehold.co/600x200/png' }] } },
       { id: 'w16', type: 'suggested_properties' },
     ],
+  },
+  {
+    id: 't7',
+    name: 'Website – ACN Canvas',
+    cohortIds: ['COH001'],
+    priority: 1,
+    status: 'Live',
+    isActive: true,
+    pageType: 'WEBSITE',
+    widgets: [
+      { id: 'w17', type: 'analytics_cards' },
+      { id: 'w18', type: 'new_resale' },
+      { id: 'w19', type: 'suggested_properties' },
+    ],
   }
 ];
 
