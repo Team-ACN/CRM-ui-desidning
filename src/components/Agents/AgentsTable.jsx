@@ -1,7 +1,10 @@
 import React from 'react';
 import { Phone, Trash2, Edit2, Link, ChevronDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const AgentsTable = ({ agents }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
@@ -28,8 +31,12 @@ const AgentsTable = ({ agents }) => {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {agents.map((agent) => (
-              <tr key={agent.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3"><input type="checkbox" className="rounded border-gray-300" /></td>
+              <tr key={agent.id} onClick={(e) => {
+                if (e.target.type !== 'checkbox' && e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+                  navigate(`/agents/${agent.agentId}`);
+                }
+              }} className="hover:bg-gray-50 cursor-pointer">
+                <td className="px-4 py-3"><input type="checkbox" className="rounded border-gray-300" onClick={(e) => e.stopPropagation()} /></td>
                 <td className="px-4 py-3 font-medium text-gray-900">{agent.name}</td>
                 <td className="px-4 py-3 text-gray-500">{agent.contact}</td>
                 <td className="px-4 py-3 text-gray-500 flex items-center gap-1">

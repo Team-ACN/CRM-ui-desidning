@@ -8,6 +8,7 @@ import QCDashboardPage from './components/QCDashboard/QCDashboardPage';
 import FinancePage from './components/Finance/FinancePage';
 import CohortsPage from './components/Cohorts/CohortsPage';
 import HomePage from './components/Home/HomePage';
+import AgentDetailsPage from './components/Agents/AgentDetailsPage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/agents" element={<AgentsPage />} />
+          <Route path="/agents/:id" element={<AgentDetailsPage />} />
           <Route path="/leads" element={<LeadsPage />} />
           <Route path="/properties" element={<PropertiesPage />} />
           <Route path="/requirements" element={<RequirementsPage />} />
