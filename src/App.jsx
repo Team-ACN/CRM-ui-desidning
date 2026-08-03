@@ -4,6 +4,7 @@ import AgentsPage from './components/Agents/AgentsPage';
 import LeadsPage from './components/Leads/LeadsPage';
 import PropertiesPage from './components/Properties/PropertiesPage';
 import RequirementsPage from './components/Requirements/RequirementsPage';
+import EnquiriesPage from './components/Enquiries/EnquiriesPage';
 import QCDashboardPage from './components/QCDashboard/QCDashboardPage';
 import FinancePage from './components/Finance/FinancePage';
 import CohortsPage from './components/Cohorts/CohortsPage';
@@ -22,6 +23,7 @@ function App() {
           <Route path="/leads" element={<LeadsPage />} />
           <Route path="/properties" element={<PropertiesPage />} />
           <Route path="/requirements" element={<RequirementsPage />} />
+          <Route path="/enquiries" element={<EnquiriesPage />} />
           <Route path="/qc-dashboard" element={<QCDashboardPage />} />
           <Route path="/finance" element={<FinancePage />} />
           <Route path="/cms" element={<CohortsPage />} />

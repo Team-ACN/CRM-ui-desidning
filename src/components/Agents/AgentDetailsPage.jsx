@@ -20,13 +20,13 @@ const AgentDetailsPage = () => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState('inventory');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [transactionType, setTransactionType] = useState('resale');
 
   // Accordion states
   const [openSections, setOpenSections] = useState({
     user: true,
     plan: true,
-    resale: true,
-    rental: true,
+    transactionDetails: true,
     enquiry: true,
     credits: true
   });
@@ -63,6 +63,11 @@ const AgentDetailsPage = () => {
       <span className="text-gray-900 font-semibold text-right">{value || <span className="invisible">-</span>}</span>
     </div>
   );
+
+  // Mock toggle rendering - in reality, rental data would be different.
+  const displayedInventories = transactionType === 'rental' 
+    ? mockInventories.slice(0, 4) // Show fewer mock results just for visual feedback of toggle
+    : mockInventories;
 
   return (
     <div className="flex flex-col h-full bg-white relative w-full pt-16 overflow-hidden">
@@ -117,8 +122,18 @@ const AgentDetailsPage = () => {
                   </div>
 
                   <div className="bg-gray-800 rounded-md flex p-1 ml-4 mt-[-10px]">
-                    <button className="px-4 py-1.5 text-sm font-medium rounded bg-white text-gray-900 shadow-sm">Resale</button>
-                    <button className="px-4 py-1.5 text-sm font-medium rounded text-gray-400 hover:text-white">Rental</button>
+                    <button 
+                      onClick={() => setTransactionType('resale')}
+                      className={`px-4 py-1.5 text-sm font-medium rounded shadow-sm transition-colors ${transactionType === 'resale' ? 'bg-white text-gray-900' : 'text-gray-400 hover:text-white'}`}
+                    >
+                      Resale
+                    </button>
+                    <button 
+                      onClick={() => setTransactionType('rental')}
+                      className={`px-4 py-1.5 text-sm font-medium rounded transition-colors ${transactionType === 'rental' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                    >
+                      Rental
+                    </button>
                   </div>
                 </div>
 
@@ -183,7 +198,7 @@ const AgentDetailsPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {mockInventories.map((row) => (
+                  {displayedInventories.map((row) => (
                     <tr key={row.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3"><input type="checkbox" className="rounded border-gray-300" /></td>
                       <td className="px-4 py-3 text-gray-500">{row.propId}</td>
@@ -214,6 +229,13 @@ const AgentDetailsPage = () => {
                       </td>
                     </tr>
                   ))}
+                  {displayedInventories.length === 0 && (
+                    <tr>
+                      <td colSpan="13" className="px-4 py-8 text-center text-gray-500">
+                        No properties found for this transaction type.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -299,22 +321,16 @@ const AgentDetailsPage = () => {
                 </div>
               )}
 
-              <AccordionHeader title="Resale Details" section="resale" />
-              {openSections.resale && (
+              {/* Dynamic Resale / Rental Section instead of having them both in parallel */}
+              <AccordionHeader 
+                title={transactionType === 'resale' ? 'Resale Details' : 'Rental Details'} 
+                section="transactionDetails" 
+              />
+              {openSections.transactionDetails && (
                 <div className="pb-4 pt-2">
-                  <InfoRow label="Inventory" value="19" />
-                  <InfoRow label="Requirement" value="38" />
-                  <InfoRow label="Enquiries Did" value="252" />
-                  <InfoRow label="Enquiries Received" value="" />
-                </div>
-              )}
-
-              <AccordionHeader title="Rental Details" section="rental" />
-              {openSections.rental && (
-                <div className="pb-4 pt-2">
-                  <InfoRow label="Inventory" value="19" />
-                  <InfoRow label="Requirement" value="38" />
-                  <InfoRow label="Enquiries Did" value="252" />
+                  <InfoRow label="Inventory" value={transactionType === 'resale' ? "19" : "5"} />
+                  <InfoRow label="Requirement" value={transactionType === 'resale' ? "38" : "12"} />
+                  <InfoRow label="Enquiries Did" value={transactionType === 'resale' ? "252" : "8"} />
                   <InfoRow label="Enquiries Received" value="" />
                 </div>
               )}
