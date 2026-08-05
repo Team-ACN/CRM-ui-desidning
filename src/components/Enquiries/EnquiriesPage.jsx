@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Plus } from 'lucide-react';
+import { Search } from 'lucide-react';
 import EnquiriesStatsCards from './EnquiriesStatsCards';
 import EnquiriesFilters from './EnquiriesFilters';
 import EnquiriesTable from './EnquiriesTable';
@@ -59,12 +59,6 @@ const EnquiriesPage = () => {
             className="pl-10 pr-4 py-2 w-64 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
           />
         </div>
-
-        {/* Add Enquiry Button */}
-        <button className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-          <Plus size={18} />
-          Add Enquiry
-        </button>
       </div>
     </header>
   );
