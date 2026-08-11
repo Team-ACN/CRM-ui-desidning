@@ -1,7 +1,15 @@
 import React, { useRef, useState } from 'react';
 import { UploadCloud, Download, FileText, AlertCircle } from 'lucide-react';
 import { downloadCsv } from '../../utils/csv';
-import { FIELD_GROUPS, PROPERTY_FIELDS, TEMPLATE_HEADERS, TEMPLATE_ROWS } from './propertySchema';
+import {
+  CONDITIONAL_FIELDS,
+  FIELD_GROUPS,
+  MIN_IMAGES_PER_PROPERTY,
+  PROPERTY_FIELDS,
+  REQUIREMENT_NOTES,
+  TEMPLATE_HEADERS,
+  TEMPLATE_ROWS,
+} from './propertySchema';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -98,7 +106,7 @@ const UploadStep = ({ onFileSelected, error, isReading }) => {
           Comma- and tab-separated exports both work.
         </p>
 
-        <p className="text-xs font-semibold text-gray-900 mb-2">Must be present</p>
+        <p className="text-xs font-semibold text-gray-900 mb-2">Always required</p>
         <ul className="space-y-1.5 mb-4">
           {requiredFields.map((field) => (
             <li key={field.key} className="flex items-center justify-between text-sm">
@@ -110,7 +118,17 @@ const UploadStep = ({ onFileSelected, error, isReading }) => {
           ))}
         </ul>
 
-        <p className="text-xs font-semibold text-gray-900 mb-2">Optional groups</p>
+        <p className="text-xs font-semibold text-gray-900 mb-2">Required depending on the row</p>
+        <ul className="space-y-1.5 mb-4">
+          {CONDITIONAL_FIELDS.map((field) => (
+            <li key={field.key} className="flex items-start justify-between gap-2 text-sm">
+              <span className="text-gray-700">{field.label}</span>
+              <span className="text-xs text-gray-500 text-right">{REQUIREMENT_NOTES[field.key]}</span>
+            </li>
+          ))}
+        </ul>
+
+        <p className="text-xs font-semibold text-gray-900 mb-2">Other groups</p>
         <ul className="space-y-1.5">
           {FIELD_GROUPS.map((group) => {
             const count = PROPERTY_FIELDS.filter((field) => field.group === group && !field.required).length;
@@ -126,7 +144,7 @@ const UploadStep = ({ onFileSelected, error, isReading }) => {
         <p className="text-xs text-gray-500 mt-4">
           <span className="font-medium text-gray-700">Property ID</span> and{' '}
           <span className="font-medium text-gray-700">Status</span> are set by the CRM on upload, so they are not read
-          from the file.
+          from the file. Every property also needs at least {MIN_IMAGES_PER_PROPERTY} photo, added in step 3.
         </p>
       </div>
     </div>

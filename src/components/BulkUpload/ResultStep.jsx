@@ -1,11 +1,13 @@
 import React from 'react';
-import { CheckCircle2, RotateCcw, ArrowRight } from 'lucide-react';
+import { CheckCircle2, RotateCcw, ArrowRight, AlertTriangle } from 'lucide-react';
 import UploadedPropertiesTable from './UploadedPropertiesTable';
+import { MIN_IMAGES_PER_PROPERTY } from './propertySchema';
 
 const ResultStep = ({ properties, imagesByProperty, fileName, onManageImages, onReset, onDone }) => {
-  const withImages = properties.filter(
-    (property) => (imagesByProperty[property.propertyId] ?? []).length > 0,
-  ).length;
+  const needingImages = properties.filter(
+    (property) => (imagesByProperty[property.key] ?? []).length < MIN_IMAGES_PER_PROPERTY,
+  );
+  const withImages = properties.length - needingImages.length;
 
   const totalImages = Object.values(imagesByProperty).reduce((count, images) => count + images.length, 0);
 
@@ -28,6 +30,12 @@ const ResultStep = ({ properties, imagesByProperty, fileName, onManageImages, on
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
+          {needingImages.length > 0 && (
+            <span className="flex items-center gap-1.5 text-sm text-amber-700">
+              <AlertTriangle size={16} />
+              {needingImages.length} still need{needingImages.length === 1 ? 's' : ''} a photo
+            </span>
+          )}
           <button
             onClick={onReset}
             className="flex items-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-900 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -37,7 +45,8 @@ const ResultStep = ({ properties, imagesByProperty, fileName, onManageImages, on
           </button>
           <button
             onClick={onDone}
-            className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            disabled={needingImages.length > 0}
+            className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             View properties
             <ArrowRight size={16} />

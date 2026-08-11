@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AlertTriangle, Check, ArrowRight, Search } from 'lucide-react';
 import { FIELDS_BY_KEY, FIELD_GROUPS, IGNORE_FIELD, PROPERTY_FIELDS } from './propertySchema';
 import { collectUnknownCpIds } from './agentLookup';
+import { unmappedRequiredFields } from './validateRows';
 import ValidationIssues from './ValidationIssues';
 import PreviewTable from './PreviewTable';
 
@@ -39,6 +40,7 @@ const MappingStep = ({ parsed, mapping, mappingStatus, summary, validatedRows, o
     .filter(({ header }) => normalizedQuery === '' || header.toLowerCase().includes(normalizedQuery));
 
   const unknownCpIds = collectUnknownCpIds(validatedRows);
+  const missingColumns = unmappedRequiredFields(validatedRows, mapping);
 
   return (
     <div className="space-y-6">
@@ -61,6 +63,13 @@ const MappingStep = ({ parsed, mapping, mappingStatus, summary, validatedRows, o
             Mapped to more than one column: <strong>{mappingStatus.duplicateFields.join(', ')}</strong>
           </Notice>
         )}
+        {missingColumns.map((entry) => (
+          <Notice key={entry.label}>
+            <strong>{entry.label}</strong> is mandatory for {entry.rowCount} row
+            {entry.rowCount === 1 ? '' : 's'}
+            {entry.note ? ` (${entry.note})` : ''} but no column is mapped to it.
+          </Notice>
+        ))}
         {unknownCpIds.length > 0 && (
           <Notice>
             {unknownCpIds.length} CP ID{unknownCpIds.length === 1 ? '' : 's'} not found in Agents:{' '}

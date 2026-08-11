@@ -151,6 +151,25 @@ export const url = {
   normalize: (value) => value.trim(),
 };
 
+const GROUND_FLOOR = new Set(['ground', 'ground floor', 'g', 'gf']);
+const TOP_FLOOR = new Set(['top', 'top floor']);
+
+/** A floor is a number, or the two special positions the team uses. */
+export const floor = {
+  validate: (value) => {
+    const normalized = value.trim().toLowerCase();
+    return GROUND_FLOOR.has(normalized) || TOP_FLOOR.has(normalized) || /^\d{1,3}$/.test(normalized)
+      ? null
+      : error('Expected a floor number, "Ground floor" or "Top floor"');
+  },
+  normalize: (value) => {
+    const normalized = value.trim().toLowerCase();
+    if (GROUND_FLOOR.has(normalized)) return 'Ground floor';
+    if (TOP_FLOOR.has(normalized)) return 'Top floor';
+    return String(Number(normalized));
+  },
+};
+
 /** "3", "3 BHK", "3b 2t" all resolve to a bedroom count. */
 export const bedrooms = {
   validate: (value) => {

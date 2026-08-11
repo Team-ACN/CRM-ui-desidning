@@ -1,6 +1,6 @@
 import React from 'react';
 import { ImagePlus, Images } from 'lucide-react';
-import { FIELDS_BY_KEY, KEY_COLUMN_KEYS } from './propertySchema';
+import { FIELDS_BY_KEY, KEY_COLUMN_KEYS, MIN_IMAGES_PER_PROPERTY } from './propertySchema';
 
 const STATUS_STYLES = {
   Available: 'bg-green-100 text-green-800 border-green-200',
@@ -10,8 +10,8 @@ const STATUS_STYLES = {
 };
 
 const ImageCell = ({ images }) => {
-  if (images.length === 0) {
-    return <span className="text-xs text-gray-400">No images</span>;
+  if (images.length < MIN_IMAGES_PER_PROPERTY) {
+    return <span className="text-xs text-amber-700 font-medium">Photo required</span>;
   }
 
   return (
@@ -54,7 +54,9 @@ const UploadedPropertiesTable = ({ properties, imagesByProperty, onManageImages 
           <Images size={16} className="text-gray-500" />
           Uploaded properties ({properties.length})
         </h4>
-        <span className="text-xs text-gray-500">Add images to each property below</span>
+        <span className="text-xs text-gray-500">
+          At least {MIN_IMAGES_PER_PROPERTY} photo per property is mandatory
+        </span>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm text-left">

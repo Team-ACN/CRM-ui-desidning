@@ -2,8 +2,10 @@ import {
   CROSS_FIELD_RULES,
   FIELDS_BY_KEY,
   IGNORE_FIELD,
+  isFieldRequired,
   PROPERTY_FIELDS,
   REQUIRED_FIELD_KEYS,
+  REQUIREMENT_NOTES,
 } from './propertySchema';
 
 const issue = (fieldKey, value, message, severity) => ({ field: fieldKey, value, message, severity });
@@ -15,19 +17,8 @@ const rawValuesFor = (cells, mapping) =>
     return { ...values, [fieldKey]: cells[Number(index)] ?? '' };
   }, {});
 
-const checkCell = (fieldKey, raw) => {
-  const entry = FIELDS_BY_KEY[fieldKey];
-
-  if (raw === '') {
-    if (entry.required) {
-      return { issues: [issue(fieldKey, raw, 'Required value is missing', 'error')], value: '' };
-    }
-    if (entry.recommended) {
-      return { issues: [issue(fieldKey, raw, 'Recommended value is missing', 'warning')], value: '' };
-    }
-    return { issues: [], value: '' };
-  }
-
+/** Validate and normalise one non-empty cell. */
+const parseCell = (entry, raw) => {
   const failure = entry.validate(raw);
 
   if (!failure) {
@@ -36,8 +27,22 @@ const checkCell = (fieldKey, raw) => {
 
   // Warnings keep the normalised value so the row can still be uploaded.
   const value = failure.severity === 'warning' && entry.normalize ? entry.normalize(raw) : raw;
-  return { issues: [issue(fieldKey, raw, failure.message, failure.severity)], value };
+  return { issues: [issue(entry.key, raw, failure.message, failure.severity)], value };
 };
+
+const missingMessage = (entry) =>
+  REQUIREMENT_NOTES[entry.key]
+    ? `Required for this row (${REQUIREMENT_NOTES[entry.key]})`
+    : 'Required value is missing';
+
+/** Blank-cell issues, decided once the whole row is parsed — requirements are conditional. */
+const missingValueIssues = (values) =>
+  PROPERTY_FIELDS.filter((entry) => values[entry.key] === '').flatMap((entry) => {
+    if (isFieldRequired(entry, values)) {
+      return [issue(entry.key, '', missingMessage(entry), 'error')];
+    }
+    return entry.recommended ? [issue(entry.key, '', 'Recommended value is missing', 'warning')] : [];
+  });
 
 const applyCrossFieldRules = (values) =>
   CROSS_FIELD_RULES.filter((rule) => rule.applies(values)).map((rule) =>
@@ -47,9 +52,15 @@ const applyCrossFieldRules = (values) =>
 const buildRow = (cells, mapping, index) => {
   const raw = rawValuesFor(cells, mapping);
 
-  const checked = PROPERTY_FIELDS.reduce(
+  const parsed = PROPERTY_FIELDS.reduce(
     (state, entry) => {
-      const { issues, value } = checkCell(entry.key, raw[entry.key] ?? '');
+      const cell = raw[entry.key] ?? '';
+
+      if (cell === '') {
+        return { ...state, values: { ...state.values, [entry.key]: '' } };
+      }
+
+      const { issues, value } = parseCell(entry, cell);
       return {
         values: { ...state.values, [entry.key]: value },
         issues: [...state.issues, ...issues],
@@ -62,8 +73,12 @@ const buildRow = (cells, mapping, index) => {
     id: `row-${index}`,
     rowNumber: index + 2, // +1 for the header row, +1 for 1-based numbering
     cells,
-    values: checked.values,
-    issues: [...checked.issues, ...applyCrossFieldRules(checked.values)],
+    values: parsed.values,
+    issues: [
+      ...parsed.issues,
+      ...missingValueIssues(parsed.values),
+      ...applyCrossFieldRules(parsed.values),
+    ],
   };
 };
 
@@ -131,6 +146,22 @@ export const validateMapping = (mapping) => {
     mappedCount: mapped.length,
     isValid: missingRequired.length === 0 && duplicateFields.length === 0,
   };
+};
+
+/**
+ * Conditionally mandatory fields that some rows need but no column feeds — the
+ * per-row errors alone would not make the missing column obvious.
+ */
+export const unmappedRequiredFields = (validatedRows, mapping) => {
+  const mapped = new Set(Object.values(mapping));
+
+  return PROPERTY_FIELDS.filter((entry) => entry.requiredWhen && !mapped.has(entry.key))
+    .map((entry) => ({
+      label: entry.label,
+      note: REQUIREMENT_NOTES[entry.key] ?? null,
+      rowCount: validatedRows.filter((row) => isFieldRequired(entry, row.values)).length,
+    }))
+    .filter((entry) => entry.rowCount > 0);
 };
 
 export const summarize = (validatedRows) => {
