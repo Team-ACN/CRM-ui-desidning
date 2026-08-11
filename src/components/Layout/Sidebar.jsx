@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, User, Building2, FileText, MessageSquare, LayoutDashboard, ChevronDown, IndianRupee, Layers } from 'lucide-react';
+import { Home, Users, User, Building2, FileText, MessageSquare, LayoutDashboard, ChevronDown, IndianRupee, Layers, Upload } from 'lucide-react';
 
 const Sidebar = () => {
   return (
@@ -25,6 +25,7 @@ const Sidebar = () => {
         <NavItem to="/agents" icon={<Users size={20} />} label="Agents" />
         <NavItem to="/leads" icon={<User size={20} />} label="Leads" />
         <NavItem to="/properties" icon={<Building2 size={20} />} label="Properties" />
+        <NavItem to="/bulk-upload" icon={<Upload size={20} />} label="Bulk Upload" />
         <NavItem to="/requirements" icon={<FileText size={20} />} label="Requirements" />
         <NavItem to="/enquiries" icon={<MessageSquare size={20} />} label="Enquiries" />
         <NavItem to="/qc-dashboard" icon={<LayoutDashboard size={20} />} label="QC Dashboard" />
