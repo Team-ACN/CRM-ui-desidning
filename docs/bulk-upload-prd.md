@@ -340,6 +340,8 @@ Uploaded property (what the API will receive):
 
 Image (client-only until an upload API exists):
 
+
+
 | Field | Type |
 |---|---|
 | `id` | string (uuid) |
