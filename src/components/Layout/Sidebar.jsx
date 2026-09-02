@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, User, Building2, FileText, MessageSquare, LayoutDashboard, ChevronDown, IndianRupee, Layers, Upload } from 'lucide-react';
+import { Home, Users, User, Building2, FileText, MessageSquare, LayoutDashboard, ChevronDown, IndianRupee, Layers, Upload, Zap } from 'lucide-react';
 
 const Sidebar = () => {
   return (
@@ -31,6 +31,7 @@ const Sidebar = () => {
         <NavItem to="/qc-dashboard" icon={<LayoutDashboard size={20} />} label="QC Dashboard" />
         <NavItem to="/finance" icon={<IndianRupee size={20} />} label="Finance" />
         <NavItem to="/cms" icon={<Layers size={20} />} label="CMS" />
+        <NavItem to="/edge" icon={<Zap size={20} />} label="Edge" />
       </nav>
     </div>
   );
