@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { getProject, createProject, updateProject, deleteProject, blankProject, getBuilders, LAYOUTS } from '../../data/mockEdge';
 
-const CONFIGS = ['Studio', '1BHK', '2BHK', '3BHK', '4BHK', '5BHK', '6BHK', '7BHK'];
+const CONFIGS = ['Studio', '1BHK', '1.5BHK', '2BHK', '2.5BHK', '3BHK', '3.5BHK', '4BHK', '4.5BHK', '5BHK', '5.5BHK', '6BHK'];
 
 function blank() {
   return projectToForm({ id: '', created_at: '', ...blankProject() });
