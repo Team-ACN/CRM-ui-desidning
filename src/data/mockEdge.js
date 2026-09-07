@@ -2286,13 +2286,14 @@ export function createProject(data) {
   const nums = projects.map(p => parseInt(p.id.slice(1), 10)).filter(n => !isNaN(n));
   const next = nums.length ? Math.max(...nums) + 1 : 1;
   const id = `P${String(next).padStart(4, '0')}`;
-  const project = { ...blankProject(), ...data, id, created_at: new Date().toISOString() };
+  const now = new Date().toISOString();
+  const project = { ...blankProject(), ...data, id, created_at: now, updated_at: now };
   projects = [project, ...projects];
   return project;
 }
 
 export function updateProject(id, patch) {
-  projects = projects.map(p => (p.id === id ? { ...p, ...patch } : p));
+  projects = projects.map(p => (p.id === id ? { ...p, ...patch, updated_at: new Date().toISOString() } : p));
   return getProject(id);
 }
 

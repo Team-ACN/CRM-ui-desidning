@@ -31,6 +31,7 @@ function projectToForm(p) {
     rawBuilderName: p.rawBuilderName ?? '',
     restackProjectId: p.restackProjectId ?? '',
     created_at: p.created_at ?? '',
+    updated_at: p.updated_at ?? '',
     published_at: p.published_at ? p.published_at.slice(0, 16) : '',
     status: p.status ?? 'drafted',
   };
@@ -59,6 +60,12 @@ function FieldLabel({ children }) {
 
 function dateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function formatShortDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function formatHourLabel(h) {
@@ -313,8 +320,9 @@ function EditorDropdown({ value, onChange, options, placeholder = 'Select…', s
 }
 
 // Preview on top, URL input below — used for all four media fields in the same row.
-function ImageField({ label, ratio, showRatio = true, value, onChange, tinted }) {
+function ImageField({ label, ratio, showRatio = true, value, onChange, tinted, acceptPdf = false }) {
   const inputRef = useRef(null);
+  const isPdf = !!value && /\.pdf(\?|#|$)/i.test(value);
 
   function handleFiles(files) {
     const file = files?.[0];
@@ -333,16 +341,29 @@ function ImageField({ label, ratio, showRatio = true, value, onChange, tinted })
         className={`w-full rounded-xl overflow-hidden bg-stone-100 border border-stone-200 flex items-center justify-center mb-2 cursor-pointer hover:border-stone-300 transition-colors ${ratio === '2/1' ? 'aspect-[2/1]' : 'aspect-[4/5]'}`}
       >
         {value ? (
-          <img src={value} alt="" className="w-full h-full object-cover" />
+          isPdf ? (
+            <a
+              href={value}
+              target="_blank"
+              rel="noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="flex flex-col items-center gap-1.5 text-stone-500 hover:text-stone-700 transition-colors"
+            >
+              <FileText size={28} />
+              <span className="text-[11px] font-medium underline">Open PDF</span>
+            </a>
+          ) : (
+            <img src={value} alt="" className="w-full h-full object-cover" />
+          )
         ) : (
           <UploadCloud size={22} className="text-stone-300" />
         )}
-        <input ref={inputRef} type="file" accept="image/*" onChange={e => handleFiles(e.target.files)} className="hidden" />
+        <input ref={inputRef} type="file" accept={acceptPdf ? 'image/*,application/pdf' : 'image/*'} onChange={e => handleFiles(e.target.files)} className="hidden" />
       </div>
       <input
         value={value}
         onChange={e => onChange(e.target.value)}
-        placeholder="Image URL…"
+        placeholder={acceptPdf ? 'Image or PDF URL…' : 'Image URL…'}
         className={fieldCls(tinted, 'text-xs py-2.5')}
       />
     </div>
@@ -467,12 +488,13 @@ export default function EdgeProjectEditorPage() {
 
       if (isNew) {
         const created = createProject(payload);
-        setForm(f => ({ ...f, id: created.id, created_at: created.created_at }));
+        setForm(f => ({ ...f, id: created.id, created_at: created.created_at, updated_at: created.updated_at }));
         setIsDirty(false);
         setStatusMsg('Saved ✓');
         navigate(`/edge/projects/${created.id}`, { replace: true });
       } else {
-        updateProject(form.id, payload);
+        const updated = updateProject(form.id, payload);
+        setForm(f => ({ ...f, updated_at: updated.updated_at }));
         setIsDirty(false);
         setStatusMsg('Saved ✓');
         if (closeAfter) navigate('/edge/projects');
@@ -563,11 +585,10 @@ export default function EdgeProjectEditorPage() {
                 <Trash2 size={16} />
               </button>
             </div>
-            {form.restackProjectId && (
-              <span className="text-sm text-stone-400">
-                Restack ID <span className="text-stone-500">{form.restackProjectId}</span>
-              </span>
-            )}
+            <div className="flex flex-col items-start sm:items-end text-sm text-stone-400 gap-0.5">
+              <span>Added At <span className="text-stone-500">{formatShortDate(form.created_at)}</span></span>
+              <span>Updated At <span className="text-stone-500">{formatShortDate(form.updated_at || form.created_at)}</span></span>
+            </div>
           </div>
         )}
 
@@ -695,51 +716,6 @@ export default function EdgeProjectEditorPage() {
         </div>
 
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-stone-900 flex items-center gap-2">
-              Phase Details (RERA)
-            </h3>
-            <button onClick={addPhase} className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white rounded-xl font-medium text-sm hover:bg-neutral-800 transition-colors">
-              <Plus size={16} /> Add Phase
-            </button>
-          </div>
-          <div className="space-y-4">
-            {form.phase_details.map((phase, idx) => (
-              <div key={idx} className="bg-stone-50 border border-stone-200 rounded-2xl overflow-hidden transition-all">
-                <div onClick={() => setExpandedPhaseIndex(expandedPhaseIndex === idx ? -1 : idx)} className="flex items-center justify-between p-4 cursor-pointer hover:bg-stone-100 transition-colors">
-                  <span className="font-medium text-stone-800">{phase.phase_name || `Phase ${idx + 1}`}</span>
-                  <div className="flex items-center gap-4">
-                    <button onClick={(e) => { e.stopPropagation(); removePhase(idx); }} className="text-stone-400 hover:text-red-600 transition-colors"><Trash2 size={16} /></button>
-                    {expandedPhaseIndex === idx ? <ChevronUp size={20} className="text-stone-500" /> : <ChevronDown size={20} className="text-stone-500" />}
-                  </div>
-                </div>
-                {expandedPhaseIndex === idx && (
-                  <div className="p-4 pt-4 border-t border-stone-200 grid grid-cols-2 gap-4 bg-white">
-                    <div>
-                      <FieldLabel tinted={tint(phase.phase_name)}>Phase Name</FieldLabel>
-                      <input value={phase.phase_name} onChange={e => updatePhase(idx, 'phase_name', e.target.value)} className={fieldCls(tint(phase.phase_name))} placeholder="e.g. Tower A & B" />
-                    </div>
-                    <div>
-                      <FieldLabel tinted={tint(phase.rera_id)}>RERA ID</FieldLabel>
-                      <input value={phase.rera_id} onChange={e => updatePhase(idx, 'rera_id', e.target.value)} className={fieldCls(tint(phase.rera_id))} placeholder="PRM/KA/RERA/..." />
-                    </div>
-                    <div>
-                      <FieldLabel tinted={tint(phase.approval_date)}>Approval Date</FieldLabel>
-                      <DateField value={phase.approval_date} onChange={v => updatePhase(idx, 'approval_date', v)} tinted={tint(phase.approval_date)} />
-                    </div>
-                    <div>
-                      <FieldLabel tinted={tint(phase.handover_date)}>Possession Date</FieldLabel>
-                      <DateField value={phase.handover_date} onChange={v => updatePhase(idx, 'handover_date', v)} tinted={tint(phase.handover_date)} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-            {form.phase_details.length === 0 && <div className="p-6 text-center text-stone-400 bg-stone-50 border border-dashed border-stone-300 rounded-2xl">No phase available</div>}
-          </div>
-        </div>
-
-        <div className="mb-8">
           <FieldLabel tinted={tint(form.layouts.length)}>Layouts</FieldLabel>
           <div className="flex flex-wrap gap-2 mt-1">
             {LAYOUTS.map(l => (
@@ -757,11 +733,58 @@ export default function EdgeProjectEditorPage() {
           </div>
         </div>
 
+        {form.launch_status === 'RERA' && (
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-stone-900 flex items-center gap-2">
+                Phase Details (RERA)
+              </h3>
+              <button onClick={addPhase} className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white rounded-xl font-medium text-sm hover:bg-neutral-800 transition-colors">
+                <Plus size={16} /> Add Phase
+              </button>
+            </div>
+            <div className="space-y-4">
+              {form.phase_details.map((phase, idx) => (
+                <div key={idx} className="bg-stone-50 border border-stone-200 rounded-2xl overflow-hidden transition-all">
+                  <div onClick={() => setExpandedPhaseIndex(expandedPhaseIndex === idx ? -1 : idx)} className="flex items-center justify-between p-4 cursor-pointer hover:bg-stone-100 transition-colors">
+                    <span className="font-medium text-stone-800">{phase.phase_name || `Phase ${idx + 1}`}</span>
+                    <div className="flex items-center gap-4">
+                      <button onClick={(e) => { e.stopPropagation(); removePhase(idx); }} className="text-stone-400 hover:text-red-600 transition-colors"><Trash2 size={16} /></button>
+                      {expandedPhaseIndex === idx ? <ChevronUp size={20} className="text-stone-500" /> : <ChevronDown size={20} className="text-stone-500" />}
+                    </div>
+                  </div>
+                  {expandedPhaseIndex === idx && (
+                    <div className="p-4 pt-4 border-t border-stone-200 grid grid-cols-2 gap-4 bg-white">
+                      <div>
+                        <FieldLabel tinted={tint(phase.phase_name)}>Phase Name</FieldLabel>
+                        <input value={phase.phase_name} onChange={e => updatePhase(idx, 'phase_name', e.target.value)} className={fieldCls(tint(phase.phase_name))} placeholder="e.g. Tower A & B" />
+                      </div>
+                      <div>
+                        <FieldLabel tinted={tint(phase.rera_id)}>RERA ID</FieldLabel>
+                        <input value={phase.rera_id} onChange={e => updatePhase(idx, 'rera_id', e.target.value)} className={fieldCls(tint(phase.rera_id))} placeholder="PRM/KA/RERA/..." />
+                      </div>
+                      <div>
+                        <FieldLabel tinted={tint(phase.approval_date)}>Approval Date</FieldLabel>
+                        <DateField value={phase.approval_date} onChange={v => updatePhase(idx, 'approval_date', v)} tinted={tint(phase.approval_date)} />
+                      </div>
+                      <div>
+                        <FieldLabel tinted={tint(phase.handover_date)}>Possession Date</FieldLabel>
+                        <DateField value={phase.handover_date} onChange={v => updatePhase(idx, 'handover_date', v)} tinted={tint(phase.handover_date)} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {form.phase_details.length === 0 && <div className="p-6 text-center text-stone-400 bg-stone-50 border border-dashed border-stone-300 rounded-2xl">No phase available</div>}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-12">
           <ImageField label="Cover Image" ratio="4/5" value={form.cover_image_url} onChange={v => setF('cover_image_url', v)} tinted={tint(form.cover_image_url)} />
           <ImageField label="Notification Image" ratio="2/1" value={form.notif_image} onChange={v => setF('notif_image', v)} tinted={tint(form.notif_image)} />
           <ImageField label="Master Plan" ratio="4/5" showRatio={false} value={form.master_plan_url} onChange={v => setF('master_plan_url', v)} tinted={tint(form.master_plan_url)} />
-          <ImageField label="Brochure" ratio="4/5" showRatio={false} value={form.brochure_url} onChange={v => setF('brochure_url', v)} tinted={tint(form.brochure_url)} />
+          <ImageField label="Brochure" ratio="4/5" showRatio={false} acceptPdf value={form.brochure_url} onChange={v => setF('brochure_url', v)} tinted={tint(form.brochure_url)} />
         </div>
 
         <div className="mb-8">

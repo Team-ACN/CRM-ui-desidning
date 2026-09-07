@@ -70,8 +70,7 @@ function zoneShort(z) {
 
 function summarize(selected, options, allLabel) {
   if (selected.length === 0) return allLabel;
-  if (selected.length <= 2) return options.filter(o => selected.includes(o.value)).map(o => o.label).join(', ');
-  return `${selected.length} selected`;
+  return options.filter(o => selected.includes(o.value)).map(o => o.label).join(', ');
 }
 
 function getNextPossessionDate(p) {
@@ -84,7 +83,7 @@ function getNextPossessionDate(p) {
 }
 
 // Single-choice custom dropdown (used for the Possession sort order — inherently one value at a time)
-function FilterSelect({ value, onChange, options }) {
+function FilterSelect({ label, value, onChange, options, defaultValue }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -103,13 +102,16 @@ function FilterSelect({ value, onChange, options }) {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between gap-2 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-[13px] font-medium text-stone-700 hover:bg-stone-100 hover:border-stone-300 transition-colors"
+        className="w-full flex items-center justify-between gap-2 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-left hover:bg-stone-100 hover:border-stone-300 transition-colors"
       >
-        <span className="truncate">{current?.label}</span>
+        <span className="flex flex-col min-w-0">
+          {value !== defaultValue && <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">{label}</span>}
+          <span className="truncate text-[13px] font-medium text-stone-700">{value === defaultValue ? label : current?.label}</span>
+        </span>
         <ChevronDown size={14} className={`text-stone-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="absolute left-0 right-0 mt-1.5 bg-white border border-stone-200 rounded-lg shadow-lg z-20 py-1 max-h-64 overflow-y-auto">
+        <div className="absolute left-0 right-0 mt-1.5 bg-white border border-stone-200 rounded-lg shadow-lg z-20 py-1">
           {options.map(o => (
             <button
               key={o.value}
@@ -128,7 +130,7 @@ function FilterSelect({ value, onChange, options }) {
 }
 
 // Multi-choice dropdown — tick as many options as you want, plus an "All" row that clears the selection
-function MultiFilterSelect({ allLabel, allCount, value, onChange, options }) {
+function MultiFilterSelect({ label, allLabel, allCount, value, onChange, options }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -149,13 +151,16 @@ function MultiFilterSelect({ allLabel, allCount, value, onChange, options }) {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className={`w-full flex items-center justify-between gap-2 border rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${value.length > 0 ? 'bg-stone-900 text-white border-stone-900' : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100 hover:border-stone-300'}`}
+        className={`w-full flex items-center justify-between gap-2 border rounded-lg px-3 py-1.5 text-left transition-colors ${value.length > 0 ? 'bg-stone-900 text-white border-stone-900' : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100 hover:border-stone-300'}`}
       >
-        <span className="truncate">{summarize(value, options, allLabel)}</span>
+        <span className="flex flex-col min-w-0">
+          {value.length > 0 && <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">{label}</span>}
+          <span className="truncate text-[13px] font-medium">{value.length > 0 ? summarize(value, options, allLabel) : label}</span>
+        </span>
         <ChevronDown size={14} className={`shrink-0 transition-transform ${value.length > 0 ? 'text-white/70' : 'text-stone-400'} ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="absolute left-0 right-0 mt-1.5 bg-white border border-stone-200 rounded-lg shadow-lg z-20 py-1 max-h-72 overflow-y-auto">
+        <div className="absolute left-0 right-0 mt-1.5 bg-white border border-stone-200 rounded-lg shadow-lg z-20 py-1">
           <button
             type="button"
             onClick={() => onChange([])}
@@ -202,6 +207,8 @@ export default function EdgeProjectsPage() {
   const navigate = useNavigate();
 
   // Filters — each is an array of selected values; [] means "All" for that dimension
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState(() => savedFilters?.search ?? '');
   const [showFilters, setShowFilters] = useState(() => savedFilters?.showFilters ?? false);
   const [statusFilter, setStatusFilter] = useState(() => savedFilters?.statusFilter ?? DEFAULT_STATUSES);
@@ -215,6 +222,16 @@ export default function EdgeProjectsPage() {
   useEffect(() => {
     savedFilters = { search, showFilters, statusFilter, stageFilter, zoneFilter, assetTypeFilter, possessionSort, dataHealthFilter, builderCategoryFilter };
   });
+
+  // Reset to page 1 whenever the filter/search set changes — done during render (React's
+  // documented "adjust state while rendering" pattern) rather than in an effect, since an
+  // effect that only calls setState is flagged as an avoidable extra render pass.
+  const filterKey = JSON.stringify([search, statusFilter, stageFilter, zoneFilter, assetTypeFilter, possessionSort, dataHealthFilter, builderCategoryFilter]);
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
+    setPage(1);
+  }
 
   const projects = getProjects();
   const builders = getBuilders();
@@ -253,7 +270,7 @@ export default function EdgeProjectsPage() {
     assetTypeFilter.length > 0 && { key: 'asset', label: `Asset: ${summarize(assetTypeFilter, assetTypeOptions, 'All')}`, clear: () => setAssetTypeFilter([]) },
     possessionSort !== 'default' && { key: 'possession', label: `Possession: ${POSSESSION_SORT_OPTIONS.find(o => o.value === possessionSort)?.label}`, clear: () => setPossessionSort('default') },
     dataHealthFilter.length > 0 && { key: 'health', label: `Health: ${summarize(dataHealthFilter, DATA_HEALTH_OPTIONS, 'All')}`, clear: () => setDataHealthFilter([]) },
-    builderCategoryFilter.length > 0 && { key: 'builderCategory', label: `Builder Category: ${summarize(builderCategoryFilter, BUILDER_CATEGORY_OPTIONS, 'All')}`, clear: () => setBuilderCategoryFilter([]) },
+    builderCategoryFilter.length > 0 && { key: 'builderCategory', label: `Builder: ${summarize(builderCategoryFilter, BUILDER_CATEGORY_OPTIONS, 'All')}`, clear: () => setBuilderCategoryFilter([]) },
   ].filter(Boolean);
 
   const searchLower = search.toLowerCase();
@@ -316,6 +333,10 @@ export default function EdgeProjectsPage() {
     }
     return b.id.localeCompare(a.id);
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // Helpers for table cells — filled badges, matching the rest of the CRM's status-pill convention
   const getLiveStatusStyle = (s) => {
@@ -392,7 +413,7 @@ export default function EdgeProjectsPage() {
 
           {/* Active filter chips — inline with search/Filters so filtering state is never hidden */}
           {activeFilters.map(f => (
-            <span key={f.key} className="inline-flex items-center gap-2 pl-4 pr-2 py-1.5 bg-white border border-stone-200 text-stone-700 rounded-full text-[13px] font-medium">
+            <span key={f.key} className="inline-flex items-center gap-2 pl-4 pr-2 py-1.5 bg-white border border-stone-200 text-stone-700 rounded-lg text-[13px] font-medium">
               {f.label}
               <button onClick={f.clear} className="p-1 hover:bg-stone-100 rounded-full transition-colors">
                 <X size={15} />
@@ -400,7 +421,7 @@ export default function EdgeProjectsPage() {
             </span>
           ))}
           {activeFilters.length > 1 && (
-            <button onClick={clearAllFilters} className="text-[13px] font-medium text-stone-400 hover:text-stone-700 underline underline-offset-2">
+            <button onClick={clearAllFilters} className="text-[13px] font-medium text-stone-400 hover:text-stone-700">
               Clear all
             </button>
           )}
@@ -409,34 +430,13 @@ export default function EdgeProjectsPage() {
         {/* Expanded Filters — tick as many options as you like in each; "All" clears that one dimension */}
         {showFilters && (
           <div className="mt-3 pt-3 border-t border-stone-100 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-            <div>
-              <label className="block text-[11px] font-medium text-stone-500 uppercase tracking-wider mb-1">Status</label>
-              <MultiFilterSelect allLabel="All Status" allCount={countAll('status')} value={statusFilter} onChange={setStatusFilter} options={statusOptionsCounted} />
-            </div>
-            <div>
-              <label className="block text-[11px] font-medium text-stone-500 uppercase tracking-wider mb-1">Stage</label>
-              <MultiFilterSelect allLabel="All Stages" allCount={countAll('stage')} value={stageFilter} onChange={setStageFilter} options={stageOptionsCounted} />
-            </div>
-            <div>
-              <label className="block text-[11px] font-medium text-stone-500 uppercase tracking-wider mb-1">Zone</label>
-              <MultiFilterSelect allLabel="All Zones" allCount={countAll('zone')} value={zoneFilter} onChange={setZoneFilter} options={zoneOptionsCounted} />
-            </div>
-            <div>
-              <label className="block text-[11px] font-medium text-stone-500 uppercase tracking-wider mb-1">Builder Category</label>
-              <MultiFilterSelect allLabel="All" allCount={countAll('builderCategory')} value={builderCategoryFilter} onChange={setBuilderCategoryFilter} options={builderCategoryOptionsCounted} />
-            </div>
-            <div>
-              <label className="block text-[11px] font-medium text-stone-500 uppercase tracking-wider mb-1">Asset Type</label>
-              <MultiFilterSelect allLabel="All Types" allCount={countAll('assetType')} value={assetTypeFilter} onChange={setAssetTypeFilter} options={assetTypeOptionsCounted} />
-            </div>
-            <div>
-              <label className="block text-[11px] font-medium text-stone-500 uppercase tracking-wider mb-1">Possession</label>
-              <FilterSelect value={possessionSort} onChange={setPossessionSort} options={POSSESSION_SORT_OPTIONS} />
-            </div>
-            <div>
-              <label className="block text-[11px] font-medium text-stone-500 uppercase tracking-wider mb-1">Data Health</label>
-              <MultiFilterSelect allLabel="All" allCount={countAll('health')} value={dataHealthFilter} onChange={setDataHealthFilter} options={dataHealthOptionsCounted} />
-            </div>
+            <MultiFilterSelect label="Status" allLabel="All Status" allCount={countAll('status')} value={statusFilter} onChange={setStatusFilter} options={statusOptionsCounted} />
+            <MultiFilterSelect label="Stage" allLabel="All Stages" allCount={countAll('stage')} value={stageFilter} onChange={setStageFilter} options={stageOptionsCounted} />
+            <MultiFilterSelect label="Zone" allLabel="All Zones" allCount={countAll('zone')} value={zoneFilter} onChange={setZoneFilter} options={zoneOptionsCounted} />
+            <MultiFilterSelect label="Builder" allLabel="All" allCount={countAll('builderCategory')} value={builderCategoryFilter} onChange={setBuilderCategoryFilter} options={builderCategoryOptionsCounted} />
+            <MultiFilterSelect label="Asset Type" allLabel="All Types" allCount={countAll('assetType')} value={assetTypeFilter} onChange={setAssetTypeFilter} options={assetTypeOptionsCounted} />
+            <FilterSelect label="Possession" value={possessionSort} onChange={setPossessionSort} options={POSSESSION_SORT_OPTIONS} defaultValue="default" />
+            <MultiFilterSelect label="Data Health" allLabel="All" allCount={countAll('health')} value={dataHealthFilter} onChange={setDataHealthFilter} options={dataHealthOptionsCounted} />
           </div>
         )}
       </div>
@@ -452,24 +452,24 @@ export default function EdgeProjectsPage() {
           <table className="text-left text-[13px] text-stone-600 whitespace-nowrap min-w-[1500px] w-full">
               <thead className="bg-white text-[11px] font-medium uppercase tracking-wider text-stone-500 sticky top-0 z-10 shadow-[0_1px_0_0_#e7e5e4]">
                 <tr>
-                  <th className="pl-6 pr-4 py-4 font-mono">ID</th>
+                  <th className="pl-6 pr-4 py-4 font-mono min-w-[130px]">ID</th>
                   <th className="px-4 py-4">State</th>
                   <th className="px-4 py-4">Launch Status</th>
                   <th className="px-4 py-4 min-w-[160px]">Developer</th>
                   <th className="px-4 py-4 min-w-[180px]">Name</th>
                   <th className="px-4 py-4">Price</th>
                   <th className="px-4 py-4">Micromarket</th>
-                  <th className="px-4 py-4">Zone</th>
-                  <th className="px-4 py-4">Units</th>
-                  <th className="px-4 py-4">Area (Acres)</th>
-                  <th className="px-4 py-4">Floor</th>
+                  <th className="px-6 py-4 min-w-[90px]">Zone</th>
+                  <th className="px-6 py-4 min-w-[90px]">Units</th>
+                  <th className="px-6 py-4 min-w-[90px]">Area</th>
+                  <th className="px-6 py-4 min-w-[90px]">Floor</th>
                   <th className="px-4 py-4 text-center">Media</th>
                   <th className="px-4 py-4">Possession</th>
                   <th className="px-4 py-4 sticky right-0 z-20 bg-white border-l border-stone-200">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {filtered.map(p => {
+                {paged.map(p => {
                   const hasImg = !!p.cover_image_url;
                   const hasNotif = !!p.notif_image;
                   const hasMp = !!p.master_plan_url;
@@ -498,10 +498,10 @@ export default function EdgeProjectsPage() {
                       </td>
                       <td className="px-4 py-3 font-medium text-stone-800">{p.pricing || '-'}</td>
                       <td className="px-4 py-3 text-stone-800">{p.micromarket || '-'}</td>
-                      <td className="px-4 py-3 text-stone-500">{zoneShort(p.zone) || '-'}</td>
-                      <td className="px-4 py-3 text-stone-800">{p.total_units || '-'}</td>
-                      <td className="px-4 py-3 text-stone-800">{p.land_area_acres ? p.land_area_acres.toFixed(2) : '-'}</td>
-                      <td className="px-4 py-3 text-stone-800">{p.floor || '-'}</td>
+                      <td className="px-6 py-3 text-stone-500">{zoneShort(p.zone) || '-'}</td>
+                      <td className="px-6 py-3 text-stone-800">{p.total_units || '-'}</td>
+                      <td className="px-6 py-3 text-stone-800">{p.land_area_acres ? p.land_area_acres.toFixed(2) : '-'}</td>
+                      <td className="px-6 py-3 text-stone-800">{p.floor || '-'}</td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-2 text-stone-300">
                           <span title={hasImg ? "Has Cover Image" : "No Cover Image"} className={hasImg ? "text-neutral-700" : "opacity-40"}><ImageIcon size={16} /></span>
@@ -512,8 +512,8 @@ export default function EdgeProjectsPage() {
                       </td>
                       <td className="px-4 py-3 font-medium text-stone-700">{getNextPossession(p)}</td>
                       <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-stone-50 border-l border-stone-200">
-                        <button onClick={() => openEdit(p)} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors">
-                          <Edit2 size={14} /> Details / Edit
+                        <button onClick={() => openEdit(p)} title="Details / Edit" className="inline-flex items-center justify-center p-2 rounded-lg font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors">
+                          <Edit2 size={14} />
                         </button>
                       </td>
                     </tr>
@@ -537,6 +537,31 @@ export default function EdgeProjectsPage() {
               </tbody>
             </table>
         )}
+      </div>
+
+      {/* Pagination — a shrink-0 sibling of the scroll container, so it stays fixed at the
+          bottom of the page and never scrolls away with the table rows. */}
+      <div className="shrink-0 px-6 py-3 bg-white border-t border-stone-200 flex items-center justify-between text-[13px] text-stone-500">
+        <span>
+          {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length}
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1.5 rounded-lg border border-stone-200 font-medium hover:bg-stone-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+          >
+            Prev
+          </button>
+          <span className="font-medium text-stone-700 px-2">Page {currentPage} of {totalPages}</span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1.5 rounded-lg border border-stone-200 font-medium hover:bg-stone-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
