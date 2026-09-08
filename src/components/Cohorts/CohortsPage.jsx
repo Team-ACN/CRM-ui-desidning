@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Search, Plus, ArrowUpDown, LayoutTemplate, Activity, Users, Layers, Lock } from 'lucide-react';
+import { Search, Plus, ArrowUpDown, LayoutTemplate, Activity, Users, Layers, Lock, MessageSquareDashed } from 'lucide-react';
 import CohortCard from './CohortCard';
 import CreateCohortModal from './CreateCohortModal';
 import LiveOverview from './LiveOverview';
@@ -10,11 +10,17 @@ import CohortViewModal from './CohortViewModal';
 import TemplateViewModal from './TemplateViewModal';
 import ComponentsTab from './ComponentsTab';
 import ComponentBuilderModal from './ComponentBuilderModal';
+import PopupsTab from '../Popups/PopupsTab';
+import PopupBuilder from '../Popups/PopupBuilder';
+import PopupPriorityManager from '../Popups/PopupPriorityManager';
+import PopupViewModal from '../Popups/PopupViewModal';
+import { usePopups, createEmptyPopup } from '../Popups/usePopups';
 import { mockCohorts as initialCohorts, mockTemplates as initialTemplates, mockComponents as initialComponents } from '../../data/mockCohorts';
 
 const TABS = [
   { id: 'templates', label: 'Templates', icon: <LayoutTemplate size={18} /> },
   { id: 'components', label: 'Components', icon: <Layers size={18} /> },
+  { id: 'popups', label: 'Popups', icon: <MessageSquareDashed size={18} /> },
   { id: 'cohorts', label: 'Cohorts', icon: <Users size={18} /> },
   { id: 'overview', label: 'Overview', icon: <Activity size={18} />, locked: true },
 ];
@@ -30,6 +36,13 @@ const CohortsPage = () => {
   const [isComponentModalOpen, setIsComponentModalOpen] = useState(false);
   const [selectedBaseWidget, setSelectedBaseWidget] = useState('');
   const [toastMessage, setToastMessage] = useState('');
+
+  // Popups own their state in the Popups module; this page only routes views.
+  const { popups, savePopup, setStatus, toggleLive, reorderPriority } = usePopups();
+  const [popupSurface, setPopupSurface] = useState('app');
+  const [editingPopup, setEditingPopup] = useState(null);
+  const [priorityPopups, setPriorityPopups] = useState([]);
+  const [viewingPopup, setViewingPopup] = useState(null);
   
   // Ref to communicate back to the template builder active widget
   const onInlineComponentCreatedRef = useRef(null);
@@ -122,7 +135,92 @@ const CohortsPage = () => {
     return templates.filter((t) => t.pageType === pageType);
   }, [templates, pageType]);
 
+  // Popup view routing
+  const handleCreatePopup = (surface) => {
+    setEditingPopup(createEmptyPopup(surface));
+    setCurrentView('popupBuilder');
+  };
+
+  const handleEditPopup = (popup) => {
+    setEditingPopup(popup);
+    setCurrentView('popupBuilder');
+  };
+
+  const handleSavePopup = (popupData) => {
+    savePopup(popupData);
+    setCurrentView('tabs');
+    setEditingPopup(null);
+    setActiveTab('popups');
+    showToast(`Popup ${popupData.id} saved as ${popupData.status}`);
+  };
+
+  const handleManagePopupPriority = (scopedPopups) => {
+    setPriorityPopups(scopedPopups);
+    setCurrentView('popupPriority');
+  };
+
   // Full-page views
+  if (currentView === 'popupPriority') {
+    const livePopup = (popupId) => {
+      setStatus(popupId, 'Live');
+      setPriorityPopups((prev) =>
+        prev.map((p) => (p.id === popupId ? { ...p, status: 'Live', isActive: true } : p))
+      );
+      setViewingPopup(null);
+    };
+
+    return (
+      <>
+        <PopupPriorityManager
+          popups={priorityPopups}
+          surface={popupSurface}
+          onSave={(reordered) => {
+            reorderPriority(reordered);
+            setCurrentView('tabs');
+            setActiveTab('popups');
+            showToast('Popup priority updated');
+          }}
+          onBack={() => {
+            setCurrentView('tabs');
+            setViewingPopup(null);
+          }}
+          onPreview={(popup) => setViewingPopup(popup)}
+          onToggleActive={(popupId) => {
+            const target = priorityPopups.find((p) => p.id === popupId);
+            const nextStatus = target?.isActive ? 'Off' : 'Live';
+            setStatus(popupId, nextStatus);
+            setPriorityPopups((prev) =>
+              prev.map((p) =>
+                p.id === popupId ? { ...p, status: nextStatus, isActive: nextStatus === 'Live' } : p
+              )
+            );
+          }}
+        />
+        <PopupViewModal
+          isOpen={!!viewingPopup}
+          popup={viewingPopup}
+          cohorts={cohorts}
+          onClose={() => setViewingPopup(null)}
+          onMakeLive={livePopup}
+        />
+      </>
+    );
+  }
+
+  if (currentView === 'popupBuilder') {
+    return (
+      <PopupBuilder
+        popup={editingPopup}
+        cohorts={cohorts}
+        onSave={handleSavePopup}
+        onBack={() => {
+          setCurrentView('tabs');
+          setEditingPopup(null);
+        }}
+      />
+    );
+  }
+
   if (currentView === 'builder') {
     return (
       <>
@@ -239,7 +337,8 @@ const CohortsPage = () => {
 
       {/* Main Content Area */}
       <main className="max-w-6xl mx-auto mt-6">
-        {/* In-page toolbar: Page Switcher + Actions */}
+        {/* In-page toolbar: Page Switcher + Actions — the Popups tab brings its own */}
+        {activeTab !== 'popups' && (
         <div className="px-6 mb-6 flex items-center justify-between">
           {/* Page Context Switcher (Segmented Control) — hidden on Cohorts tab */}
           {activeTab !== 'cohorts' ? (
@@ -339,6 +438,21 @@ const CohortsPage = () => {
             )}
           </div>
         </div>
+        )}
+
+        {activeTab === 'popups' && (
+          <PopupsTab
+            popups={popups}
+            cohorts={cohorts}
+            surface={popupSurface}
+            onSurfaceChange={setPopupSurface}
+            onCreate={handleCreatePopup}
+            onEdit={handleEditPopup}
+            onManagePriority={handleManagePopupPriority}
+            onToggle={toggleLive}
+            onSetStatus={setStatus}
+          />
+        )}
 
         {activeTab === 'overview' && (
           <LiveOverview
