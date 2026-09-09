@@ -45,24 +45,27 @@ const PopupBuilder = ({ popup: initialPopup, cohorts, onSave, onBack }) => {
   const isEditing = !!initialPopup?.name;
   const validation = useMemo(() => validatePopup(popup), [popup]);
 
-  const applyPosterColor = (imageUrl) => {
-    sampleBottomEdgeColor(imageUrl).then((color) => {
+  const applyCreativeColor = (creative) => {
+    sampleBottomEdgeColor(creative).then((color) => {
       if (color) setPopup((prev) => ({ ...prev, actionBarColor: color }));
     });
   };
 
+  // Whichever creative this surface uses is the one the action area continues.
+  const creativeOf = (record) => (record.surface === 'app' ? record.imageUrl : record.imageUrlDesktop);
+
   const handleChange = (updates) => {
     setPopup((prev) => {
       const next = { ...prev, ...updates };
-      // The action area continues the poster, so it re-reads the artwork's bottom edge.
-      if ('imageUrl' in updates && next.matchPosterColor !== false) applyPosterColor(updates.imageUrl);
+      const creativeChanged = 'imageUrl' in updates || 'imageUrlDesktop' in updates || 'surface' in updates;
+      if (creativeChanged && next.matchPosterColor !== false) applyCreativeColor(creativeOf(next));
       return next;
     });
   };
 
   const handleMatchPoster = (shouldMatch) => {
     setPopup((prev) => ({ ...prev, matchPosterColor: shouldMatch }));
-    if (shouldMatch) applyPosterColor(popup.imageUrl);
+    if (shouldMatch) applyCreativeColor(creativeOf(popup));
   };
 
   const handleSurfaceChange = (surface) => handleChange({ surface });

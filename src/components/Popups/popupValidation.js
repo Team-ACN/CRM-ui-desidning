@@ -147,11 +147,10 @@ export const describeTrigger = (popup) => {
 };
 
 export const describeFrequency = (popup) => {
-  const { maxImpressions = 1, cooldownHours, minGapHours } = popup?.frequency || {};
+  const { maxImpressions = 1, minGapHours } = popup?.frequency || {};
   const parts = [
     maxImpressions === 1 ? 'Shows once per user' : `Shows up to ${maxImpressions} times per user`,
   ];
-  if (cooldownHours) parts.push(`${cooldownHours}h cooldown between shows`);
   if (minGapHours) parts.push(`${minGapHours}h minimum gap after any popup`);
   parts.push('stops once dismissed or completed');
   return parts.join(' · ');

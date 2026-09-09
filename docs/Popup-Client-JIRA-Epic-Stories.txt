@@ -1,0 +1,346 @@
+================================================================
+JIRA PLAN — POPUP DELIVERY ON APP & WEB (CLIENT)
+Source: docs/popup-client-prd.md
+Companion: docs/Popup-JIRA-Epic-Stories.txt (CMS side)
+Written: 2026-09-09
+================================================================
+
+EPIC
+Name: Popup Delivery on App & Web (Client)
+Key (suggested): POPC
+
+Summary
+The app and the web front-end must render a popup they have never seen
+before, fire it at the right moment, and report what happened.
+
+One rule for the whole epic
+  THE SERVER DECIDES. THE CLIENT RENDERS AND REPORTS.
+
+The client holds no targeting, frequency or priority logic. It never
+hides a popup it was given and never shows one it was not given. If a
+popup looks wrong, that is a server bug, not a client guard.
+
+Who does what
+- Server: eligibility, cohorts, frequency caps, minimum gap,
+  suppression, priority, counting shows against the cap.
+- Client: spot the moment (session / page / scroll / event), render,
+  handle dismissal and navigation, send events.
+
+Epic done when
+- A popup made in the CMS renders on app and web with no client
+  release, matching the spec at three widths per surface.
+- All three templates render, including "no button".
+- Each of the four moments fires the right popup, and two popups never
+  show at once.
+- Events match a scripted test run exactly, with no duplicates.
+- A failed or slow call leaves the product unchanged, and a popup
+  turned off centrally stops showing at the next moment.
+
+Out of scope
+Authoring, approval, targeting and reporting screens (CMS epic) · any
+client decision about whether an agent should see a popup · counting
+triggers.
+
+Stories
+1. Shared — Popup contract, API client and event queue
+2. App — Create template popup UI
+3. App — Triggers and delivery
+4. App — Handle analytics
+5. Web — Create template popup UI
+6. Web — Triggers and delivery
+7. Web — Handle analytics
+
+
+================================================================
+1. Shared — Popup contract, API client and event queue
+================================================================
+As a client developer, I want one shared layer so that both surfaces
+talk to the server the same way.
+
+Done
+- Parses per popup: id, surface, template, creative URL, backdrop
+  opacity, close corner, divider label, action area colour (app), toast
+  text. Per CTA: label, background colour, label colour, destination
+  URL, tracking key.
+- An unknown template is skipped silently — nothing rendered, nothing
+  reported, no guessed fallback. Broken or partial config is skipped
+  the same way, with a developer log only.
+- Destination URLs that are not http(s) are not opened.
+- Eligibility request sends surface (fixed per build), trigger
+  (session / page / scroll / event), device (mobile / desktop),
+  page_key for page and scroll moments (home, properties, my_business,
+  service) and event_key for event moments.
+- The agent is identified by the auth token. The agent id is never put
+  in a URL or query string.
+- Reads back: popup (or null) and scroll_popups[] with each threshold.
+- The call has a timeout budget (OQ-6). Over budget it is dropped and
+  nothing is shown — a late popup is never shown. A failure shows
+  nothing, shows no error to the agent, and is not retried in that
+  moment.
+- Responses are never cached past the moment they were asked for, so a
+  popup turned off centrally cannot come back from a cache.
+- Event queue accepts impression, cta_click and close; batches them;
+  sends in the background; saves them on the device when offline and
+  flushes on reconnect; de-duplicates by event id; survives a restart
+  or reload. Nothing the agent does ever waits on it.
+- Every silent skip writes a developer log with the reason. Logs are
+  never shown to the agent and carry no personal data.
+
+
+================================================================
+2. App — Create template popup UI
+================================================================
+As an agent, I want the popup to look right on my phone so that I can
+read it and act in a few seconds.
+
+Done
+- Geometry is written for 390pt width and scales in proportion.
+- Backdrop dims the whole screen, app chrome included, at the opacity
+  from config (default 60%).
+- Close control: 36pt circle, centred, 12pt above the sheet. Always
+  present, never removable by config.
+- Poster: the creative at a fixed 39:50 (390 x 500pt), full width, top
+  corners rounded with the sheet. Never cropped or letterboxed.
+- Action area: solid block under the poster in the config colour, 18pt
+  side padding, 12pt top padding. Poster and action area read as one
+  surface with no visible seam.
+- Divider: centred label with star and rule on both sides, 300pt row,
+  Inter Medium 14 / 1.5, #E5E5E5.
+- CTAs: 354 x 48pt, 8pt radius, stacked 11pt apart, 12pt below the
+  divider, labels Inter Medium 16. Native controls with labels read out
+  by assistive tech.
+- Home indicator sits on the action area colour, and the sheet respects
+  the bottom safe area with that same colour filling the inset.
+- All three templates render: two buttons, one button, and no button
+  (no divider, no action area, the whole poster is the link and tapping
+  it counts as the CTA click).
+- Enter: sheet slides up while the backdrop fades in, 250 ms, standard
+  easing. Exit reverses. Reduced motion shows it with no slide.
+- Dismissal works from the close control, a downward swipe on the
+  poster, a backdrop tap, and the platform back gesture or button —
+  which closes the popup only and does not navigate.
+- Swipe: the sheet follows the finger; it commits past one third of the
+  sheet height or on release with downward speed, else springs back.
+  The action area is not a drag surface, so a drag starting on a CTA is
+  a press.
+- Toast text from config, if set, appears above the popup after a CTA
+  tap, never over the tapped CTA, in system typography, and never
+  blocks the navigation.
+- The popup is announced when it appears, and dismissal is possible
+  without a gesture.
+
+
+================================================================
+3. App — Triggers and delivery
+================================================================
+As a marketing manager, I want the app to fire popups at the right
+moment so that the message lands in context.
+
+Done
+- Session start: on the first authenticated load of a session, ask with
+  trigger=session, render what comes back, and do not ask again in that
+  session. A cold launch, or a resume after the session timeout, is a
+  new session.
+- Page context: on landing on a supported page, ask with trigger=page
+  and the page_key, render what comes back, store scroll_popups[] and
+  arm the scroll listener. Leaving the page disarms it and drops the
+  armed popups. A deep link fires the page moment normally.
+- Scroll: depth is a percentage of total scrollable content, not
+  viewport position. A popup fires the first time its threshold is
+  crossed and only if no popup is on screen, with no network call. It
+  fires at most once per page visit, even after scrolling up and down,
+  and is not re-shown if already dismissed in that visit. The listener
+  is throttled with no synchronous layout reads.
+- Event: ask with trigger=event only after the action is confirmed
+  successful, never on submit. Initial events: inventory added, enquiry
+  submitted, profile completed. If a success screen or toast is
+  showing, the popup comes after it, not on top.
+- One popup at a time: two are never shown together and never stacked.
+  A popup returned while one is on screen is dropped, not queued, with
+  no impression sent, and is offered again at the next such moment.
+- Failure: a failed call shows nothing and no error; an over-budget
+  call is dropped; a creative that fails or loads too slowly means the
+  popup is dropped before it is visible. The popup system never blocks,
+  delays or breaks a screen.
+- Backgrounded and resumed inside the session: the popup stays and no
+  new impression is sent. Sign-out with a popup open closes it at once
+  with no close event. A destination URL that fails to open still
+  closes the popup.
+
+
+================================================================
+4. App — Handle analytics
+================================================================
+As a data analyst, I want correct app events so that every rate can be
+trusted.
+
+Done
+- impression is sent after the creative has painted, not when the API
+  response arrives.
+- cta_click is sent before the destination opens, with that CTA's
+  tracking key.
+- close is sent with the method: close control, backdrop, swipe, or
+  back.
+- Every event carries popup id, agent, surface, page key, device and
+  timestamp.
+- One impression per appearance. Rotation, resize or a recomposition
+  never sends a second one.
+- No impression is ever sent when the creative did not load, or when
+  the popup was dropped.
+- A CTA tap closes the popup but does not send close.
+- Events go through the shared queue (story 1): async, batched, retried
+  offline, de-duplicated. No tap, dismissal, navigation or render ever
+  waits on a network call.
+- A scripted interaction run produces exactly the expected events, with
+  no duplicates and none missing.
+
+
+================================================================
+5. Web — Create template popup UI
+================================================================
+As an agent on desktop, I want the popup to look right so that I can
+read it and act quickly.
+
+Done
+- Geometry is written for a 910pt card width and scales in proportion.
+- Backdrop dims the viewport at the opacity from config.
+- Card: 910 x 436 fixed ratio, 12pt radius, centred, capped so it never
+  passes the viewport and scales down on small windows.
+- Banner: the creative fills the whole card. Never cropped or
+  letterboxed.
+- Close control: 30 x 30pt, 8pt inside the top corner from config.
+  Always present, never removable by config.
+- CTA well: 420pt wide, 48pt in from the card's left edge, anchored
+  48pt above the card base and growing upward, so a single CTA sits in
+  the lower position.
+- Divider: label left aligned, then a star, then a rule filling the
+  rest. 21pt row, 12pt above the CTAs, same typography as app.
+- CTAs: 420 x 48pt, 8pt radius, stacked 11pt apart. Real buttons or
+  links, at least 48pt tall, labels read out by assistive tech.
+- All three templates render, including no button, where the whole
+  banner is the link and clicking it counts as the CTA click.
+- Below the width where the card would scale under 480pt the popup is
+  not shown and no impression is sent (threshold: OQ-3). A resize while
+  open rescales with no new impression; falling below the floor closes
+  it with no close event.
+- Enter: the card fades and scales from 96% to 100% over 200 ms while
+  the backdrop fades. Exit reverses. Reduced motion shows it with no
+  scale.
+- On open, focus moves into the card and is trapped; Tab cycles the
+  CTAs and the close control; Esc closes; focus returns to where it was
+  before. Content behind the popup is not reachable by keyboard or
+  screen reader while it is open.
+- Dismissal works from the close control, a backdrop click, and Esc.
+- Toast text from config, if set, appears above the popup after a
+  click, never over the clicked CTA, and never blocks navigation.
+- The popup is announced when it appears.
+
+
+================================================================
+6. Web — Triggers and delivery
+================================================================
+As a marketing manager, I want the web front-end to fire popups at the
+right moment.
+
+Done
+- Session start: on the first authenticated load of a session, ask with
+  trigger=session, render what comes back, and do not ask again in that
+  session. A new tab, or a load after re-authentication, is a new
+  session.
+- Page context: fires on landing on a supported page and also on
+  client-side route changes, not only on a full page load. Asks with
+  trigger=page and the page_key, stores scroll_popups[] and arms the
+  scroll listener. Routing away disarms it.
+- Scroll: depth is a percentage of total scrollable height. Fires the
+  first time the threshold is crossed and only if no popup is on
+  screen, with no network call, at most once per page visit, and not
+  again if already dismissed in that visit. Listener is throttled with
+  no synchronous layout reads per scroll event.
+- Event: asks with trigger=event only after confirmed success, never on
+  submit, and appears after any success screen or toast.
+- One popup at a time: never two, never stacked. A popup returned while
+  one is showing is dropped, not queued, with no impression.
+- Failure: a failed call shows nothing and no error; an over-budget
+  call is dropped; a creative that fails or is too slow means the popup
+  is dropped before it is visible. Popups are rendered after the page
+  is interactive and never delay it.
+- Two tabs open: each triggers on its own, but the same popup does not
+  appear twice because the server suppresses it, and a dismissal in one
+  tab holds for later requests from the other.
+- Responses are never cached, so a popup turned off centrally cannot
+  come back. A destination URL that fails to open still closes the
+  popup.
+
+
+================================================================
+7. Web — Handle analytics
+================================================================
+As a data analyst, I want correct web events so that rates can be
+trusted.
+
+Done
+- impression is sent after the creative has painted, not on response.
+- cta_click is sent before navigation, with that CTA's tracking key.
+- close is sent with the method: close control, backdrop, or Esc.
+- Every event carries popup id, agent, surface, page key, device and
+  timestamp.
+- One impression per appearance. A re-render or a resize never sends a
+  second one.
+- No impression when the creative did not load, when the popup was
+  dropped, or when the window is below the responsive floor.
+- A CTA click closes the popup but does not send close.
+- Events go through the shared queue (story 1): async, batched, retried
+  offline, de-duplicated, and nothing waits on them.
+- A scripted interaction run produces exactly the expected events, with
+  no duplicates and none missing.
+
+
+================================================================
+PERFORMANCE TARGETS (apply to stories 2-7)
+================================================================
+P-1  Eligibility is not felt on session or page load. 100 ms p95
+     server-side; the client drops the call after its budget.
+P-2  Scroll popups fire with no network call.
+P-3  Rendering never delays page interactivity.
+P-4  Scroll monitoring drops no frames.
+P-5  Creative is 2 MB or less, CDN-served, decoded off the main thread
+     where the platform allows.
+P-6  Event reporting is async, batched and retried in the background.
+
+
+================================================================
+OPEN QUESTIONS THAT BLOCK STORIES
+================================================================
+OQ-1  Is the app native or a webview, and what are the exact route
+      identifiers per page?           Blocks 3.   App engineering.
+OQ-2  Which client callbacks reliably mean confirmed success for each
+      event trigger?                  Blocks 3, 6. App / Web eng.
+OQ-3  At what window width should the web popup stop showing instead of
+      scaling down?                   Blocks 5.   Design.
+OQ-4  Do the animations match existing sheet and modal patterns, or get
+      their own?                      Blocks 2, 5. Design.
+OQ-5  Should a back-gesture dismissal be recorded differently from a
+      close-control one?              Blocks 4.   Product.
+OQ-6  What is the client's timeout budget for an eligibility request?
+                                      Blocks 1.   Engineering.
+OQ-7  Do older app versions need a minimum-version gate, so a newer
+      layout is not served to them at all?
+                                      Blocks 1.   Platform.
+
+
+================================================================
+ORDER OF WORK
+================================================================
+Sprint 1  Story 1        (contract, API client, event queue)
+Sprint 2  Stories 2 + 5  (app and web rendering, in parallel)
+Sprint 3  Stories 3 + 6  (app and web triggers, in parallel)
+Sprint 4  Stories 4 + 7  (analytics on both surfaces)
+
+Story 1 must land before any rendering work.
+CMS delivery engine (CMS story 5) must be live to test stories 3 and 6
+end to end. CMS analytics backend (CMS story 6) must be live to verify
+stories 4 and 7.
+
+================================================================
+END
+================================================================
