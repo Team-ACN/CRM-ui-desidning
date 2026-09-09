@@ -1,421 +1,482 @@
-# PRD — ACN Popup System (CMS module)
+# Product Requirements Document — In-Product Popup System
 
-**Owner:** Samarth · **Status:** Built (UI prototype, mock data) · **Surface:** ACN CRM → CMS → Popups
-**Branch:** `feat/popup-cms` · **Last updated:** 2026-09-08
-
----
-
-## 1. Summary
-
-A config-driven popup system authored inside the existing CMS. The creative is a single uploaded image; the system renders the CTA buttons, the close control and the backdrop around it. An author uploads the image, picks a layout, writes the button labels and colours, chooses where and how often it fires, and sends it for approval — no deploy.
-
-**App and web are separate products here.** A popup belongs to exactly one surface, has one creative shaped for that surface, renders with a different anatomy on each, and is ranked only against popups on the same surface.
-
-This document describes what was built: anatomy, data model, every validation rule, both colour algorithms, the metric formulas, and the backend contract the UI assumes.
-
-### What is in scope (built)
-
-- Popups list grouped by trigger context, per surface, with per-surface performance panels
-- Builder: canvas + single settings column (creative → action area → placement → delivery)
-- Automatic action-area colour matched to the poster
-- WCAG contrast guard on every button label
-- Priority + approval on one screen, two-step (drag, then save)
-- The app's built-in delist popup represented as an app-managed record
-- Preview modal with configuration and performance summary
-
-### What is not in scope
-
-- No backend. All state is React state over `src/data/mockPopups.js`; nothing persists across reload.
-- No text/layout editor — the image carries the design.
-- No counting triggers ("N enquiries in 1 day") — needs aggregation infra.
-- No A/B variants, no conversion attribution beyond the click, no audit log.
-- No web anatomy from design yet — web renders the older centred-card model (see §14).
-
----
-
-## 2. Surface model
-
-| | App | Web |
-|---|---|---|
-| Record field | `surface: 'app'` | `surface: 'web'` |
-| Creative field | `imageUrl` — 39:50 poster | `imageUrlDesktop` — 4:3 landscape |
-| Min upload | 780 × 1000 | 1440 × 1080 |
-| Anatomy | Bottom sheet (§3.1) | Centred card (§3.2) |
-| Preview frame | Phone, with ACN app header | Desktop browser chrome |
-| Competes with | Other app popups on the same trigger | Other web popups on the same trigger |
-
-There is no "both" surface and no "all" filter. The list shows one surface at a time; the stats panels show both side by side so the other surface is never hidden, and clicking the inactive panel switches the view.
-
----
-
-## 3. Anatomy
-
-### 3.1 App — bottom sheet
-
-Built to the mobile spec (Figma `Popup designs`, node `163:1764`). Geometry is authored at 390pt and scaled linearly by the render width.
-
-```
-        ( × )                    36pt close chip, centred, 12pt above the sheet
-┌───────────────────────┐
-│                       │
-│   POSTER  390 × 500   │        39:50, edge to edge, object-cover
-│                       │
-├───────────────────────┤        ← no seam: action colour == poster bottom edge
-│  ✦ ── TRY IT YOURSELF ── ✦ │   divider row, 300pt wide, 21pt tall
-│  [   Button label    ]│        354pt wide, 48pt tall, radius 8
-│  [   Button label    ]│        11pt gap between buttons
-│         ▁▁▁▁          │        home indicator, same colour
-└───────────────────────┘
-```
-
-| Element | Spec |
+| | |
 |---|---|
-| Backdrop | `rgba(0,0,0,{backdropOpacity})`, default 0.6, covers the whole screen including the app header |
-| Close chip | 36pt circle, white 90%, centred horizontally, 12pt above the sheet |
-| Poster | 39:50 (`POSTER_ASPECT`), full bleed |
-| Action area | Solid `actionBarColor`, 12pt top padding, side padding 18pt |
-| Divider label | Inter Medium 14 / 1.5, letter-spacing 0, `#E5E5E5`; text authored, font fixed |
-| Divider rule + star | 1px `#E5E5E5` rule, 12pt star (`DividerStar.jsx`, exported from Figma node `163:1809`), stars sit adjacent to the label |
-| Buttons | 354pt wide, 48pt tall, radius 8, Inter Medium 16, stacked, 11pt apart, drop-shadow `0 4 6 rgba(0,0,0,.25)` |
-| Home indicator | 139 × 5pt, on the same solid colour |
-| Dismissal | Close chip, or swiping the poster down |
-| Toast | Authored text, shown after a CTA tap, above the sheet (§7) |
+| **Product area** | ACN — Agent App & Web, CMS |
+| **Document owner** | Samarth Jangir |
+| **Status** | Draft for review |
+| **Version** | 2.0 |
+| **Last updated** | 9 September 2026 |
+| **Reviewers** | Design · Engineering (App, Web, Platform) · Marketing · Data |
 
-Inter is loaded in `index.html` so the CMS preview renders in the app's real typeface.
-
-### 3.2 Web — centred card
-
-Centred 4:3 card over a dimmed page. Buttons are drawn **over the artwork**, positioned as a % of the card from the template registry, sitting in an empty "well" the designer leaves in the image. A close button sits in `closeCorner` with a reserved zone (`CLOSE_ZONE_PCT` = 14% × 11%) so `full_tap` never swallows it.
+**Changes in v2.0** — the web experience is now specified from design (§6.2), closing the open question that stood in v1. The web creative changes from a 4:3 card to a 910:436 banner. Frequency control is simplified to a single gap setting (§7.4). Poster colour matching is confirmed as app-only (§10.2). The post-action toast is authored text and applies to both surfaces (§10.3).
 
 ---
 
-## 4. Template registry
+## 1. Executive summary
 
-Layout geometry lives in code (`popupTemplates.js`), never in the record. Adding a layout is one registry entry plus one design template.
+ACN has no controlled way to place a message in front of an agent inside the product. Campaigns that need in-product reach today require an engineering ticket and ride an app release: a two-to-four week lead time, no ability to stop a live message, and no measurement once it ships.
 
-| `templateKey` | Label | Buttons | App behaviour | Web slots (% of card) |
+This document specifies a **popup system**: a configuration-driven overlay that Marketing authors, a reviewer approves, and the product serves to a targeted audience at a defined moment — with no code change and no release dependency.
+
+The decision at the centre of the product is that **the creative is a single uploaded image, and the system renders everything interactive around it**. Marketing already produces polished creative; the product supplies the call-to-action buttons, the close control, the backdrop and the measurement. This removes the need for a layout editor while keeping the CTA accessible, trackable, and impossible to crop.
+
+The system is governed by four safety rules that apply to every popup regardless of author: one popup per view, capped frequency by default, suppression once acted upon, and an approval gate before anything reaches an agent.
+
+---
+
+## 2. Context and problem statement
+
+### 2.1 Current state
+
+| Need | How it is met today | Cost |
+|---|---|---|
+| Announce a feature in-product | Hard-coded screen, shipped in a release | 2–4 weeks; cannot be changed after ship |
+| Reach a specific agent segment | Not possible in-product; falls back to WhatsApp / email | Low open rates, no in-context relevance |
+| Stop a message that is underperforming | Requires a hotfix or a forced app update | Effectively not possible |
+| Measure a message | Ad hoc, if at all | No CTR, no dismissal data, no comparison |
+
+### 2.2 Why now
+
+Three initiatives in the current roadmap each need in-product placement within the quarter: delisting prevention nudges, plan upgrade prompts, and new-launch announcements. Absent a shared system, each will be built separately, and none will be measurable or safely stoppable.
+
+### 2.3 The risk of getting this wrong
+
+A popup system is a shared channel with no natural back-pressure. If several teams can each place overlays without constraint, the agent experience degrades quickly and agents learn to reflex-dismiss anything that appears — which also destroys the value of genuinely useful interventions such as delisting prevention. **The governance rules in §9 are therefore product requirements, not implementation details.**
+
+---
+
+## 3. Goals and non-goals
+
+### 3.1 Goals
+
+| # | Goal | Measured by |
+|---|---|---|
+| G1 | Ship an in-product message without an engineering ticket or release | Median time from brief to live < 1 working day |
+| G2 | Target a message to a defined audience and moment | ≥ 80% of live popups use a cohort or a contextual trigger, not a blanket session trigger |
+| G3 | Make every message measurable | 100% of live popups report impressions, CTR and dismissal rate |
+| G4 | Protect the agent experience from message fatigue | Portfolio dismissal rate stays below 65%; no agent sees more than one popup per view |
+| G5 | Stop or change a live message immediately | Time from decision to a popup being off < 2 minutes |
+
+### 3.2 Non-goals for v1
+
+- **A design editor.** No text, layout, or composition tooling. The image carries the design.
+- **Blocking interstitials.** Popups are dismissible overlays; nothing blocks an agent from reaching the product.
+- **Behavioural counting triggers** ("5 enquiries in one day", "status unchanged for N days"). Deferred to Phase 4; requires aggregation infrastructure.
+- **A/B variant testing**, conversion attribution beyond the click, and a full change audit log.
+- **A new segmentation engine.** Cohorts already exist as a platform capability; this system consumes them.
+- **Cohort exclusions and multi-cohort targeting.** The data model reserves room; the v1 experience targets one cohort or everyone.
+
+---
+
+## 4. Users and use cases
+
+| Persona | Need | Frequency |
+|---|---|---|
+| **Marketing manager** (author) | Launch a campaign message to a segment, see whether it worked | Weekly |
+| **Product / QC reviewer** (approver) | Check a message renders correctly and is targeted sanely before it reaches agents | Per popup |
+| **Growth / Ops** (author) | Nudge behaviour at a moment of intent — e.g. after an agent adds inventory | Fortnightly |
+| **Agent** (recipient) | Understand the message in under three seconds; act or dismiss without friction | Passive |
+
+### Representative use cases
+
+1. **Feature announcement** — new launch inventory goes live; announce it on the app home screen to agents in the relevant micro-market, once each.
+2. **Moment-of-intent nudge** — an agent has just added inventory; offer a paid boost immediately after success, up to four times with a minimum two-hour gap.
+3. **Retention nudge** — agents at risk of delisting see a reminder at 50% scroll on My Business, once, on web.
+4. **Plan upgrade** — rental-focused agents see an upgrade prompt on the Properties page.
+
+---
+
+## 5. Solution overview
+
+### 5.1 The creative model
+
+A popup is composed of two layers:
+
+1. **The artwork layer** — one image supplied by Marketing, carrying all design, copy and art. It is produced with an area deliberately left clear for the call to action.
+2. **The system layer** — the backdrop, the close control, the divider label and the CTA button(s), rendered natively by the product and configured per popup (label, colours, destination, tracking key).
+
+**Why the CTA is not baked into the image.** Three reasons, each of which has broken image-only implementations elsewhere: a rendered button cannot be clipped by cropping or scaling; a native button is a real focusable control with a correct tap target and screen-reader label; and a native button is independently trackable, so click-through can be attributed per CTA rather than inferred.
+
+### 5.2 One system, two surfaces
+
+The App and the Web are treated as **separate delivery surfaces with separate content**. A popup belongs to exactly one surface. It carries a creative shaped for that surface, renders with the anatomy appropriate to that surface, and competes for placement only against popups on the same surface.
+
+This is deliberate. A shared record with per-surface overrides was considered and rejected: the two surfaces have different creative shapes, different traffic volumes and different campaign calendars, and a shared record makes it impossible to answer "what is running on the app right now?" without mental filtering.
+
+App leads throughout the experience — it carries most agent traffic and is the default surface for a new popup.
+
+---
+
+## 6. Experience specification
+
+Both surfaces share the same principle: a fixed-ratio creative, with the divider and CTAs drawn by the system. Where they differ is **placement of the system layer** — beneath the creative on app, over a reserved area of the creative on web. That difference comes from the two designs, not from a technical constraint.
+
+### 6.1 App — anchored sheet
+
+The app popup is anchored to the bottom of the screen over a dimmed backdrop.
+
+```
+              ( × )                   ← close control, centred above the sheet
+   ┌───────────────────────────┐
+   │                           │
+   │      POSTER  390 × 500    │      ← artwork, 39:50, full width
+   │                           │
+   ├───────────────────────────┤      ← no visible seam
+   │  ✦ ─── TRY IT YOURSELF ─── ✦ │   ← divider label (authored text), centred
+   │  [      Primary CTA      ] │
+   │  [     Secondary CTA     ] │
+   └───────────────────────────┘
+```
+
+| Element | Requirement |
+|---|---|
+| Backdrop | Dimmed overlay across the full screen, including product chrome. Default opacity 60%. |
+| Close control | 36pt circular control, centred horizontally, 12pt above the sheet. Always present. |
+| Poster | Fixed 39:50 ratio (390 × 500pt), full-bleed to the sheet edges. Never cropped or letterboxed. |
+| Action area | Solid colour block beneath the poster, holding the divider and CTAs. Its colour **must match the poster's bottom edge** so poster and action area read as a single surface (§10.2). Side padding 18pt. |
+| Divider | Rule-and-star treatment either side of a centred label. Label text is authored; typography is fixed (Inter Medium 14 / 1.5, `#E5E5E5`). |
+| CTAs | 354pt wide, 48pt tall, 8pt corner radius, stacked 11pt apart, 12pt below the divider. Label typography fixed (Inter Medium 16); label text and colours authored. |
+| Home indicator | Sits on the same solid colour as the action area. |
+| Dismissal | Close control, or swiping the poster downward. |
+
+**Rationale for the anchored sheet over a centred card:** the anchor keeps the CTA within thumb reach, and the fixed poster ratio means the artwork is never cropped across device sizes — the variable space is absorbed by the backdrop, not the creative.
+
+### 6.2 Web — banner card
+
+The web popup is a centred landscape card over a dimmed page. **The banner is the whole card**, and the system draws the divider and CTAs over it, inside an area the artwork leaves clear.
+
+```
+   ┌───────────────────────────────────────────────( × )┐
+   │                                                    │
+   │   BANNER  910 × 436          ← artwork fills the card
+   │                                                    │
+   │   TRY IT YOURSELF ✦────────────                    │
+   │   [        Primary CTA        ]                    │
+   │   [       Secondary CTA       ]   ← 48pt above base │
+   └────────────────────────────────────────────────────┘
+```
+
+| Element | Requirement |
+|---|---|
+| Card | 910 × 436 (fixed ratio), 12pt corner radius, centred on a dimmed page. Capped so it never dominates a large viewport. |
+| Banner | The artwork fills the entire card. Never cropped or letterboxed. |
+| Close control | 30 × 30pt, 8pt inset from the top corner, inside the card. Corner is configurable; presence is not. |
+| CTA well | The area the artwork must leave clear: 420pt wide, inset 48pt from the left edge. |
+| Well anchoring | The block is anchored to its **bottom edge, 48pt above the card's base**, and grows upward. A single CTA therefore sits in the lower position, where the second CTA would be. |
+| Divider | Label **left-aligned**, followed by a star and a rule filling the remaining width. 21pt row, 12pt above the CTAs. Typography fixed as on app. |
+| CTAs | 420 × 48pt, 8pt corner radius, stacked 11pt apart. Typography fixed; label text and colours authored. |
+| Dismissal | Close control or backdrop click. |
+
+**Why the well rather than a strip beneath the banner:** the web creative is landscape and its right side carries the art, so the CTA belongs in the composition's left column. A strip beneath would add height to an already wide card and break the design's balance. The trade-off is that the artwork must respect the well — which the published design template and the authoring guides (§10.4) enforce.
+
+### 6.3 Layout templates
+
+Authors choose from a fixed set. Templates are a system-owned registry, not a free-form editor.
+
+| Template | CTAs | App | Web |
+|---|---|---|---|
+| **No button** | 0 | The poster itself is the link | The banner itself is the link |
+| **One button** | 1 | Single CTA in the action area | Single CTA in the lower well position |
+| **Two buttons** | 2 | Primary and secondary, stacked | Primary and secondary, stacked in the well |
+
+With **No button**, no divider is drawn and no action area is rendered.
+
+Adding a template is a design-plus-engineering change, not an authoring capability. Each template ships with a matching Figma/Canva template so designers produce artwork that respects the reserved area.
+
+---
+
+## 7. Configuration model
+
+Fields marked *System* are not author-editable.
+
+### 7.1 Identity and creative
+
+| Field | Type | Required | Default | Notes |
 |---|---|---|---|---|
-| `full_tap` | No button | 0 | Poster itself is the link | none; whole card tappable minus close zone |
-| `single_button` | One button | 1 | One CTA in the action area | `x 8, y 78, w 84, h 9` |
-| `two_button` | Two buttons | 2 | Two CTAs stacked | `x 8 / 51.5, y 78, w 40.5, h 9` |
+| Name | Text | Yes | — | Internal only; never shown to agents |
+| Surface | `App` \| `Web` | Yes | App | Determines creative shape, anatomy and competition set |
+| Creative | Image | Yes | — | App: 39:50, min 780 × 1000. Web: 910:436, min 1820 × 872. PNG/JPEG/WebP, ≤ 2 MB |
+| Layout template | Enum | Yes | One button | See §6.3 |
+| Backdrop opacity | % | System | 60% | Fixed for consistency across popups |
+| Close corner | Enum | Yes | Top right | Web only; app's close control is always centred above the sheet |
 
-Switching template preserves button config for slots the new template still has and fills new slots from `buildDefaultButtons` (primary `#047857` on white text, secondary `#1F2937`).
+Below-minimum dimensions produce a warning, not a block — the author may knowingly use a smaller asset.
 
----
+### 7.2 Call to action
 
-## 5. Data model
+| Field | Type | Required | Default | Applies to | Notes |
+|---|---|---|---|---|---|
+| Divider label | Text | No | "TRY IT YOURSELF" | Both | Text authored; typography fixed |
+| Action area colour | Colour | Yes | Auto-matched | App only | Derived from the poster; manual override available (§10.2) |
+| Toast message | Text (≤ 80 chars) | No | Empty | Both | Shown after a CTA tap; empty means no toast |
 
-One flattened record per popup (`src/data/mockPopups.js`). A real backend would split this into `popup`, `popup_button`, `trigger_rule`, `frequency_policy`.
+### 7.3 Per CTA
 
-```js
-{
-  id: 'POP001',
-  name: 'Whitefield Premium — Book a demo',
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| Label | Text | Yes | Kept short; the button does not wrap |
+| Background colour | Hex | Yes | Contrast-checked against the label colour |
+| Label colour | Hex | Yes | Contrast-checked against the background |
+| Destination URL | URL | Yes | Must be `http(s)` |
+| Tracking key | Slug | Yes | Stable identifier for reporting; renaming starts a new series (§11.4) |
 
-  // Ownership
-  managedExternally: false,   // true = built into the app; only priority is editable here
-  externalNote: '',           // shown in place of the preview for app-managed popups
+### 7.4 Targeting and delivery
 
-  // Surface + creative
-  surface: 'app',             // 'app' | 'web'
-  imageUrl: '<data or url>',  // app poster (39:50) — required for app
-  imageUrlDesktop: '',        // web creative (4:3) — required for web
-  templateKey: 'single_button',
-  backdropOpacity: 0.6,
-  closeCorner: 'top_right',   // web only
+| Field | Type | Required | Default | Notes |
+|---|---|---|---|---|
+| Trigger type | Enum | Yes | Session start | See §8 |
+| Page | Enum | Conditional | — | Required for page and scroll triggers |
+| Scroll depth | 1–100% | Conditional | 50% | Required for scroll trigger |
+| Event | Enum | Conditional | — | Required for event trigger |
+| Audience | Cohort or "All users" | Yes | All users | One cohort in v1, chosen from a searchable list |
+| Max shows per user | Integer ≥ 1 | Yes | **1** | Capped by default |
+| Minimum gap | Hours | No | None | Minimum wait before this agent sees a popup again |
+| Priority | Integer | Yes | Lowest | Rank within its competition set (§9.3) |
 
-  // App action area
-  actionBarColor: '#065F46',
-  matchPosterColor: true,     // when true, actionBarColor is sampled from the poster
-  dividerLabel: 'TRY IT YOURSELF',
-  toastMessage: '',           // ≤ 80 chars, shown after a CTA tap; empty = no toast
-
-  // Lifecycle
-  status: 'Live',             // 'Draft' | 'Not Live' | 'Live' | 'Off'
-  isActive: true,             // mirrors status === 'Live'
-  priority: 1,                // 1 = highest, within its (surface, trigger) group
-
-  // Targeting
-  cohortIncludeIds: ['COH001'],  // 0 or 1 entry — "All users" when empty
-  cohortExcludeIds: [],          // reserved; no UI today
-
-  // Buttons
-  buttons: [{
-    id: 'POP001-b0',
-    slotIndex: 0,
-    label: 'Book a demo',
-    bgColor: '#047857',
-    textColor: '#FFFFFF',
-    redirectUrl: 'https://acn.example.com/demo',
-    openInNewTab: false,      // in the model, not author-editable
-    analyticsKey: 'book_demo',
-  }],
-
-  // Trigger — exactly one
-  trigger: {
-    type: 'session',          // 'session' | 'page' | 'scroll' | 'event'
-    pageKey: null,            // required for page/scroll
-    scrollDepthPct: null,     // required for scroll, 1–100
-    eventKey: null,           // required for event
-  },
-
-  // Frequency
-  frequency: { maxImpressions: 2, cooldownHours: 48, minGapHours: 12 },
-
-  // Rolled-up counters (server-owned in production)
-  stats: {
-    impressions: 12840,
-    closes: 7620,
-    buttonClicks: { book_demo: 1932 },   // keyed by analyticsKey
-    byDevice: { mobile: 12840, desktop: 0 },
-  },
-}
-```
-
-**Enums** (`popupConstants.js`): page keys `home | properties | my_business | service`; event keys `add_inventory_success | enquiry_submitted | profile_completed`; statuses `Draft | Not Live | Live | Off`.
-
-**Defaults on create:** surface = the surface being viewed, `templateKey: 'single_button'`, backdrop 0.6, close corner top-right, `matchPosterColor: true`, divider `TRY IT YOURSELF`, `frequency: { maxImpressions: 1, cooldownHours: null, minGapHours: null }`, `priority: 999`, status `Draft`.
-
-**Image constraints:** PNG / JPEG / WebP, ≤ 2 MB. Below-minimum dimensions are a warning, not a block.
+**On the single gap setting.** v1 had two overlapping controls — a per-popup cooldown and a cross-popup minimum gap. Authors could not reliably distinguish them, and the stricter of the two always governed in practice. They are collapsed into one **Minimum gap**. The precise scope of that gap is an open question (§14.3, OQ-4): as specified today it is the wait before the agent sees a popup again, which is the stricter reading and the safer default for agent experience.
 
 ---
 
-## 6. Authoring flow
+## 8. Triggers
 
-The builder is a canvas plus one scrolling settings column. Name sits at the top of the column; everything is on one side.
+Exactly one trigger per popup. Combining triggers was rejected for v1: it multiplies the eligibility surface without a demonstrated need, and a second popup can express the second moment.
 
-| Step | Fields |
+| Trigger | Fires | Required configuration | Phase |
+|---|---|---|---|
+| **Session start** | First authenticated load of a session | — | 1 |
+| **Page context** | On landing on a specified page | Page | 1 |
+| **Scroll depth** | When the agent passes a scroll threshold on a page | Page, depth % | 1 |
+| **Event** | Immediately after a user action succeeds | Event key | 1 |
+| **Counting** | "N actions within a time window" | Aggregation definition | 4 — deferred |
+
+**Supported pages:** Home, Properties, My Business, Service.
+**Supported events (initial):** inventory added, enquiry submitted, profile completed. The event list expands as the clients expose success callbacks; each addition is configuration, not a schema change.
+
+Scroll-triggered popups must be resolved and delivered to the client **with the page payload**, not fetched when the threshold is crossed, so the popup appears without a perceptible delay.
+
+---
+
+## 9. Governance and delivery rules
+
+These rules are load-bearing. Multiple teams author into a shared channel, and the rules are what prevent that channel from degrading.
+
+### 9.1 One popup per view
+
+If several popups qualify for the same moment, exactly one is shown. The others are suppressed for that view and are not queued — they compete again the next time the moment occurs.
+
+### 9.2 Capped by default
+
+A popup created without frequency configuration shows **once per agent, ever**. Authors raise the cap deliberately. This inverts the common failure mode where an unconfigured popup shows on every qualifying view.
+
+### 9.3 Priority within a competition set
+
+A *competition set* is the combination of **surface and trigger context** — for example, "App · Home page" or "Web · My Business page at 50% scroll". Popups are ranked only within their set, because only popups in the same set can ever contend for the same view.
+
+Ranking is a deliberate, two-step action: reordering happens on a dedicated ranking screen, scoped to one surface, and takes effect only when explicitly saved. An accidental drag must never change what live traffic sees.
+
+### 9.4 Suppression
+
+A popup stops being eligible for an agent when any of the following is true: the maximum number of shows is reached, the minimum gap has not yet elapsed, the agent dismissed it, or the agent completed the target action. Suppression state is **stored server-side, per agent** — an agent uses ACN on both phone and desktop, and a dismissal on one must hold on the other.
+
+### 9.5 Approval gate
+
+No popup reaches an agent without a reviewer approving it. Approval takes place on the ranking screen, where the reviewer sees the popup rendered as an agent will see it, alongside its targeting and frequency configuration. Ranking and approval share one screen because both are decisions about what an agent will actually be shown.
+
+### 9.6 Eligibility resolution order
+
+For a given agent, surface and moment, the system evaluates gates **in order** and stops at the first failure:
+
+1. **Status** — the popup is Live.
+2. **Surface and trigger** — the popup's surface matches, and its trigger matches the current page, scroll depth or event.
+3. **Audience** — the agent is in the target cohort, or the popup targets all users.
+4. **Frequency and suppression** — under the maximum number of shows; past the minimum gap; not dismissed; not completed.
+5. **Priority** — the highest-priority survivor wins; the rest are suppressed for this view.
+
+The audience gate deliberately precedes the frequency gate: cohort membership is a cheap filter that removes most candidates before per-agent state is read.
+
+---
+
+## 10. Quality guardrails
+
+### 10.1 Accessibility
+
+| Requirement | Standard |
 |---|---|
-| **Name** | Popup name |
-| **1 · Surface & creative** | Surface (App / Web) → creative upload for that surface → layout (No button / One button / Two buttons) |
-| **2 · Action area** (app) / **Buttons** (web) | Divider label, action-area colour (auto-matched), per button: label, background, text colour, contrast readout, redirect URL, analytics key; toast message |
-| **3 · Where it shows** | Trigger type, page key, scroll depth, event key, audience (one searchable cohort dropdown) |
-| **4 · How often** | Max shows, cooldown (h), min gap (h), plain-English summary |
+| CTA label legibility | Contrast ratio ≥ 4.5:1 (WCAG 2.1 AA) between label and button background |
+| Tap target | Minimum 48pt height on all CTAs |
+| Close control | Always present, never suppressible by configuration, with an accessible label |
+| Screen readers | CTAs are native controls, announced with their label and destination |
 
-Canvas controls: surface chip (App/Web), **Show guides** (outlines the poster block, the button slots and the reserved close zone so the artwork can be checked against them), and **Toast** (app only — previews the post-CTA toast).
+**Contrast is computed and surfaced at authoring time.** Relative luminance follows WCAG 2.1: each channel is normalised to 0–1, linearised (`c ≤ 0.03928 ? c/12.92 : ((c+0.055)/1.055)^2.4`), and combined as `0.2126·R + 0.7152·G + 0.0722·B`. The ratio is `(L_lighter + 0.05) / (L_darker + 0.05)`. Results are graded AAA (≥ 7:1), AA (≥ 4.5:1) or Fail, shown live next to the colour controls.
 
-Header actions: **Save draft** (needs a name only) and **Send for approval** (needs a fully valid record). An amber "*N* to fix" chip lists blocking issues on hover.
+A failing ratio produces a prominent warning rather than a hard block — the author may have a deliberate reason — but it is visible to the reviewer at approval, which is where it should be caught.
+
+### 10.2 Poster-matched action area (App)
+
+The app's action area sits beneath the poster and must appear to be part of the artwork. Requiring the author to eyedrop and type a hex value is error-prone and was rejected.
+
+**The system derives the colour from the artwork automatically.** On upload, it samples the **bottom 4% of the image's height across the middle 60% of its width** and averages the result. The horizontal inset matters: corners commonly carry rounding, vignetting or a signature, and including them pulls the average away from the true edge colour.
+
+The derived colour is shown to the author as "matched", with a manual override available for artwork whose bottom edge is a gradient or a photograph. Where a creative cannot be read for colour, the previous value is retained and the author is prompted to set it manually.
+
+This applies to **app only**. Web draws its CTAs over the banner and has no separate colour surface.
+
+### 10.3 Post-action feedback
+
+A CTA tap must produce a visible response, not just a navigation. The authored toast message appears above the popup — never over the CTA that triggered it — using system typography. Authors write the message; the presentation is fixed. Applies to both surfaces.
+
+### 10.4 Artwork alignment
+
+Because the system draws the CTAs, the artwork must leave the corresponding area clear — the action-area seam on app, the CTA well on web. Two mechanisms enforce this:
+
+1. **Published design templates**, one per layout, with the reserved area marked, so creative is produced correctly.
+2. **A guide overlay in authoring** that outlines the reserved area, the CTA positions and the close control's zone over the uploaded creative, so a misaligned asset is caught before approval.
 
 ---
 
-## 7. Toast
+## 11. Measurement
 
-Authored as **text**, not an image. Max 80 characters, with a live counter. Empty means no toast. Rendered by the system: 354pt wide, `rgba(23,23,23,0.95)`, white Inter Medium 14, radius 12, drop shadow — positioned **above the sheet** so it never covers the CTA that fired it. One toast per popup, fired by any CTA tap.
+### 11.1 Event taxonomy
 
----
+Three events per popup. Each carries popup ID, agent ID, surface, page, device and timestamp.
 
-## 8. Colour logic
-
-### 8.1 Action-area colour sampling (`sampleImageColor.js`)
-
-The action area must continue the poster so the sheet reads as one surface. The colour is read off the artwork rather than typed in.
-
-1. Load the poster with `crossOrigin = 'anonymous'`; bail to `null` on error.
-2. Draw it into a canvas capped at 240 × 240 px (cheap, and averaging is unaffected).
-3. Take a strip of the **bottom 4% of rows**, spanning the **middle 60% of the width** — corners and outer edges carry rounding and vignetting that drag the average off-colour.
-4. Average R, G and B across that strip; round each channel and format as `#RRGGBB`.
-5. On a tainted canvas (cross-origin image without CORS headers) log and return `null`; the existing colour is kept.
-
-Triggered automatically whenever `imageUrl` changes while `matchPosterColor` is true, and on demand via **Match poster**. **Set manually** flips `matchPosterColor` to false and hands over a colour picker.
-
-### 8.2 Contrast guard (`contrast.js`)
-
-Standard WCAG 2.1 relative luminance and contrast ratio, applied to every button's label-on-background pair.
-
-```
-channel c' = c/255 ≤ 0.03928 ? (c/255)/12.92 : (((c/255)+0.055)/1.055)^2.4
-L          = 0.2126·R' + 0.7152·G' + 0.0722·B'
-ratio      = (L_lighter + 0.05) / (L_darker + 0.05)
-```
-
-| Ratio | Level | Effect |
+| Event | Emitted when | Additional properties |
 |---|---|---|
-| ≥ 7 | AAA | Pass, shown grey |
-| ≥ 4.5 | AA | Pass, shown grey |
-| < 4.5 | Fail | Red inline readout + a validation **warning** (does not block saving) |
+| `impression` | The popup becomes visible to the agent | — |
+| `cta_click` | A CTA is tapped, before navigation | Tracking key of the CTA tapped |
+| `close` | The popup is dismissed — close control, backdrop click, or swipe-down on app | Dismissal method |
 
-The default primary colour is `#047857` (5.48:1 on white), chosen because emerald-600 `#059669` fails at 3.77:1.
+Events are recorded per agent, which allows every metric below to be sliced by cohort retrospectively — including for cohorts defined after the campaign ran.
 
----
+### 11.2 Per-popup metrics
 
-## 9. Targeting and triggers
-
-One trigger per popup. Required fields by type:
-
-| Type | Requires | Fires |
+| Metric | Definition | Formula |
 |---|---|---|
-| `session` | — | First authenticated load of a session |
-| `page` | `pageKey` | On landing on that page |
-| `scroll` | `pageKey`, `scrollDepthPct` (1–100) | When the user passes that scroll depth on that page |
-| `event` | `eventKey` | After the named action succeeds |
+| **Impressions** | Times the popup was rendered | `count(impression)` |
+| **Total clicks** | Taps across all CTAs on the popup | `Σ cta_click` across tracking keys |
+| **Click-through rate (CTR)** | Clicks per impression | `total clicks ÷ impressions` |
+| **Dismissal rate** | Share of impressions dismissed | `closes ÷ impressions` |
+| **CTA clicks** | Taps on one specific CTA | `count(cta_click where tracking_key = k)` |
+| **CTA click-through rate** | That CTA's clicks per impression | `CTA clicks ÷ impressions` |
+| **Share of clicks** | Attention split between the CTAs | `CTA clicks ÷ total clicks` |
 
-**Audience:** one searchable dropdown — "All users" (default) or a single cohort, stored as `cohortIncludeIds: [id]`. Exclusions exist in the model but have no UI.
+### 11.3 Portfolio metrics (per surface)
 
----
+Both surfaces are always on screen, side by side, so neither is hidden behind a filter. Each panel is computed over every popup on that surface.
 
-## 10. Priority and grouping
-
-### Grouping key
-
-`groupPopupsByContext` buckets popups by `surface | trigger.type | pageKey|eventKey | scrollDepthPct`. That bucket is the competition: only one popup can show per view, so ranking only means anything inside it.
-
-Group order: surface (app, then web) → trigger type (`session`, `page`, `scroll`, `event`) → label alphabetically. Within a group, ascending `priority`.
-
-### Two-step ranking
-
-Ranking never changes from the list — a stray drag must not reshuffle live traffic. **Manage priority** opens a dedicated screen, scoped to the current surface:
-
-- Drag handles reorder within a group; ordering is local state.
-- **Save & apply** is disabled until the order actually differs from the stored order, then writes `priority = index + 1` per group.
-- **Cancel** discards.
-- Status controls on this screen are live, not deferred: rows render the latest record so an approval repaints immediately while ordering stays uncommitted.
-
----
-
-## 11. Status lifecycle and approval
-
-```
-Draft ──save & send──▶ Not Live ──approve──▶ Live ⇄ Off
-```
-
-| Status | Meaning | Where it changes |
-|---|---|---|
-| `Draft` | Incomplete or parked | Builder → Save draft |
-| `Not Live` | Complete, waiting on review | Builder → Send for approval |
-| `Live` | Serving | Priority screen → Preview to activate → **Approve & Make Live** |
-| `Off` | Manually stopped | List row menu → Turn off, or the priority screen's Live/Off button |
-
-Approval lives only on the priority screen (mirroring Templates). The list row menu offers Preview, Edit and Turn on/off. App-managed popups (`managedExternally`) expose Preview only — no edit, no status toggle — and show a lock note instead of a creative preview.
-
----
-
-## 12. Metrics — definitions and formulas
-
-All metrics derive from `popup.stats`, which a backend owns in production. `safeDivide` returns **0** whenever the denominator is 0, so an unlaunched popup reads 0.0% rather than `NaN`.
-
-### 12.1 Inputs
-
-| Counter | Definition | Emitted when |
-|---|---|---|
-| `impressions` | Times the popup rendered | Popup becomes visible |
-| `closes` | Times the popup was dismissed | Close chip, backdrop tap, or swipe-down |
-| `buttonClicks[analyticsKey]` | Clicks per CTA, keyed by the author's analytics key | CTA tapped, before the redirect |
-| `byDevice` | Impressions split by device | Alongside each impression |
-
-### 12.2 Per-popup formulas
-
-| Metric | Formula | Notes |
-|---|---|---|
-| Total clicks | `Σ buttonClicks[*]` | Sums every CTA on the popup |
-| **CTR** | `total clicks ÷ impressions` | Can exceed 100% if one impression yields taps on both CTAs — it is clicks per impression, not clickers per impression |
-| **Dismiss rate** | `closes ÷ impressions` | A CTA tap is not a close, so CTR + dismiss rate need not reach 100% |
-| Per-button clicks | `buttonClicks[button.analyticsKey]`, defaulting to 0 | Missing key ⇒ 0, never an error |
-| Per-button CTR | `button clicks ÷ impressions` | Comparable across buttons of one popup |
-| Share of clicks | `button clicks ÷ total clicks` | Splits attention between the two CTAs; 0 when there are no clicks |
-
-An unmatched `analyticsKey` (renamed after data was collected) silently reads 0 — historic clicks stay in `stats` but stop being attributed. Treat renaming a live key as starting a new series.
-
-### 12.3 Per-surface aggregates (the two stats panels)
-
-Computed over every popup on that surface — not just the filtered or searched rows.
-
-| Panel metric | Formula |
+| Metric | Formula |
 |---|---|
-| **Live** | count of popups with `status === 'Live'` |
-| **Impressions** | `Σ impressions` |
-| **Avg CTR** | `(Σ clicks) ÷ (Σ impressions)` |
-| **Dismiss** | `(Σ closes) ÷ (Σ impressions)` |
+| **Live popups** | Count of popups with status Live on that surface |
+| **Impressions** | `Σ impressions` across the surface's popups |
+| **Average CTR** | `(Σ clicks) ÷ (Σ impressions)` |
+| **Dismissal rate** | `(Σ closes) ÷ (Σ impressions)` |
 
-"Avg CTR" is a **ratio of sums, not an average of ratios** — a popup with 12,840 impressions counts proportionally more than one with 940. This is deliberate: an average of per-popup CTRs would let a tiny popup swing the surface number.
+**Average CTR is a ratio of sums, not a mean of per-popup rates.** A popup with 12,000 impressions must weigh proportionally more than one with 900; averaging the rates would let a low-volume popup swing the surface figure and mislead a portfolio decision.
 
-### 12.4 Formatting
+### 11.4 Interpretation rules and edge cases
 
-- Counts: `toLocaleString('en-IN')` → `12,840`, `1,20,000` at lakh scale.
-- Percentages: one decimal → `15.0%`, `46.3%`.
-- Zero-traffic popups show "No data yet" in the list instead of `0 · 0.0%`.
-- All numeric cells use tabular figures so columns align.
+These are stated explicitly because each one has caused a misread in comparable systems:
 
----
+1. **CTR can exceed 100%.** It is clicks per impression, not clickers per impression — a two-CTA popup can produce two clicks from one impression. A distinct-agent CTR is a Phase 3 addition (§11.5).
+2. **CTR and dismissal rate do not sum to 100%.** A CTA tap is not a dismissal, and an agent may leave the popup by navigating away, so a share of impressions resolves as neither.
+3. **Zero impressions yields zero, never an error.** Any rate over an empty denominator reports 0.0%, and unlaunched popups are labelled "no data yet" rather than shown as 0% performance.
+4. **A renamed tracking key starts a new series.** Historic clicks remain attached to the old key and stop being attributed to the renamed CTA. Renaming a key on a live popup is therefore treated as a breaking change.
+5. **Counts are formatted to the Indian numbering system** (12,840 / 1,20,000); rates to one decimal place.
 
-## 13. Backend contract
+### 11.5 Deferred metrics (Phase 3+)
 
-The UI assumes two endpoints. Neither exists yet; the shapes below are what the client is written against.
-
-### `GET /popups/eligible?surface=&page=&user=`
-
-Returns the winning popup for the context, plus any scroll-triggered popups for that page (pre-fetched so they fire without a round trip). The server must run these gates **in order** and stop at the first failure:
-
-1. **Live + schedule** — `status === 'Live'`.
-2. **Surface + trigger** — popup's surface equals the request surface; trigger type matches, and `pageKey` / `eventKey` / scroll threshold match.
-3. **Cohort** — user is in an included cohort (or the popup has none), and in no excluded cohort.
-4. **Frequency / suppression** — from per-user state: not dismissed, not completed, `impressionCount < maxImpressions`, hours since `lastShownAt` ≥ `cooldownHours`, and ≥ `minGapHours` since any popup.
-5. **Priority** — lowest `priority` number among survivors wins; everything else is suppressed for that view.
-
-Per-user state the server must keep: `{ user_id, popup_id, impression_count, last_shown_at, dismissed_at, completed_at }` — server-side, because an agent uses ACN on phone and desktop and a dismissal must persist across both.
-
-### `POST /popups/events`
-
-Ingests `impression | cta_click | close`, carrying `popup_id`, `button_id` / `analytics_key`, `user_id`, `surface`, `page_key`, `device`, `created_at`. These are the counters §12 reads back.
+| Metric | Requires |
+|---|---|
+| Unique reach (distinct agents who saw the popup) | Distinct-agent aggregation |
+| Distinct-agent CTR | Distinct-agent aggregation |
+| Suppression breakdown (which gate blocked delivery, and how often) | Gate-level eligibility logging |
+| Frequency exhaustion (share of the audience at cap) | Per-agent state reporting |
+| Downstream conversion (did the CTA lead to the target action?) | Attribution join with product events |
 
 ---
 
-## 14. Open questions
+## 12. Non-functional requirements
 
-1. **Web anatomy.** Only the mobile design exists. Web still renders the older centred-card model with buttons over the artwork's well. If web should adopt the poster + action-area anatomy, the registry and `PopupOverlayPreview` change.
-2. **Toast design.** Node `170:614` carries the note but no toast frame; the current styling is a system default. A design would replace it.
-3. **Event keys.** Only `add_inventory_success` is confirmed; the other two are placeholders until the client exposes the callbacks.
-4. **App route keys.** Assumes `home | properties | my_business | service`; needs confirming against the real app navigation.
-5. **Image limits.** 780×1000 / 1440×1080 / 2 MB are working figures.
-6. **Multi-cohort targeting.** The dropdown is single-select today; the field is an array, so multi-select is additive.
-7. **Counting triggers** ("N enquiries in 1 day") remain deferred — they need a scheduled job flagging eligible users into a table the eligibility API reads.
-
----
-
-## 15. File map
-
-```
-src/data/mockPopups.js                  8 seeded popups incl. the app-managed delist popup
-
-src/components/Popups/
-  popupConstants.js       enums, image limits, sheet defaults, label helpers
-  popupTemplates.js       layout registry: aspect, buttonCount, web slot geometry
-  popupValidation.js      validatePopup + describeTrigger / describeFrequency / describeTargeting
-  contrast.js             WCAG luminance + ratio + level
-  sampleImageColor.js     poster bottom-edge colour sampling
-  popupStats.js           every metric in §12
-  groupPopups.js          trigger-context grouping + ordering
-  usePopups.js            state hook: save, setStatus, toggleLive, reorderPriority, createEmptyPopup
-
-  PopupsTab.jsx           screen: stats panels, toolbar, grouped list, preview modal
-  PopupsToolbar.jsx       surface switch, search, Manage priority, New popup
-  PopupGroup.jsx          one trigger-context group
-  PopupRow.jsx            list row
-  StatusChip.jsx          the one status vocabulary
-  RowMenu.jsx             row overflow menu
-  PopupPriorityManager.jsx  two-step ranking + approval
-  PopupViewModal.jsx      preview + configuration + performance
-
-  PopupBuilder.jsx        builder shell, template remap, colour sampling trigger
-  PopupCanvas.jsx         device frame, guides toggle, toast toggle
-  PopupSheetPreview.jsx   app bottom sheet renderer (§3.1)
-  PopupOverlayPreview.jsx web card renderer (§3.2)
-  DesktopFrameMock.jsx    browser chrome mock
-  DividerStar.jsx         exported Figma star
-  ImageUploadField.jsx    upload + type/size/dimension checks
-  ColorField.jsx          swatch + hex input
-  CohortSelect.jsx        searchable audience dropdown
-  settings/Section.jsx    numbered section wrapper
-  settings/CreativeSection.jsx | ButtonsSection.jsx | PlacementSection.jsx | DeliverySection.jsx
-
-src/components/Cohorts/CohortsPage.jsx  hosts the Popups tab + builder/priority routing
-index.html                              loads Inter for the app preview
-```
+| # | Requirement | Target |
+|---|---|---|
+| NFR-1 | Eligibility resolution adds no perceptible delay to a page or session load | ≤ 100 ms p95, resolved server-side |
+| NFR-2 | Scroll-triggered popups appear without a round trip at the threshold | Pre-resolved with the page payload |
+| NFR-3 | A popup turned off stops being served promptly | ≤ 2 minutes to full propagation |
+| NFR-4 | Creative delivery does not degrade a slow connection | ≤ 2 MB per creative; CDN-served; popup never blocks page interactivity |
+| NFR-5 | Suppression state is consistent across an agent's devices | Server-authoritative per-agent state |
+| NFR-6 | Event loss does not distort reporting | ≤ 1% event loss; impressions and clicks reconciled daily |
+| NFR-7 | No personally identifiable data is embedded in popup configuration or destination URLs | Enforced at authoring |
+| NFR-8 | The system degrades safely | If eligibility cannot be resolved, no popup is shown; the product is never blocked |
 
 ---
 
-## 16. Verification performed
+## 13. Release plan
 
-- `npm run build` → exit 0.
-- `npx eslint src/components/Popups src/data/mockPopups.js` → 0 problems. (`CohortsPage.jsx` still reports one pre-existing `handlePrioritySave` unused-var error that predates this work.)
-- Manual walkthrough in Chrome: create and edit popups on both surfaces; layout switching; colour sampling (`#04352A` → `#065F46`, matching the poster fill); contrast pass and fail states; toast text preview; guides overlay; audience search; save → Not Live → approve → Live; per-group ranking with Save & apply gated on a real change; app-managed popup restricted to Preview.
-- Not exercised by automation: drag-reorder (synthetic instant drags do not satisfy dnd-kit's pointer-move constraint — the same limitation applies to the existing Templates priority screen) and the file-upload path.
+| Phase | Scope | Acceptance criteria |
+|---|---|---|
+| **1 — Renderer** | Popup rendering on App and Web; layout templates; close and CTA behaviour; event emission | A configured popup renders identically across phone sizes and desktop viewports, with the CTA correctly placed at every size; taps route correctly and emit events |
+| **2 — Authoring** | Creative upload, layout selection, CTA configuration, contrast guard, poster colour matching, guide overlay, live preview | A non-engineer creates a complete popup end to end without assistance, and the rendered result matches the preview |
+| **3 — Orchestration** | Triggers, cohort targeting, frequency and suppression, priority, approval workflow, reporting | Triggers fire on the correct surfaces and moments; frequency and suppression hold across sessions and devices; only one popup ever shows per view; every live popup reports impressions, CTR and dismissal rate |
+| **4 — Counting triggers** | Behavioural "N in a time window" triggers | A counting-triggered popup fires within the agreed latency of the qualifying behaviour |
+
+Phases 1–3 constitute a complete, shippable product covering all non-counting placements on both surfaces.
+
+---
+
+## 14. Risks, dependencies and open questions
+
+### 14.1 Risks
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Popup fatigue trains agents to reflex-dismiss | Erodes the channel, including retention nudges | One-per-view rule; capped by default; portfolio dismissal rate tracked as a health metric (G4) |
+| Artwork does not leave the reserved area clear, and the CTA overlaps the design | Unusable popup reaches agents | Published design templates per layout; guide overlay in authoring; visual check at approval (§10.4) |
+| Multiple teams launch into the same moment | Campaigns cannibalise each other | Competition sets are explicit, and ranking within a set is a deliberate, reviewed action |
+| Unreadable CTA colours ship | Accessibility failure, lost clicks | Live contrast grading at authoring; visible to the reviewer at approval |
+| A single gap setting is interpreted differently by authors and by the server | Under- or over-throttling of the whole channel | Resolve OQ-4 before Phase 3 build; state the chosen scope in the field's help text |
+| Channel used for messages better suited to email or WhatsApp | Diminishing returns per popup | Editorial guideline: in-product placement is for in-product actions |
+
+### 14.2 Dependencies
+
+| Dependency | Owner | Needed by |
+|---|---|---|
+| Cohort membership available at eligibility time | Platform | Phase 3 |
+| Client success callbacks for event triggers | App / Web engineering | Phase 3 |
+| Confirmed app screen and route identifiers | App engineering | Phase 1 |
+| Design templates per layout, with reserved areas marked | Design | Phase 2 |
+| Event pipeline and reporting tables | Data | Phase 3 |
+
+### 14.3 Open questions
+
+| # | Question | Needed for | Owner |
+|---|---|---|---|
+| OQ-1 | Is the post-action toast one confirmation per popup, or one per CTA? | Phase 2 | Product |
+| OQ-2 | Should the toast carry an action of its own — an undo, or a link — as the design notes suggest? | Phase 2 | Design |
+| OQ-3 | Is the app native or a webview, and what are the exact route identifiers for page triggers? | Phase 1 | App engineering |
+| OQ-4 | Does Minimum gap mean "before this popup shows again" or "before any popup shows again"? | Phase 3 | Product |
+| OQ-5 | Should audience targeting support multiple cohorts and exclusions, and when? | Phase 3 | Marketing |
+| OQ-6 | Who owns the approval decision — Product, Marketing lead, or a rotating reviewer? | Phase 3 | Product |
+| OQ-7 | What is the acceptable latency for counting triggers — near-real-time, or is hourly sufficient? | Phase 4 | Growth |
+
+**Closed since v1**
+
+| Question | Resolution |
+|---|---|
+| Should Web adopt the app's anatomy, or its own? | Resolved from design: web is a 910:436 banner with the CTAs drawn over a reserved well in the artwork (§6.2). The web creative spec changes accordingly. |
+| Is the toast an image or text? | Text, authored per popup, system-styled (§10.3). |
+
+---
+
+## 15. Glossary
+
+| Term | Definition |
+|---|---|
+| **Surface** | A delivery channel: App or Web. A popup belongs to exactly one. |
+| **Creative** | The uploaded image carrying the design, copy and art — the *poster* on app, the *banner* on web. |
+| **Action area** | The solid block beneath the poster on app, containing the divider and the CTAs. |
+| **CTA well** | The area of the web banner the artwork must leave clear, where the system draws the divider and CTAs. |
+| **Competition set** | Surface plus trigger context — the group within which popups contend for a single view. |
+| **Cohort** | An existing platform-defined segment of agents. |
+| **Suppression** | The state in which a popup is no longer eligible for a specific agent. |
+| **Tracking key** | A stable identifier on a CTA, used to attribute clicks in reporting. |

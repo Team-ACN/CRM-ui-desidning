@@ -42,8 +42,8 @@ const CreativeSection = ({ popup, validation, onChange, onSurfaceChange, onTempl
         />
       ) : (
         <ImageUploadField
-          label="Web creative"
-          hint={`4:3 · ${IMAGE_CONSTRAINTS.desktopMinWidth}×${IMAGE_CONSTRAINTS.desktopMinHeight}`}
+          label="Web banner"
+          hint={`910:436 · ${IMAGE_CONSTRAINTS.desktopMinWidth}×${IMAGE_CONSTRAINTS.desktopMinHeight}`}
           value={popup.imageUrlDesktop}
           minWidth={IMAGE_CONSTRAINTS.desktopMinWidth}
           minHeight={IMAGE_CONSTRAINTS.desktopMinHeight}

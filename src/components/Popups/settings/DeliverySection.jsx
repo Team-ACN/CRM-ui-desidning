@@ -25,18 +25,12 @@ const DeliverySection = ({ popup, validation, onChange }) => {
 
   return (
     <Section step={4} title="How often" hint="Capped by default so a popup can never nag.">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <NumberField
           label="Max shows"
           min={1}
           value={frequency.maxImpressions ?? 1}
           onChange={(maxImpressions) => updateFrequency({ maxImpressions: maxImpressions ?? 1 })}
-        />
-        <NumberField
-          label="Cooldown (h)"
-          placeholder="—"
-          value={frequency.cooldownHours}
-          onChange={(cooldownHours) => updateFrequency({ cooldownHours })}
         />
         <NumberField
           label="Min gap (h)"

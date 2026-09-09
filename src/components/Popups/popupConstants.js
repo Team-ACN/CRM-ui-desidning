@@ -71,9 +71,9 @@ export const IMAGE_CONSTRAINTS = {
   // App poster — 390x500 @2x, per the mobile spec
   minWidth: 780,
   minHeight: 1000,
-  // Landscape creative — web on a desktop
-  desktopMinWidth: 1440,
-  desktopMinHeight: 1080,
+  // Landscape banner — web, 910x436 at 2x
+  desktopMinWidth: 1820,
+  desktopMinHeight: 872,
 };
 
 export const isApp = (popup) => popup?.surface === 'app';
@@ -82,12 +82,30 @@ export const DEFAULT_BACKDROP_OPACITY = 0.6;
 
 // App sheet: the poster is a fixed 39:50 block, with a solid action area under it.
 export const POSTER_ASPECT = 39 / 50;
+
+// Web card: a 910x436 banner. The system draws the divider and the CTAs over the
+// artwork, inside the well the creative leaves clear on its left side.
+// Geometry below is in design points on that 910x436 card (Figma node 207:1634).
+export const WEB_BANNER_ASPECT = 910 / 436;
+export const WEB_CARD_WIDTH = 910;
+// The well is anchored to its bottom edge (48pt above the card's base), so a single
+// CTA sits where the second one would — the block grows upward, not downward.
+export const WEB_WELL = {
+  x: 48,
+  bottomInset: 48,
+  width: 420,
+  dividerHeight: 21,
+  dividerGap: 12,
+  ctaHeight: 48,
+  ctaGap: 11,
+  closeSize: 30,
+  closeInset: 8,
+};
 export const DEFAULT_ACTION_BAR_COLOR = '#111111';
 export const DEFAULT_DIVIDER_LABEL = 'TRY IT YOURSELF';
 
 export const DEFAULT_FREQUENCY = {
   maxImpressions: 1,
-  cooldownHours: null,
   minGapHours: null,
 };
 
