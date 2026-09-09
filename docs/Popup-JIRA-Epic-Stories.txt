@@ -1,0 +1,282 @@
+================================================================
+JIRA PLAN — POPUP CMS
+Source: docs/Popup-PRD.txt
+Written: 2026-09-09
+================================================================
+
+EPIC
+Name: Popup CMS (author, approve, deliver, measure)
+Key (suggested): POP
+
+Summary
+Marketing makes a popup, a reviewer approves it, and the product shows
+it to the right agents at the right moment. No code change. No app
+release.
+
+What a popup is
+- One image made by Marketing. All design and copy sit in the image.
+- The product draws the rest: dim backdrop, close button, divider
+  label, and 0 / 1 / 2 CTA buttons.
+- App = sheet at the bottom (poster 39:50).
+- Web = centred card (banner 910x436), buttons over a clear area.
+
+Four safety rules (hold for every popup)
+1. One popup per view.
+2. A new popup shows once per agent unless the author raises the cap.
+3. It stops showing after dismiss, after the action is done, at the
+   cap, or inside the minimum gap.
+4. Nothing reaches an agent before a reviewer approves it.
+
+Epic done when
+- Brief to live in under 1 working day, with no release.
+- Every live popup reports impressions, CTR and dismissal rate.
+- A popup turned off stops showing within 2 minutes.
+
+Out of scope (v1)
+Layout editor · blocking popups · counting triggers ("5 enquiries in a
+day") · A/B tests · full audit log · new cohort engine · more than one
+cohort per popup · combined triggers.
+
+Stories
+1. CMS — Popup page UI
+2. CMS — Priority page UI
+3. CMS — Popup builder UI
+4. CMS — Popup builder backend
+5. CMS — Delivery engine backend
+6. CMS — Analytics backend
+
+
+================================================================
+1. CMS — Popup page UI
+================================================================
+As a marketing manager, I want one page listing every popup so that I
+can see what is running and how it performs.
+
+Done
+- App and Web tabs. App is default. Chosen tab is remembered.
+- Two stats panels shown together (App and Web), each with: live
+  popups, impressions, average CTR, dismissal rate.
+- Average CTR = total clicks / total impressions, not the mean of each
+  popup's CTR.
+- Popups are grouped by where they show, e.g. "Home page",
+  "My Business - 50% scroll", "Session start", "Event: inventory
+  added". Groups open and close.
+- Each row: thumbnail, name, status chip (Draft / Waiting approval /
+  Live / Paused), trigger, audience, priority, impressions, CTR,
+  dismissal rate.
+- A popup that never went live shows "No data yet", not 0%.
+- Search by name; filter by status, trigger and page; sort by newest,
+  impressions, CTR; "Clear all" resets.
+- Clicking a row opens a preview that renders the popup exactly as an
+  agent sees it (app sheet or web card) plus its targeting, frequency
+  and CTA destinations.
+- Row actions: Edit, Duplicate, Turn on, Turn off, Delete. Turn on is
+  blocked until approved, with the reason shown. Turn off and Delete
+  ask to confirm.
+- One popup's metrics view shows impressions, total clicks, CTR,
+  dismissal rate, and per CTA: clicks, CTR, share of clicks. With a
+  note that CTR can pass 100% on a two-button popup, and that CTR and
+  dismissal rate do not add to 100%.
+- Counts use Indian format (12,840 / 1,20,000). Rates show 1 decimal.
+  Zero impressions shows 0.0%, never an error.
+- Loading skeletons, empty state with "Create popup", no-results state,
+  and a load error with Retry.
+- Works down to 1280px wide. Keyboard reachable. Modals trap focus.
+
+
+================================================================
+2. CMS — Priority page UI
+================================================================
+As a reviewer, I want one screen to rank and approve popups so that I
+control what an agent actually sees.
+
+Done
+- Scoped to one surface at a time.
+- Popups are listed inside their competition set (surface + trigger
+  context). Ranking happens only inside a set. Rank 1 is highest.
+- Drag to reorder, plus a keyboard way to move an item up or down.
+- Nothing changes for live traffic until Save. Unsaved changes warn and
+  block leaving. Cancel restores the saved order.
+- If someone else saved first, the save is rejected and the page asks
+  to reload.
+- Each waiting popup shows its preview plus targeting and frequency,
+  with Approve and Send back buttons.
+- Send back needs a short note, shown to the author.
+- Only the reviewer role sees Approve and Send back. An author cannot
+  approve their own popup.
+- An unapproved popup can never be turned on.
+
+
+================================================================
+3. CMS — Popup builder UI
+================================================================
+As a marketing manager, I want a simple builder so that I can ship a
+popup without a designer or an engineer.
+
+Done
+- Four steps: Creative, Buttons, Targeting, Review. Move back and
+  forward. "Save draft" works at any step. Leaving unsaved asks to
+  confirm.
+- Surface: App or Web (App default). It sets the required image shape
+  and which fields show. Changing it after upload warns the image must
+  be replaced.
+- Upload: PNG / JPEG / WebP, max 2 MB. Ratio must be 39:50 (app) or
+  910:436 (web), else blocked with the required ratio shown. Below the
+  minimum pixel size warns but is allowed. Image is never cropped.
+- Template: No button / One button / Two buttons (default One). Fixed
+  system list. "No button" hides the divider and CTA forms and makes
+  the whole image the link with one destination URL.
+- Guide overlay can be turned on over the image, marking the reserved
+  area (app action-area seam, web CTA well) and the close button zone.
+- App only: action area colour is suggested from the image (bottom 4%
+  of height, middle 60% of width) and marked "Matched", with a manual
+  override. If it cannot be read, the author is asked to set it.
+- Per button: label, background colour, label colour, destination URL,
+  tracking key. URL must be http(s). Tracking key unique in the popup.
+  Contrast at least 4.5:1 or blocked. No personal data in URLs.
+- Divider label (default "TRY IT YOURSELF") and toast message (max 80
+  chars, empty means none), both with a character count. Text is
+  authored, look is fixed.
+- Web only: close button corner (top right default). It can never be
+  removed.
+- Trigger: exactly one — Session start, Page context, or Event.
+  ("Counting" shown as coming later, disabled.) Page needs Home /
+  Properties / My Business / Service. Scroll depth 1-100% (default
+  50%). Event needs inventory added / enquiry submitted / profile
+  completed. Fields that do not apply are hidden.
+- Audience: "All users" by default, or one cohort from a searchable
+  list of existing cohorts.
+- Frequency: max shows per agent (min 1, default 1) and optional
+  minimum gap in hours, explained in plain words.
+- Priority is read-only here and defaults to lowest, with a link to the
+  Priority page.
+- Live preview beside the form updates as fields change, showing the
+  real image, colours, labels, template and the fixed parts.
+- Review step lists everything and shows a problem list; each item
+  jumps to its field. "Submit for approval" stays disabled until the
+  list is empty. After submit the popup is read-only.
+- Editing a live popup warns that changes reach agents on save.
+  Renaming a tracking key or replacing the creative needs a confirm.
+
+
+================================================================
+4. CMS — Popup builder backend
+================================================================
+As a backend developer, I want APIs behind the CMS so that popups are
+stored, validated and approved safely.
+
+Done
+- Popup schema holds: name, surface, creative, template, close corner,
+  divider label, action area colour, toast, buttons (0-2 with label,
+  colours, URL, tracking key), trigger, page, scroll depth, event,
+  audience, max shows, minimum gap, priority, status. Plus created by /
+  at, updated at, approved by / at.
+- Statuses: Draft, Waiting approval, Approved, Live, Paused. Backdrop
+  opacity is fixed at 60% by the system.
+- Create, get, update, list, delete. List filters by surface, status,
+  trigger, page, plus name search and paging.
+- Every write is validated on the server, not only in the UI, and
+  returns field-level errors. A popup in Waiting approval cannot be
+  edited. Deleting keeps past events for reporting.
+- Image upload checks type, size (2 MB) and ratio; flags below-minimum
+  size as a warning; stores and serves from the CDN; returns the
+  sampled action-area colour, or a flag to set it by hand.
+- Cohort lookup returns id, name and size from the existing platform
+  capability, with search and paging. A cohort that no longer exists
+  blocks the popup going live.
+- Approval endpoints: submit, approve, send back with a note. Reviewer
+  role only. An author cannot approve their own popup. Approve records
+  who and when. Editing an approved popup's creative, buttons or
+  targeting sends it back to Draft.
+- Priority save takes one surface and the full ordered set, is
+  all-or-nothing, keeps ranks unique, and rejects a stale save with a
+  conflict. There is no single-item move endpoint.
+- Status endpoint sets Live or Paused. Live is rejected unless the
+  popup is Approved and valid. Changes record who and when.
+- Server also enforces: http(s) URLs only, no personal data in config
+  or URLs, contrast 4.5:1, CTA minimum height 48pt, close control can
+  never be turned off.
+
+
+================================================================
+5. CMS — Delivery engine backend
+================================================================
+As a backend developer, I want one resolver so that the four safety
+rules hold for every popup, on every device.
+
+Done
+- Input: agent, surface, page, scroll depth or event.
+- Gates run in this order and stop at the first failure:
+  1. Status is Live.
+  2. Surface and trigger match the moment.
+  3. Agent is in the cohort, or the popup targets all users.
+  4. Frequency and suppression allow it.
+  5. Highest priority survivor wins.
+- Exactly one popup is returned. The rest are dropped for that view and
+  never queued.
+- Audience is checked before frequency, so the cheap filter runs first.
+- Per-agent state stores shows so far, last shown time, dismissed, and
+  action completed. It is server-side, so a dismissal on the phone also
+  holds on desktop.
+- A popup with no frequency settings behaves as "once per agent, ever".
+- Scroll popups are sent with the page payload, so the client makes no
+  extra call at the threshold. If nothing qualifies, the payload says
+  so.
+- Resolution adds no more than 100 ms at p95.
+- A popup turned off stops being served everywhere within 2 minutes.
+  Responses are not cacheable past their moment.
+- If resolution fails for any reason, no popup is returned and the
+  product is never blocked.
+
+
+================================================================
+6. CMS — Analytics backend
+================================================================
+As a data analyst, I want events and metrics so that every popup can be
+judged.
+
+Done
+- Events endpoint accepts impression, cta_click and close, in batches.
+- Every event carries popup id, agent id, surface, page, device,
+  timestamp. cta_click adds the tracking key; close adds the method
+  (close button, backdrop, swipe, Esc, back).
+- A repeat send of the same event is not counted twice. Event loss
+  stays at or under 1%.
+- Per-popup metrics: impressions, total clicks, CTR, dismissal rate,
+  and per CTA clicks, CTA CTR and share of clicks.
+- Per-surface metrics: live popup count, impressions, average CTR,
+  dismissal rate. Average CTR is total clicks / total impressions.
+- Zero impressions returns 0, never an error or NaN. A popup that never
+  went live is marked "no data yet".
+- A renamed tracking key starts a new series. Old clicks stay on the
+  old key.
+- Events are stored per agent, so results can be sliced by cohort
+  later, including cohorts made after the campaign ran.
+- A daily job compares stored counts against raw events, alerts if the
+  gap passes 1%, and is safe to run twice.
+
+
+================================================================
+ORDER OF WORK
+================================================================
+Sprint 1  Story 4  (model, CRUD, image, approval, priority, status)
+Sprint 2  Story 3  (builder UI)
+Sprint 3  Stories 1 + 2  (popup page, priority page)
+Sprint 4  Story 5  (delivery engine)
+Sprint 5  Story 6  (events and metrics)
+
+Stories 1 and 2 read mock numbers until story 6 lands.
+Client rendering is a separate epic: docs/Popup-Client-JIRA-Epic-Stories.txt
+
+
+================================================================
+DEFERRED
+================================================================
+Counting triggers (Phase 4) · unique reach and distinct-agent CTR
+(Phase 3) · suppression breakdown by gate · frequency exhaustion ·
+downstream conversion · A/B variants · layout editor · full audit log ·
+multiple cohorts per popup · combined triggers.
+
+================================================================
+END
+================================================================
