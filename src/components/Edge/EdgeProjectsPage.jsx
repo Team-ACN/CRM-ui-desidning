@@ -3,6 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Building2, PlusCircle, Loader2, Search, X, Edit2, Image as ImageIcon, ImagePlus, Filter, Map, FileText, ChevronDown, Check } from 'lucide-react';
 import { getProjects, getBuilders, ZONES, LAYOUTS, BUILDER_CATEGORIES } from '../../data/mockEdge';
 
+function WhatsAppIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.29-1.39a9.9 9.9 0 0 0 4.75 1.21h.01c5.46 0 9.9-4.45 9.9-9.91C21.96 6.45 17.5 2 12.04 2zm0 18.14h-.01a8.2 8.2 0 0 1-4.2-1.15l-.3-.18-3.14.82.84-3.06-.2-.31a8.19 8.19 0 0 1-1.26-4.35c0-4.52 3.68-8.2 8.2-8.2 2.19 0 4.25.85 5.8 2.4a8.15 8.15 0 0 1 2.4 5.8c0 4.52-3.68 8.2-8.13 8.2zm4.5-6.14c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.53.06-.25-.12-1.04-.38-1.98-1.22-.73-.65-1.23-1.46-1.37-1.7-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.42-.14-.01-.31-.01-.48-.01a.92.92 0 0 0-.67.31c-.23.25-.87.85-.87 2.07 0 1.22.89 2.4 1.02 2.57.12.17 1.75 2.67 4.25 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.08.14-1.18-.06-.1-.23-.16-.48-.28z" />
+    </svg>
+  );
+}
+
 const DEFAULT_STATUSES = ['live', 'drafted'];
 
 const STATUS_OPTIONS = [
@@ -209,6 +217,7 @@ export default function EdgeProjectsPage() {
   // Filters — each is an array of selected values; [] means "All" for that dimension
   const PAGE_SIZE = 20;
   const [page, setPage] = useState(1);
+  const [copiedId, setCopiedId] = useState(null);
   const [search, setSearch] = useState(() => savedFilters?.search ?? '');
   const [showFilters, setShowFilters] = useState(() => savedFilters?.showFilters ?? false);
   const [statusFilter, setStatusFilter] = useState(() => savedFilters?.statusFilter ?? DEFAULT_STATUSES);
@@ -248,6 +257,18 @@ export default function EdgeProjectsPage() {
 
   function openCreate() { navigate('/edge/projects/new'); }
   function openEdit(p) { navigate(`/edge/projects/${p.id}`); }
+
+  function copyForWhatsApp(p) {
+    const name = p.name || p.codename || 'Project';
+    const location = [p.micromarket, zoneShort(p.zone)].filter(Boolean).join(', ');
+    let msg = `*${name}*\n\n`;
+    if (p.pricing) msg += `${p.pricing}\n`;
+    if (location) msg += `${location}\n`;
+    msg += `https://acn-edge.vercel.app/?project=${p.id}&s=w`;
+    navigator.clipboard.writeText(msg);
+    setCopiedId(p.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  }
 
   function clearAllFilters() {
     setSearch('');
@@ -512,9 +533,18 @@ export default function EdgeProjectsPage() {
                       </td>
                       <td className="px-4 py-3 font-medium text-stone-700">{getNextPossession(p)}</td>
                       <td className="px-4 py-3 sticky right-0 bg-white group-hover:bg-stone-50 border-l border-stone-200">
-                        <button onClick={() => openEdit(p)} title="Details / Edit" className="inline-flex items-center justify-center p-2 rounded-lg font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors">
-                          <Edit2 size={14} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => openEdit(p)} title="Details / Edit" className="inline-flex items-center justify-center p-2 rounded-lg font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors">
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => copyForWhatsApp(p)}
+                            title={copiedId === p.id ? 'Copied!' : 'Copy for WhatsApp'}
+                            className={`inline-flex items-center justify-center p-2 rounded-lg font-medium transition-all ${copiedId === p.id ? 'bg-neutral-900 text-white scale-95' : 'text-stone-700 bg-stone-100 hover:bg-stone-200'}`}
+                          >
+                            {copiedId === p.id ? <Check size={14} /> : <WhatsAppIcon size={14} />}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
