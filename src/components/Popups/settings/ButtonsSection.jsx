@@ -22,6 +22,7 @@ const inputClass =
 // only steps in when the automatic match is wrong.
 const ActionColorField = ({ popup, onChange, onMatchPoster }) => {
   const isMatched = popup.matchPosterColor !== false;
+  const creativeWord = popup.surface === 'app' ? 'poster' : 'banner';
 
   return (
     <div>
@@ -52,14 +53,14 @@ const ActionColorField = ({ popup, onChange, onMatchPoster }) => {
       <div className="flex items-center justify-between mt-1">
         <p className="text-[10px] text-gray-400">
           {isMatched
-            ? "Taken from the poster's bottom edge."
-            : 'Set by hand — may not line up with the poster.'}
+            ? `Taken from the ${creativeWord}'s bottom edge.`
+            : `Set by hand — may not line up with the ${creativeWord}.`}
         </p>
         <button
           onClick={() => onMatchPoster(!isMatched)}
           className="text-[10px] font-medium text-emerald-600 hover:text-emerald-700 transition-colors cursor-pointer shrink-0"
         >
-          {isMatched ? 'Set manually' : 'Match poster'}
+          {isMatched ? 'Set manually' : `Match ${creativeWord}`}
         </button>
       </div>
     </div>
@@ -81,7 +82,9 @@ const ActionAreaFields = ({ popup, onChange, onMatchPoster }) => (
       </p>
     </Field>
 
-    <ActionColorField popup={popup} onChange={onChange} onMatchPoster={onMatchPoster} />
+    {popup.surface === 'app' && (
+      <ActionColorField popup={popup} onChange={onChange} onMatchPoster={onMatchPoster} />
+    )}
   </>
 );
 
@@ -137,7 +140,7 @@ const ButtonsSection = ({
       <Section
         step={2}
         title="Destination"
-        hint={isApp ? 'No button — the poster itself is the link.' : 'No button — the whole card is one link.'}
+        hint={isApp ? 'No button — the poster itself is the link.' : 'No button — the whole banner is one link.'}
       >
         {isApp && (
           <ActionColorField popup={popup} onChange={onChange} onMatchPoster={onMatchPoster} />
@@ -162,7 +165,7 @@ const ButtonsSection = ({
           />
         </Field>
 
-        {isApp && <ToastField popup={popup} onChange={onChange} />}
+        <ToastField popup={popup} onChange={onChange} />
       </Section>
     );
   }
@@ -170,16 +173,14 @@ const ButtonsSection = ({
   return (
     <Section
       step={2}
-      title={isApp ? 'Action area' : 'Buttons'}
+      title={isApp ? 'Action area' : 'Call to action'}
       hint={
         isApp
           ? 'Buttons sit in a solid strip under the poster.'
-          : 'Rendered by the system, over the well in your image.'
+          : "Drawn over the banner, inside the well the artwork leaves clear."
       }
     >
-      {isApp && (
-        <ActionAreaFields popup={popup} onChange={onChange} onMatchPoster={onMatchPoster} />
-      )}
+      <ActionAreaFields popup={popup} onChange={onChange} onMatchPoster={onMatchPoster} />
 
       {template.slots.map((slot) => {
         const button = (popup.buttons || []).find((b) => b.slotIndex === slot.index) || {};
@@ -256,7 +257,7 @@ const ButtonsSection = ({
         );
       })}
 
-      {isApp && <ToastField popup={popup} onChange={onChange} />}
+      <ToastField popup={popup} onChange={onChange} />
     </Section>
   );
 };

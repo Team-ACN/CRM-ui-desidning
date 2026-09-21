@@ -12,9 +12,12 @@ function draftFromBuilder(b) {
   return { ...b, contacts: [first ? { ...first } : { name: '', designation: '', mobile: '' }] };
 }
 
+const PAGE_SIZE = 20;
+
 export default function EdgeDevelopersPage() {
   const [refreshTick, setRefreshTick] = useState(0);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
   const logoInputRef = useRef(null);
@@ -33,6 +36,18 @@ export default function EdgeDevelopersPage() {
   const filtered = builders.filter(b => {
     return b.builderName.toLowerCase().includes(search.toLowerCase()) || b.id.toLowerCase().includes(search.toLowerCase());
   }).sort((a, b) => b.id.localeCompare(a.id));
+
+  // Reset to page 1 whenever the search changes — done during render (React's documented
+  // "adjust state while rendering" pattern) rather than in an effect.
+  const [prevSearch, setPrevSearch] = useState(search);
+  if (search !== prevSearch) {
+    setPrevSearch(search);
+    setPage(1);
+  }
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   function openEdit(b) {
     setDraft(draftFromBuilder(b));
@@ -137,7 +152,7 @@ export default function EdgeDevelopersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {filtered.map(b => {
+              {paged.map(b => {
                 const contact = b.contacts?.[0] || {};
                 return (
                   <tr key={b.id} onClick={() => openEdit(b)} className="hover:bg-stone-50/50 transition-colors group cursor-pointer">
@@ -151,7 +166,7 @@ export default function EdgeDevelopersPage() {
                             <Building2 size={20} className="text-stone-300" />
                           )}
                         </div>
-                        <span className="font-semibold text-stone-900 group-hover:underline">{b.builderName}</span>
+                        <span className="text-base font-semibold text-stone-900 group-hover:underline">{b.builderName}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-stone-600">{b.category || '-'}</td>
@@ -180,6 +195,31 @@ export default function EdgeDevelopersPage() {
             </tbody>
           </table>
         )}
+      </div>
+
+      {/* Pagination — a shrink-0 sibling of the scroll container, so it stays fixed at the
+          bottom of the page and never scrolls away with the table rows. */}
+      <div className="shrink-0 px-6 py-3 bg-white border-t border-stone-200 flex items-center justify-between text-[13px] text-stone-500">
+        <span>
+          {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length}
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1.5 rounded-lg border border-stone-200 font-medium hover:bg-stone-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+          >
+            Prev
+          </button>
+          <span className="font-medium text-stone-700 px-2">Page {currentPage} of {totalPages}</span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1.5 rounded-lg border border-stone-200 font-medium hover:bg-stone-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {/* Edit Developer modal */}
