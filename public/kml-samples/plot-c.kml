@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Sample Site Boundary — Plot C (clear, no overlap)</name>
+    <Placemark>
+      <name>Plot C</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              77.6850,12.9005,0
+              77.6890,12.9005,0
+              77.6890,12.9035,0
+              77.6850,12.9035,0
+              77.6850,12.9005,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Sample Site Boundary — Plot B (overlaps Plot A)</name>
+    <Placemark>
+      <name>Plot B</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              77.7500,12.9710,0
+              77.7535,12.9710,0
+              77.7535,12.9737,0
+              77.7500,12.9737,0
+              77.7500,12.9710,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

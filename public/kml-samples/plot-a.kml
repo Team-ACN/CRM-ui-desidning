@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Sample Site Boundary — Plot A</name>
+    <Placemark>
+      <name>Plot A</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              77.7480,12.9698,0
+              77.7515,12.9698,0
+              77.7515,12.9725,0
+              77.7480,12.9725,0
+              77.7480,12.9698,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

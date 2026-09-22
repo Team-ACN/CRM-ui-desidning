@@ -18,6 +18,8 @@ import EdgePostEditorPage from './components/Edge/EdgePostEditorPage';
 import EdgeProjectsPage from './components/Edge/EdgeProjectsPage';
 import EdgeDevelopersPage from './components/Edge/EdgeDevelopersPage';
 import EdgeProjectEditorPage from './components/Edge/EdgeProjectEditorPage';
+import EcPipelinePage from './components/Edge/EcPipelinePage';
+import EcFilingEditorPage from './components/Edge/EcFilingEditorPage';
 
 function App() {
   return (
@@ -45,6 +47,8 @@ function App() {
           <Route path="/edge/project/developers" element={<EdgeDevelopersPage />} />
           <Route path="/edge/projects/new" element={<EdgeProjectEditorPage />} />
           <Route path="/edge/projects/:id" element={<EdgeProjectEditorPage />} />
+          <Route path="/ec" element={<EcPipelinePage />} />
+          <Route path="/ec/:id" element={<EcFilingEditorPage />} />
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </Layout>

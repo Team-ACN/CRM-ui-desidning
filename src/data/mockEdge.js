@@ -2234,24 +2234,34 @@ export function deletePost(id) {
 // which developers' projects surface first, independent of the project's own launch stage.
 export const BUILDER_CATEGORIES = ['A', 'B', 'C', 'D'];
 
+// A developer (e.g. "Embassy Group") is often just an umbrella brand — the RERA registrations
+// underneath it are filed by separate promoter entities (e.g. "Embassy Springs LLP"). This is
+// just a flat list of those entity names; where each one came from (typed in, RERA, Restack)
+// will matter once the backfill scripts land, but isn't tracked per-entry yet.
 export function blankBuilder() {
   return {
     builderName: '',
     builderLogo: null,
     category: 'C',
     contacts: [],
+    promoters: [],
   };
 }
 
 let builders = [
-  { id: 'B0001', builderName: 'Prestige Group', builderLogo: null, category: 'A', contacts: [{ name: 'Ramesh Kumar', designation: 'Sales Head', mobile: '9800000001' }] },
-  { id: 'B0002', builderName: 'Sobha Limited', builderLogo: null, category: 'A', contacts: [{ name: 'Anitha Rao', designation: 'CRM Manager', mobile: '9800000002' }] },
-  { id: 'B0003', builderName: 'Brigade Group', builderLogo: null, category: 'B', contacts: [{ name: 'Kiran Shetty', designation: 'Sales Head', mobile: '9800000003' }] },
-  { id: 'B0004', builderName: 'Puravankara', builderLogo: null, category: 'B', contacts: [{ name: 'Meera Nair', designation: 'CRM Manager', mobile: '9800000004' }] },
-  { id: 'B0005', builderName: 'Adarsh Group', builderLogo: null, category: 'C', contacts: [{ name: 'Vikram Rao', designation: 'Sales Manager', mobile: '9800000005' }] },
-  { id: 'B0006', builderName: 'Century Real Estate', builderLogo: null, category: 'C', contacts: [{ name: 'Divya Suresh', designation: 'Sales Manager', mobile: '9800000006' }] },
-  { id: 'B0007', builderName: 'Shriram Properties', builderLogo: null, category: 'D', contacts: [{ name: 'Arjun Kumar', designation: 'Sales Executive', mobile: '9800000007' }] },
-  { id: 'B0008', builderName: 'Salarpuria Sattva', builderLogo: null, category: 'D', contacts: [{ name: 'Pooja Iyer', designation: 'Sales Executive', mobile: '9800000008' }] },
+  { id: 'B0001', builderName: 'Prestige Group', builderLogo: null, category: 'A', contacts: [{ name: 'Ramesh Kumar', designation: 'Sales Head', mobile: '9800000001' }], promoters: [] },
+  { id: 'B0002', builderName: 'Sobha Limited', builderLogo: null, category: 'A', contacts: [{ name: 'Anitha Rao', designation: 'CRM Manager', mobile: '9800000002' }], promoters: [] },
+  { id: 'B0003', builderName: 'Brigade Group', builderLogo: null, category: 'B', contacts: [{ name: 'Kiran Shetty', designation: 'Sales Head', mobile: '9800000003' }], promoters: [] },
+  { id: 'B0004', builderName: 'Puravankara', builderLogo: null, category: 'B', contacts: [{ name: 'Meera Nair', designation: 'CRM Manager', mobile: '9800000004' }], promoters: [] },
+  { id: 'B0005', builderName: 'Adarsh Group', builderLogo: null, category: 'C', contacts: [{ name: 'Vikram Rao', designation: 'Sales Manager', mobile: '9800000005' }], promoters: [] },
+  { id: 'B0006', builderName: 'Century Real Estate', builderLogo: null, category: 'C', contacts: [{ name: 'Divya Suresh', designation: 'Sales Manager', mobile: '9800000006' }], promoters: [] },
+  { id: 'B0007', builderName: 'Shriram Properties', builderLogo: null, category: 'D', contacts: [{ name: 'Arjun Kumar', designation: 'Sales Executive', mobile: '9800000007' }], promoters: [] },
+  { id: 'B0008', builderName: 'Salarpuria Sattva', builderLogo: null, category: 'D', contacts: [{ name: 'Pooja Iyer', designation: 'Sales Executive', mobile: '9800000008' }], promoters: [] },
+  {
+    id: 'B0009', builderName: 'Embassy Group', builderLogo: null, category: 'A',
+    contacts: [{ name: 'Neel Kapadia', designation: 'Sales Head', mobile: '9800000009' }],
+    promoters: ['Embassy Springs LLP', 'Embassy Pristine Properties Pvt Ltd', 'Embassy One Developers Pvt Ltd'],
+  },
 ];
 
 export function getBuilders() { return [...builders]; }
