@@ -3,7 +3,7 @@ import { Smartphone, Monitor, Frame, MessageSquare } from 'lucide-react';
 import AppHeaderMock from '../Cohorts/AppHeaderMock';
 import PropertiesHeaderMock from '../Cohorts/PropertiesHeaderMock';
 import DesktopFrameMock from './DesktopFrameMock';
-import PopupOverlayPreview from './PopupOverlayPreview';
+import PopupBannerPreview from './PopupBannerPreview';
 import PopupSheetPreview from './PopupSheetPreview';
 import { pageLabel } from './popupConstants';
 
@@ -34,12 +34,12 @@ const PopupCanvas = ({
   const isApp = popup.surface === 'app';
   const page = popup.trigger?.pageKey ? pageLabel(popup.trigger.pageKey) : 'Home';
 
-  const overlay = (cardWidth, previewDevice) => (
-    <PopupOverlayPreview
+  const banner = (
+    <PopupBannerPreview
       popup={popup}
-      device={previewDevice}
-      cardWidth={cardWidth}
+      width={640}
       showSlots={showSlots}
+      showToast={showToast}
       selectedSlotIndex={selectedSlotIndex}
       onSelectSlot={onSelectSlot}
     />
@@ -77,20 +77,18 @@ const PopupCanvas = ({
           {showSlots ? 'Hide guides' : 'Show guides'}
         </button>
 
-        {isApp && (
-          <button
-            onClick={onToggleToast}
-            title="Preview the toast that appears after a CTA tap"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
-              showToast
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : 'bg-white text-gray-500 border-gray-200 hover:text-gray-700'
-            }`}
-          >
-            <MessageSquare size={14} />
-            Toast
-          </button>
-        )}
+        <button
+          onClick={onToggleToast}
+          title="Preview the toast that appears after a CTA tap"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+            showToast
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-white text-gray-500 border-gray-200 hover:text-gray-700'
+          }`}
+        >
+          <MessageSquare size={14} />
+          Toast
+        </button>
       </div>
 
       <div className="flex-1 flex flex-col items-center pb-8 px-6">
@@ -108,7 +106,7 @@ const PopupCanvas = ({
           </PhoneFrame>
         ) : (
           <div className="origin-top scale-[0.82]">
-            <DesktopFrameMock pageLabel={page}>{overlay(420, 'desktop')}</DesktopFrameMock>
+            <DesktopFrameMock pageLabel={page}>{banner}</DesktopFrameMock>
           </div>
         )}
 

@@ -1,12 +1,13 @@
 import React, { useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Search, Plus, X } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Search, Plus, Sparkles, X } from 'lucide-react';
 import PropertiesStatsCards from './PropertiesStatsCards';
 import PropertiesFilters from './PropertiesFilters';
 import PropertiesTable from './PropertiesTable';
 import { mockPropertiesStats, mockProperties } from '../../data/mockProperties';
 
 const PropertiesPage = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Get filter from URL
@@ -74,9 +75,21 @@ const PropertiesPage = () => {
         </div>
 
         {/* Add Inventory Button */}
-        <button className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+        <button 
+          onClick={() => navigate('/properties/new')}
+          className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        >
           <Plus size={18} />
           Add Inventory
+        </button>
+
+        {/* Paste a listing and let AI fill the same form */}
+        <button 
+          onClick={() => navigate('/properties/new?mode=ai')}
+          className="flex items-center gap-2 border border-violet-300 bg-violet-50 hover:bg-violet-100 text-violet-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        >
+          <Sparkles size={18} />
+          Add with AI
         </button>
       </div>
     </header>

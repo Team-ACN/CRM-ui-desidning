@@ -11,6 +11,7 @@ import CohortsPage from './components/Cohorts/CohortsPage';
 import HomePage from './components/Home/HomePage';
 import AgentDetailsPage from './components/Agents/AgentDetailsPage';
 import BulkUploadPage from './components/BulkUpload/BulkUploadPage';
+import AddInventoryPage from './components/AddInventory/AddInventoryPage';
 import EdgeDashboardPage from './components/Edge/EdgeDashboardPage';
 import EdgeHomeFeedPage from './components/Edge/EdgeHomeFeedPage';
 import EdgePostsPage from './components/Edge/EdgePostsPage';
@@ -32,6 +33,7 @@ function App() {
           <Route path="/agents/:id" element={<AgentDetailsPage />} />
           <Route path="/leads" element={<LeadsPage />} />
           <Route path="/properties" element={<PropertiesPage />} />
+          <Route path="/properties/new" element={<AddInventoryPage />} />
           <Route path="/bulk-upload" element={<BulkUploadPage />} />
           <Route path="/requirements" element={<RequirementsPage />} />
           <Route path="/enquiries" element={<EnquiriesPage />} />

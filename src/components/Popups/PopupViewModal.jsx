@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, CheckCircle, Info, Smartphone, Monitor, Lock } from 'lucide-react';
-import PopupOverlayPreview from './PopupOverlayPreview';
+import PopupBannerPreview from './PopupBannerPreview';
 import PopupSheetPreview from './PopupSheetPreview';
 import { STATUS_STYLES, surfaceLabel } from './popupConstants';
 import { getTemplate } from './popupTemplates';
@@ -99,13 +99,13 @@ const PopupViewModal = ({ isOpen, popup, cohorts, onClose, onMakeLive }) => {
 
               <div
                 className={`relative bg-gray-300 rounded-2xl overflow-hidden border border-gray-300 ${
-                  device === 'mobile' ? 'w-[320px] h-[620px]' : 'w-[560px] h-[400px]'
+                  device === 'mobile' ? 'w-[320px] h-[620px]' : 'w-[560px] h-[440px]'
                 }`}
               >
                 {device === 'mobile' ? (
                   <PopupSheetPreview popup={popup} width={320} />
                 ) : (
-                  <PopupOverlayPreview popup={popup} device={device} cardWidth={300} />
+                  <PopupBannerPreview popup={popup} width={500} />
                 )}
               </div>
             </div>
