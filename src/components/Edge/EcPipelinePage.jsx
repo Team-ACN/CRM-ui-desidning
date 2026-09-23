@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Search, X, Filter, ChevronDown, RefreshCw, MapPin, FileText,
-  Building2, Workflow,
+  ArrowLeft, Search, X, Filter, ChevronDown, MapPin, FileText,
+  Building2, Workflow, Sparkles, Loader2, ClipboardPaste,
 } from 'lucide-react';
 import {
   getEcScrapes, runScraper, hasMoreIncoming,
@@ -104,6 +104,101 @@ function ManualCheckBadge({ value }) {
   );
 }
 
+const SAMPLE_LISTING_TEXT = `SIA/KA/INFRA2/12560/2026 — EC
+Godrej Aqua Phase 1
+Proponent: Godrej Properties Limited
+Submitted: ${new Date().toISOString().slice(0, 10)}`;
+
+const STATUS_LINES = ['Reading the listing…', 'Matching SIA ID…', 'Resolving proponent…'];
+const STATUS_INTERVAL_MS = 450;
+
+function StatusTicker() {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setIndex(i => (i + 1) % STATUS_LINES.length), STATUS_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, []);
+  return <span>{STATUS_LINES[index]}</span>;
+}
+
+// Same "paste text → AI fills it in" entry point as Add Inventory's AiPasteModal, adapted for a
+// raw EC/ToR listing instead of a property. There's no real NLP here (no backend) — extraction is
+// simulated with a short delay, then the next queued incoming filing (runScraper's mock data) is
+// what actually gets created, same as the old Run Scraper button did.
+function AiExtractModal({ isOpen, isExtracting, onExtract, onClose }) {
+  const [text, setText] = useState('');
+  if (!isOpen) return null;
+  const canExtract = text.trim().length > 20 && !isExtracting;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
+        <header className="flex items-start justify-between gap-4 px-6 py-5 border-b border-stone-200">
+          <div className="flex gap-3">
+            <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet-100 text-violet-700 shrink-0">
+              <Sparkles size={20} />
+            </span>
+            <div>
+              <h2 className="text-lg font-bold text-stone-900">AI Extraction</h2>
+              <p className="text-sm text-stone-500">Paste the raw SEIAA listing text — a new filing gets created and filled in for you.</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="p-1 text-stone-400 hover:text-stone-900">
+            <X size={20} />
+          </button>
+        </header>
+
+        <div className="px-6 py-5 flex flex-col gap-3 overflow-y-auto">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-semibold text-stone-900">Listing text</label>
+            <button
+              type="button"
+              onClick={() => setText(SAMPLE_LISTING_TEXT)}
+              className="flex items-center gap-1 text-xs font-medium text-violet-700 hover:text-violet-900"
+            >
+              <ClipboardPaste size={13} />
+              Use a sample
+            </button>
+          </div>
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            disabled={isExtracting}
+            rows={8}
+            placeholder={'Paste the SEIAA portal row or notice text here…'}
+            className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent resize-y disabled:bg-stone-50"
+          />
+          <div className="flex items-center justify-between text-xs text-stone-400">
+            <span>{text.trim().length} characters</span>
+            <span>Nothing is submitted until you review the filing.</span>
+          </div>
+        </div>
+
+        <footer className="flex items-center justify-between gap-3 px-6 py-4 border-t border-stone-200">
+          <span className="flex items-center gap-2 text-xs text-stone-500">
+            {isExtracting && <Loader2 size={14} className="animate-spin text-violet-600" />}
+            {isExtracting && <StatusTicker />}
+          </span>
+          <div className="flex gap-3">
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-stone-200 text-sm font-medium text-stone-700 hover:bg-stone-50">
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={!canExtract}
+              onClick={() => onExtract()}
+              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:bg-stone-200 disabled:text-stone-400 text-white text-sm font-medium transition-colors"
+            >
+              {isExtracting ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+              {isExtracting ? 'Extracting…' : 'Extract with AI'}
+            </button>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
 
 export default function EcPipelinePage() {
   const [refreshTick, setRefreshTick] = useState(0);
@@ -118,6 +213,8 @@ export default function EcPipelinePage() {
   const [kmlFilter, setKmlFilter] = useState([]);
   const [sitePlanFilter, setSitePlanFilter] = useState([]);
   const [overallFilter, setOverallFilter] = useState([]);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiExtracting, setAiExtracting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -173,10 +270,18 @@ export default function EcPipelinePage() {
   const currentPage = Math.min(page, totalPages);
   const paged = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  function handleRunScraper() {
-    const added = runScraper();
-    refresh();
-    if (added) navigate(`/ec/${added.id}`);
+  // The actual "extraction" is mocked — there's no NLP backend — but the pasted text triggers a
+  // believable delay before the next queued incoming filing (runScraper's data) gets created,
+  // same underlying mechanism the old Run Scraper button used.
+  function handleAiExtract() {
+    setAiExtracting(true);
+    setTimeout(() => {
+      const added = runScraper();
+      setAiExtracting(false);
+      setAiModalOpen(false);
+      refresh();
+      if (added) navigate(`/ec/${added.id}`);
+    }, 1100);
   }
 
   return (
@@ -195,11 +300,11 @@ export default function EcPipelinePage() {
         <div className="flex items-center gap-4">
           <span className="font-medium text-stone-400 px-3 py-1 bg-stone-100 rounded-full">{scrapes.length} Filings</span>
           <button
-            onClick={handleRunScraper}
+            onClick={() => setAiModalOpen(true)}
             disabled={!hasMoreIncoming()}
             className="flex items-center gap-2 px-5 py-2 bg-neutral-900 text-white rounded-xl font-medium hover:bg-neutral-800 transition-colors shadow-sm whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <RefreshCw size={16} /> Run Scraper
+            <Sparkles size={16} /> AI Extraction
           </button>
         </div>
       </header>
@@ -309,6 +414,12 @@ export default function EcPipelinePage() {
         </div>
       </div>
 
+      <AiExtractModal
+        isOpen={aiModalOpen}
+        isExtracting={aiExtracting}
+        onExtract={handleAiExtract}
+        onClose={() => setAiModalOpen(false)}
+      />
     </div>
   );
 }
