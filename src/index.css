@@ -1,7 +1,77 @@
 @import "tailwindcss";
 
+/*
+ * CMS design tokens — Apple-style: neutral grey surfaces, one accent,
+ * hairline separators, system type. Used as Tailwind utilities, e.g.
+ * bg-canvas, bg-surface, bg-fill, text-label, text-secondary, border-separator, text-accent.
+ */
+@theme {
+  --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+
+  --color-canvas: #f5f5f7;
+  --color-surface: #ffffff;
+  --color-fill: #ededf0;
+  --color-fill-strong: #e3e3e8;
+  --color-separator: rgb(60 60 67 / 0.12);
+
+  --color-label: #1d1d1f;
+  --color-secondary: #6e6e73;
+  --color-tertiary: #a1a1a6;
+
+  --color-accent: #0f766e;
+  --color-accent-hover: #0c625b;
+  --color-accent-soft: rgb(15 118 110 / 0.1);
+
+  --color-positive: #248a3d;
+  --color-positive-dot: #34c759;
+  --color-warning: #b25000;
+  --color-warning-dot: #ff9f0a;
+  --color-danger: #d70015;
+  --color-danger-soft: rgb(255 59 48 / 0.1);
+
+  --shadow-card: 0 0 0 1px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-raised: 0 0 0 1px rgb(0 0 0 / 0.04), 0 12px 40px rgb(0 0 0 / 0.12);
+
+  --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --animate-sheet-in: sheet-in 320ms var(--ease-apple);
+  --animate-scrim-in: scrim-in 240ms ease-out;
+
+  @keyframes sheet-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.97); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes scrim-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900;
+  }
+
+  /* CMS scope: system font, comfortable leading, crisp rendering */
+  .cms {
+    font-family: var(--font-system);
+    -webkit-font-smoothing: antialiased;
+    @apply text-label;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cms *,
+  .cms *::before,
+  .cms *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .cms .material {
+    background-color: var(--color-surface) !important;
+    backdrop-filter: none !important;
   }
 }
