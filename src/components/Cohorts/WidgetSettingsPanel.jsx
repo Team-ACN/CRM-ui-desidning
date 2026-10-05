@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { availableWidgets } from '../../data/mockCohorts';
 import { Trash2, Plus, ArrowLeft, Upload, Check, Puzzle, Layers, Search, X, Hash } from 'lucide-react';
+import TopBannerSettings from './TopBannerSettings';
 
 const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponentBuilder, isComponent, componentName, onOpenComponentBuilder, components = [], pageType }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -122,6 +123,9 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
     }
 
     switch (widget.type) {
+      case 'top_banner':
+        return <TopBannerSettings config={config} onChange={handleUpdate} />;
+
       case 'inventory_discovery':
         return (
           <div className="space-y-4">
@@ -402,7 +406,8 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
       )}
       <div className={`flex-1 overflow-y-auto ${hideHeader ? 'p-0' : 'p-4'}`}>
         
-        {/* Global Widget Settings (Applies to all) */}
+        {/* Global Widget Settings (Applies to all except the hero, which has no heading) */}
+        {widget.type !== 'top_banner' && (
         <div className="mb-6 space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Section Heading</label>
@@ -415,6 +420,7 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
             />
           </div>
         </div>
+        )}
 
         {/* Dynamic Widget Specific Configuration */}
         {renderConfig()}

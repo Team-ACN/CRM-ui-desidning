@@ -1,7 +1,8 @@
 import React from 'react';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Monitor } from 'lucide-react';
+import { Monitor, ImageIcon, ChevronDown, Plus, Bell } from 'lucide-react';
 import WidgetPreview from './WidgetPreview';
+import { TOP_BANNER_SPEC } from './topBannerSpec';
 
 const WebsiteFooter = () => {
   return (
@@ -85,52 +86,86 @@ const WebsiteFooter = () => {
   );
 };
 
-const WebsiteHeader = () => {
-  return (
-    <div className="relative">
-      <div className="bg-[#262626] text-[#F5F5F5] h-10 flex items-center px-3">
-        <div className="flex-1 flex items-center gap-2 text-[12px] font-medium font-['Inter'] opacity-90">
-          <span className="inline-block w-2.5 h-2.5 rounded bg-[#FDE047]" />
-          <span>2BHK in Sobha Dream Acres</span>
-          <span className="inline-block w-1 h-1 rounded-full bg-[#F5F5F5]" />
-          <span>1200 sqft sold for ₹1.25Cr on 12 Jan</span>
+// Hero image is right-anchored so the safe area stays visible while the left side crops.
+const heroStyle = (imageUrl) => ({
+  aspectRatio: `${TOP_BANNER_SPEC.width} / ${TOP_BANNER_SPEC.height}`,
+  backgroundImage: imageUrl ? `url(${imageUrl})` : undefined,
+  backgroundSize: 'cover',
+  backgroundPosition: 'right center',
+});
+
+const HeroControls = ({ hasImage, isSelected }) => (
+  <>
+    <div className={`absolute top-[72px] left-3 z-10 flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider ${
+      isSelected ? 'bg-emerald-600 text-white' : 'bg-white/90 text-gray-700'
+    }`}>
+      <ImageIcon size={12} /> Top Banner
+    </div>
+    {!hasImage && (
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <p className="text-sm font-medium text-gray-500 bg-white/80 px-3 py-1.5 rounded-lg">
+          Upload a {TOP_BANNER_SPEC.width}×{TOP_BANNER_SPEC.height} hero image in widget settings
+        </p>
+      </div>
+    )}
+  </>
+);
+
+// Matches Figma "Header" (Home-Page file, node 10120:11296)
+const NAV_LINKS = [
+  { label: 'My Business' },
+  { label: 'Properties' },
+  { label: 'Services', hasDropdown: true },
+  { label: 'Edge', hasDropdown: true },
+];
+
+const WebsiteNav = () => (
+  <div className="relative z-10 flex items-center justify-between">
+    <span className="text-white text-[22px] font-bold tracking-tight font-['Outfit']">ACN</span>
+    <div className="flex items-center gap-6">
+      <nav className="hidden md:flex items-center gap-8 text-[#FAFAFA] text-base tracking-[0.04px] font-['Outfit']">
+        {NAV_LINKS.map(({ label, hasDropdown }) => (
+          <span key={label} className="flex items-center gap-1">
+            {label}
+            {hasDropdown && <ChevronDown size={16} />}
+          </span>
+        ))}
+      </nav>
+      <div className="flex items-center gap-3">
+        <button className="h-10 px-3 flex items-center gap-1.5 rounded-lg bg-[#FAFAFA] text-[#115E59] text-sm font-medium font-['Inter']">
+          <Plus size={16} /> Add Property
+        </button>
+        <div className="h-10 px-4 flex items-center gap-1.5 rounded-lg bg-[#FAFAFA] border-[1.5px] border-[#E5E5E5]">
+          <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#D6A75B] to-[#8A5A1F]" />
+          <span className="text-base font-semibold text-[#0F766E] font-['Outfit']">100</span>
         </div>
-        <div className="hidden md:flex items-center gap-3 text-[12px] text-[#FFE4E6] font-['Inter']">
-          <span>Why Bangalore property prices are rising in 2026</span>
-          <span className="inline-block w-2 h-2 rounded bg-[#CA8A04]" />
+        <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-[#FAFAFA] border-[1.5px] border-[#E5E5E5] text-[#262626]">
+          <Bell size={16} />
+        </div>
+        <div className="h-10 w-10 rounded-full bg-[#F5F5F5] border-[1.5px] border-[#E5E5E5] flex items-center justify-center text-[#262626] text-xl font-bold font-['Outfit']">
+          A
         </div>
       </div>
+    </div>
+  </div>
+);
 
-      <div className="bg-gradient-to-b from-[#7BAEE1] to-[#CFE1EF]">
-        <div className="px-12 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <div className="w-14 h-6 bg-white/20 rounded" />
-            </div>
-            <div className="hidden md:flex items-center gap-8 text-white text-sm font-['Outfit']">
-              <span>My Business</span>
-              <span>Properties</span>
-              <span>Rent</span>
-              <span>My Wallet</span>
-              <span>Need Help</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="h-10 px-4 rounded-lg bg-white text-[#115E59] text-sm font-medium font-['Inter']">
-                Add Inventory
-              </button>
-              <div className="h-10 w-10 rounded-lg bg-white/90 border border-white/40" />
-              <div className="h-10 w-10 rounded-full bg-white/90 border border-white/40 flex items-center justify-center text-[#262626] font-bold font-['Outfit']">
-                A
-              </div>
-            </div>
-          </div>
+const WebsiteHeader = ({ hero, isHeroSelected, onSelectHero }) => {
+  const heroImage = hero?.config?.imageUrl;
+  return (
+    <div className="relative">
+      <div
+        onClick={onSelectHero}
+        style={heroStyle(heroImage)}
+        className={`relative bg-gray-200 bg-no-repeat cursor-pointer ${isHeroSelected ? 'ring-4 ring-inset ring-emerald-500' : ''}`}
+      >
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
+        <HeroControls hasImage={!!heroImage} isSelected={isHeroSelected} />
+        <div className="px-12 py-3">
+          <WebsiteNav />
 
-          <div className="mt-10 max-w-[780px]">
-            <h1 className="text-white text-[40px] leading-[1.2] font-semibold font-['Outfit']">
-              Search best inventories for your client from 10,000+ options
-            </h1>
-
-            <div className="mt-6 w-[720px] max-w-full bg-[#FAFAFA] border border-[#E5E5E5] rounded-2xl overflow-hidden shadow-sm">
+          <div className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 z-10 w-[720px] max-w-[90%]">
+            <div className="w-[720px] max-w-full bg-[#FAFAFA] border border-[#E5E5E5] rounded-2xl overflow-hidden shadow-sm">
               <div className="flex items-center bg-white px-3 h-14 gap-4 border-b border-[#D4D4D4]">
                 <div className="text-sm font-semibold text-[#0F766E] border-b-2 border-[#0F766E] h-full flex items-center px-2 font-['Outfit']">
                   Resale (50)
@@ -158,7 +193,6 @@ const WebsiteHeader = () => {
             </div>
           </div>
         </div>
-        <div className="h-10" />
       </div>
     </div>
   );
@@ -172,18 +206,24 @@ const WebsiteCanvas = ({
   onSelectWidget,
   onRemoveWidget,
 }) => {
-  const widgetIds = widgets.map((w) => w.id);
+  const hero = widgets.find((w) => w.type === 'top_banner');
+  const bodyWidgets = widgets.filter((w) => w.type !== 'top_banner');
+  const widgetIds = bodyWidgets.map((w) => w.id);
 
   return (
     <div className="w-full flex justify-center">
       <div className="w-[1180px] max-w-[95vw] bg-[#FAFAFA] rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-        <WebsiteHeader />
+        <WebsiteHeader
+          hero={hero}
+          isHeroSelected={!!hero && selectedWidgetId === hero.id}
+          onSelectHero={() => hero && onSelectWidget(hero.id)}
+        />
 
         <div
           ref={setNodeRef}
-          className={`px-12 py-10 transition-colors ${isOver ? 'bg-emerald-50/70' : ''}`}
+          className={`px-12 pt-24 pb-10 transition-colors ${isOver ? 'bg-emerald-50/70' : ''}`}
         >
-          {widgets.length === 0 ? (
+          {bodyWidgets.length === 0 ? (
             <div className="h-56 rounded-2xl border-2 border-dashed border-gray-200 bg-white flex flex-col items-center justify-center text-center">
               <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
                 <Monitor size={18} className="text-gray-400" />
@@ -194,7 +234,7 @@ const WebsiteCanvas = ({
           ) : (
             <SortableContext items={widgetIds} strategy={verticalListSortingStrategy}>
               <div className="space-y-6">
-                {widgets.map((widget) => (
+                {bodyWidgets.map((widget) => (
                   <div key={widget.id} className="max-w-[900px]">
                     <WidgetPreview
                       widget={widget}

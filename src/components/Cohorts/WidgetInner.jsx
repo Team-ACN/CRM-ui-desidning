@@ -51,6 +51,19 @@ const WidgetInner = ({ widget }) => {
         </div>
       );
 
+    case 'top_banner':
+      return (
+        <div className="p-2">
+          <div className="relative w-full aspect-[1440/378] bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
+            {config.imageUrl ? (
+              <img src={config.imageUrl} alt={config.altText || 'Top banner'} className="w-full h-full object-cover object-right" />
+            ) : (
+              <span className="text-[8px] text-gray-400">Hero image (1440×378)</span>
+            )}
+          </div>
+        </div>
+      );
+
     case 'banner_carousel':
     case 'advertisement':
       const items = config.items && config.items.length > 0 ? config.items : [{ id: 1 }];
