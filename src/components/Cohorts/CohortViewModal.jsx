@@ -1,135 +1,102 @@
 import React from 'react';
-import { X, Layers, Calendar, Users, Tag } from 'lucide-react';
+import { Calendar, Users, Tag } from 'lucide-react';
+import { Modal, Button } from '../cms-ui';
+
+const formatTag = (tag) => tag.charAt(0) + tag.slice(1).toLowerCase();
 
 const CohortViewModal = ({ isOpen, onClose, cohort, templates }) => {
   if (!isOpen || !cohort) return null;
 
   const linkedTemplates = templates.filter((t) => t.cohortId === cohort.id);
 
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-      onClick={handleBackdropClick}
+    <Modal
+      onClose={onClose}
+      title={cohort.name}
+      subtitle={cohort.description}
+      width="max-w-[520px]"
+      footer={
+        <Button variant="primary" onClick={onClose}>
+          Close
+        </Button>
+      }
     >
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-[520px] mx-4">
-        {/* Header */}
-        <div className="flex items-start justify-between p-6 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
-              <Layers size={18} className="text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">{cohort.name}</h2>
-              <p className="text-sm text-gray-500">{cohort.description}</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+      {/* Body */}
+      <div className="space-y-6">
+        {/* Status & tags */}
+        <div className="flex items-center gap-3 flex-wrap text-[13px]">
+          <span
+            className={`inline-flex items-center gap-1.5 font-medium ${
+              cohort.status === 'Active' ? 'text-positive' : 'text-secondary'
+            }`}
           >
-            <X size={20} />
-          </button>
+            <span className={`w-1.5 h-1.5 rounded-full ${cohort.isActive ? 'bg-positive-dot' : 'bg-tertiary'}`} />
+            {cohort.status}
+          </span>
+          {cohort.tags.length > 0 && (
+            <span className="text-secondary">{cohort.tags.map(formatTag).join(' · ')}</span>
+          )}
         </div>
 
-        {/* Body */}
-        <div className="px-6 pb-6 space-y-5">
-          {/* Status & tags */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <span
-              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                cohort.status === 'Active'
-                  ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
-                  : 'text-gray-500 bg-gray-50 border-gray-200'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${cohort.isActive ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-              {cohort.status}
-            </span>
-            {cohort.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2.5 py-1 bg-gray-900 text-white text-[10px] font-bold uppercase rounded tracking-wider"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          {/* Info grid */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-gray-50 rounded-xl">
-              <div className="flex items-center gap-2 text-gray-400 mb-1">
-                <Tag size={14} />
-                <span className="text-[11px] font-medium uppercase tracking-wider">Type</span>
-              </div>
-              <p className="text-sm font-medium text-gray-900">
-                {cohort.tags.join(', ')}
-              </p>
+        {/* Info grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 bg-canvas rounded-xl">
+            <div className="flex items-center gap-1.5 text-secondary mb-1">
+              <Tag size={14} strokeWidth={1.75} />
+              <span className="text-[12px] font-medium">Type</span>
             </div>
-            <div className="p-3 bg-gray-50 rounded-xl">
-              <div className="flex items-center gap-2 text-gray-400 mb-1">
-                <Users size={14} />
-                <span className="text-[11px] font-medium uppercase tracking-wider">Agents</span>
-              </div>
-              <p className="text-sm font-medium text-gray-900">
-                {cohort.agentCount || 0}
-              </p>
-            </div>
+            <p className="text-[15px] font-medium text-label">
+              {cohort.tags.map(formatTag).join(', ')}
+            </p>
           </div>
+          <div className="p-3 bg-canvas rounded-xl">
+            <div className="flex items-center gap-1.5 text-secondary mb-1">
+              <Users size={14} strokeWidth={1.75} />
+              <span className="text-[12px] font-medium">Agents</span>
+            </div>
+            <p className="text-[15px] font-medium text-label tabular-nums">
+              {cohort.agentCount || 0}
+            </p>
+          </div>
+        </div>
 
-          {/* Linked templates */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Linked Templates
-            </h3>
-            {linkedTemplates.length > 0 ? (
-              <div className="space-y-2">
-                {linkedTemplates.map((t) => (
-                  <div
-                    key={t.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{t.name}</p>
-                      <p className="text-xs text-gray-400">
-                        Priority #{t.priority} • {t.widgets.length} widgets
-                      </p>
-                    </div>
-                    <span
-                      className={`px-2 py-0.5 text-[10px] font-semibold rounded-full border ${
-                        t.status === 'Live'
-                          ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
-                          : 'text-gray-500 bg-gray-50 border-gray-200'
-                      }`}
-                    >
-                      {t.status}
-                    </span>
+        {/* Linked templates */}
+        <div>
+          <h3 className="text-[13px] font-medium text-secondary mb-2 px-1">
+            Linked templates
+          </h3>
+          {linkedTemplates.length > 0 ? (
+            <div className="bg-canvas rounded-xl divide-y divide-separator">
+              {linkedTemplates.map((t) => (
+                <div
+                  key={t.id}
+                  className="flex items-center justify-between px-3 py-2.5"
+                >
+                  <div>
+                    <p className="text-[14px] font-medium text-label">{t.name}</p>
+                    <p className="text-[12px] text-secondary tabular-nums">
+                      Priority {t.priority} · {t.widgets.length} widgets
+                    </p>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400 py-3 text-center bg-gray-50 rounded-xl">
-                No templates linked to this cohort
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end px-6 py-4 border-t border-gray-100">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            Close
-          </button>
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-[13px] font-medium ${
+                      t.status === 'Live' ? 'text-positive' : 'text-secondary'
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${t.status === 'Live' ? 'bg-positive-dot' : 'bg-tertiary'}`} />
+                    {t.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[13px] text-secondary py-4 text-center bg-canvas rounded-xl">
+              No templates linked to this cohort
+            </p>
+          )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

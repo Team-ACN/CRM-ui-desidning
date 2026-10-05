@@ -8,17 +8,17 @@ const WidgetInner = ({ widget }) => {
     case 'analytics_cards':
       return (
         <div className="flex gap-1.5 p-1.5">
-          <div className="flex-1 bg-blue-50/50 border border-blue-100 rounded p-1.5 text-center">
-            <p className="text-[10px] font-bold text-blue-900">12</p>
-            <p className="text-[7px] text-blue-600 uppercase tracking-wider mt-0.5">Properties</p>
+          <div className="flex-1 bg-fill rounded-md p-1.5 text-center">
+            <p className="text-[10px] font-semibold text-label tabular-nums">12</p>
+            <p className="text-[8px] text-secondary mt-0.5">Properties</p>
           </div>
-          <div className="flex-1 bg-emerald-50/50 border border-emerald-100 rounded p-1.5 text-center">
-            <p className="text-[10px] font-bold text-emerald-900">3</p>
-            <p className="text-[7px] text-emerald-600 uppercase tracking-wider mt-0.5">Business</p>
+          <div className="flex-1 bg-fill rounded-md p-1.5 text-center">
+            <p className="text-[10px] font-semibold text-label tabular-nums">3</p>
+            <p className="text-[8px] text-secondary mt-0.5">Business</p>
           </div>
-          <div className="flex-1 bg-purple-50/50 border border-purple-100 rounded p-1.5 text-center">
-            <p className="text-[10px] font-bold text-purple-900">8</p>
-            <p className="text-[7px] text-purple-600 uppercase tracking-wider mt-0.5">Edge</p>
+          <div className="flex-1 bg-fill rounded-md p-1.5 text-center">
+            <p className="text-[10px] font-semibold text-label tabular-nums">8</p>
+            <p className="text-[8px] text-secondary mt-0.5">Edge</p>
           </div>
         </div>
       );
@@ -27,10 +27,10 @@ const WidgetInner = ({ widget }) => {
       return (
         <div className="p-2 space-y-1.5">
           {[1, 2].map((i) => (
-            <div key={i} className="flex justify-between items-center bg-gray-50 border border-gray-100 rounded p-1.5">
-              <div className="w-16 h-2 bg-gray-200 rounded" />
-              <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center">
-                <div className="w-2 h-0.5 bg-red-500 rounded-full" />
+            <div key={i} className="flex justify-between items-center bg-fill rounded-md p-1.5">
+              <div className="w-16 h-2 bg-fill-strong rounded-full" />
+              <div className="w-4 h-4 rounded-full bg-surface flex items-center justify-center">
+                <div className="w-2 h-0.5 bg-tertiary rounded-full" />
               </div>
             </div>
           ))}
@@ -41,12 +41,25 @@ const WidgetInner = ({ widget }) => {
     case 'enquiry_feedback':
       return (
         <div className="p-2">
-          <div className="bg-gray-50 border border-gray-100 rounded p-2">
+          <div className="bg-fill rounded-md p-2">
             <div className="flex items-center gap-2 mb-1.5">
-              <div className="w-4 h-4 bg-gray-200 rounded-full" />
-              <div className="w-20 h-2 bg-gray-200 rounded" />
+              <div className="w-4 h-4 bg-fill-strong rounded-full" />
+              <div className="w-20 h-2 bg-fill-strong rounded-full" />
             </div>
-            <div className="w-full h-8 bg-white border border-gray-100 rounded mt-1" />
+            <div className="w-full h-8 bg-surface rounded-md mt-1" />
+          </div>
+        </div>
+      );
+
+    case 'top_banner':
+      return (
+        <div className="p-2">
+          <div className="relative w-full aspect-[1440/378] bg-fill rounded-md overflow-hidden flex items-center justify-center">
+            {config.imageUrl ? (
+              <img src={config.imageUrl} alt={config.altText || 'Top banner'} className="w-full h-full object-cover object-right" />
+            ) : (
+              <span className="text-[8px] text-tertiary">Hero image (1440×378)</span>
+            )}
           </div>
         </div>
       );
@@ -57,11 +70,11 @@ const WidgetInner = ({ widget }) => {
       return (
         <div className="p-2 space-y-1.5">
           {items.slice(0, 2).map((item, idx) => (
-            <div key={item.id || idx} className="relative w-full h-16 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
+            <div key={item.id || idx} className="relative w-full h-16 bg-fill rounded-md overflow-hidden flex items-center justify-center">
               {item.imageUrl ? (
                 <img src={item.imageUrl} alt="Banner" className="w-full h-full object-cover opacity-80" />
               ) : (
-                <span className="text-[8px] text-gray-400">
+                <span className="text-[8px] text-tertiary">
                   {widget.type === 'advertisement' ? 'Ad Space' : `Carousel slide ${idx + 1}`}
                 </span>
               )}
@@ -70,7 +83,7 @@ const WidgetInner = ({ widget }) => {
           {items.length > 2 && (
             <div className="w-full flex justify-center gap-0.5 mt-1">
               {items.map((_, i) => (
-                <div key={i} className={`w-1 h-1 rounded-full ${i === 0 ? 'bg-gray-800' : 'bg-gray-300'}`} />
+                <div key={i} className={`w-1 h-1 rounded-full ${i === 0 ? 'bg-secondary' : 'bg-fill-strong'}`} />
               ))}
             </div>
           )}
@@ -82,23 +95,23 @@ const WidgetInner = ({ widget }) => {
       return (
         <div className="p-2 space-y-1.5">
           {propertyIds.length > 0 && (
-            <div className="flex items-center gap-1 px-1.5 py-1 bg-amber-50 border border-amber-200 rounded">
-              <span className="text-[7px] text-amber-700 font-semibold flex items-center gap-0.5"><Pin size={8} /> {propertyIds.length} pinned {propertyIds.length === 1 ? 'property' : 'properties'}</span>
+            <div className="flex items-center gap-1 px-1.5 py-1 bg-accent-soft rounded-md">
+              <span className="text-[8px] text-accent font-medium flex items-center gap-0.5"><Pin size={8} /> {propertyIds.length} pinned {propertyIds.length === 1 ? 'property' : 'properties'}</span>
             </div>
           )}
           <div className="flex gap-1">
-            <div className="flex-1 h-5 bg-gray-50 border border-gray-200 rounded flex items-center px-1.5">
-              <span className="text-[7px] text-gray-500 truncate">{config.assetType || 'Asset Type'}</span>
+            <div className="flex-1 h-5 bg-fill rounded-md flex items-center px-1.5">
+              <span className="text-[8px] text-secondary truncate">{config.assetType || 'Asset Type'}</span>
             </div>
-            <div className="flex-1 h-5 bg-gray-50 border border-gray-200 rounded flex items-center px-1.5">
-              <span className="text-[7px] text-gray-500 truncate">{config.configuration || 'Config'}</span>
+            <div className="flex-1 h-5 bg-fill rounded-md flex items-center px-1.5">
+              <span className="text-[8px] text-secondary truncate">{config.configuration || 'Config'}</span>
             </div>
           </div>
-          <div className="w-full h-5 bg-gray-50 border border-gray-200 rounded flex items-center px-1.5">
-            <span className="text-[7px] text-gray-500 truncate">{config.zone ? `Zone: ${config.zone}` : 'Select Zone'}</span>
+          <div className="w-full h-5 bg-fill rounded-md flex items-center px-1.5">
+            <span className="text-[8px] text-secondary truncate">{config.zone ? `Zone: ${config.zone}` : 'Select Zone'}</span>
           </div>
-          <div className="w-full h-6 bg-gray-900 rounded flex items-center justify-center mt-1">
-            <span className="text-[8px] text-white font-medium">Search</span>
+          <div className="w-full h-6 bg-fill-strong rounded-md flex items-center justify-center mt-1">
+            <span className="text-[8px] text-secondary font-medium">Search</span>
           </div>
         </div>
       );
@@ -109,10 +122,10 @@ const WidgetInner = ({ widget }) => {
       return (
         <div className="p-2 flex gap-1.5 overflow-hidden">
           {[1, 2].map((i) => (
-            <div key={i} className="flex-1 min-w-[100px] bg-gray-50 rounded p-1.5 border border-gray-100">
-              <div className="w-full h-10 bg-gray-200 rounded mb-1.5" />
-              <div className="w-16 h-2 bg-gray-300 rounded mb-1" />
-              <div className="w-10 h-1.5 bg-gray-200 rounded" />
+            <div key={i} className="flex-1 min-w-[100px] bg-fill rounded-md p-1.5">
+              <div className="w-full h-10 bg-fill-strong rounded-md mb-1.5" />
+              <div className="w-16 h-2 bg-fill-strong rounded-full mb-1" />
+              <div className="w-10 h-1.5 bg-fill-strong rounded-full" />
             </div>
           ))}
         </div>
@@ -120,8 +133,8 @@ const WidgetInner = ({ widget }) => {
 
     default:
       return (
-        <div className="h-12 bg-gray-50 rounded-lg border border-dashed border-gray-200 flex items-center justify-center m-2">
-          <span className="text-[8px] text-gray-400">Configure widget</span>
+        <div className="h-12 bg-fill rounded-md flex items-center justify-center m-2">
+          <span className="text-[8px] text-tertiary">Configure widget</span>
         </div>
       );
   }

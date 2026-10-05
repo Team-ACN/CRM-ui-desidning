@@ -4,17 +4,17 @@ import { Lock } from 'lucide-react';
 // Browser-chrome mock for the desktop preview — same role as AppHeaderMock
 // in the template builder, just for web.
 const DesktopFrameMock = ({ children, pageLabel = 'Home' }) => (
-  <div className="w-[900px] h-[560px] bg-white rounded-2xl shadow-2xl border border-gray-300 overflow-hidden flex flex-col shrink-0">
+  <div className="w-[900px] h-[560px] bg-white rounded-xl shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_24px_60px_rgb(0_0_0/0.14)] overflow-hidden flex flex-col shrink-0">
     {/* Chrome */}
-    <div className="h-10 bg-gray-100 border-b border-gray-200 flex items-center gap-3 px-4 shrink-0">
+    <div className="h-10 bg-[#ececee] border-b border-black/[0.08] flex items-center gap-3 px-4 shrink-0">
       <div className="flex items-center gap-1.5">
-        <span className="w-3 h-3 rounded-full bg-red-400" />
-        <span className="w-3 h-3 rounded-full bg-yellow-400" />
-        <span className="w-3 h-3 rounded-full bg-green-400" />
+        <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+        <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
+        <span className="w-3 h-3 rounded-full bg-[#28c840]" />
       </div>
-      <div className="flex-1 flex items-center gap-2 px-3 py-1 bg-white border border-gray-200 rounded-md">
-        <Lock size={11} className="text-gray-400" />
-        <span className="text-[11px] text-gray-500">acn.example.com/{pageLabel.toLowerCase()}</span>
+      <div className="flex-1 max-w-md mx-auto flex items-center justify-center gap-1.5 h-6 px-3 bg-black/[0.05] rounded-md">
+        <Lock size={11} className="text-tertiary" />
+        <span className="text-[12px] text-secondary">acn.example.com/{pageLabel.toLowerCase()}</span>
       </div>
     </div>
 

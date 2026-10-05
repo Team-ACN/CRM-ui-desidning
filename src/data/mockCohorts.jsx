@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, BarChart3, Mail, MessageSquare, Image, Search, Building2, Key, Megaphone, Sparkles } from 'lucide-react';
+import { Trash2, BarChart3, Mail, MessageSquare, Image, Search, Building2, Key, Megaphone, Sparkles, PanelTop } from 'lucide-react';
 
 export const mockCohorts = [
   {
@@ -86,6 +86,17 @@ export const cohortTypes = [
 
 // Available widget types for the template builder
 export const availableWidgets = [
+  {
+    type: 'top_banner',
+    label: 'Top Banner (Hero)',
+    description: 'Full-width hero image behind search',
+    icon: <PanelTop size={16} />,
+    hasConfig: false,
+    pageTypes: ['WEBSITE'],
+    singleton: true,
+    isDefault: true, // auto-added to every Website template, cannot be removed
+    category: 'cms',
+  },
   {
     type: 'delist_inventories',
     label: 'Delist Inventories',

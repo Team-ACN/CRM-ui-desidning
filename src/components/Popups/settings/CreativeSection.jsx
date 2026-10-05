@@ -1,9 +1,19 @@
 import React from 'react';
+import { SegmentedControl, labelClass } from '../../cms-ui';
 import Section from './Section';
 import ImageUploadField from '../ImageUploadField';
 import { IMAGE_CONSTRAINTS, SURFACES } from '../popupConstants';
 import { POPUP_TEMPLATES } from '../popupTemplates';
 import { errorFor } from '../popupValidation';
+
+const SURFACE_OPTIONS = SURFACES.map((s) => ({ value: s.id, label: s.label }));
+const LAYOUT_OPTIONS = POPUP_TEMPLATES.map((template) => ({
+  value: template.key,
+  label: <span title={template.description}>{template.label}</span>,
+}));
+
+// Stretch segments to fill the panel width.
+const fullWidth = 'flex w-full [&>button]:flex-1 [&>button]:px-2';
 
 const CreativeSection = ({ popup, validation, onChange, onSurfaceChange, onTemplateChange }) => {
   const isApp = popup.surface === 'app';
@@ -15,21 +25,12 @@ const CreativeSection = ({ popup, validation, onChange, onSurfaceChange, onTempl
       hint="Web and app are separate popups — the surface decides the creative."
     >
       {/* Surface first: everything below depends on it */}
-      <div className="flex items-center p-1 bg-gray-100 rounded-lg">
-        {SURFACES.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => onSurfaceChange(s.id)}
-            className={`flex-1 px-2 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
-              popup.surface === s.id
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        options={SURFACE_OPTIONS}
+        value={popup.surface}
+        onChange={onSurfaceChange}
+        className={fullWidth}
+      />
 
       {isApp ? (
         <ImageUploadField
@@ -52,27 +53,18 @@ const CreativeSection = ({ popup, validation, onChange, onSurfaceChange, onTempl
       )}
 
       {errorFor(validation, 'creative') && (
-        <p className="text-[10px] text-red-600">{errorFor(validation, 'creative')}</p>
+        <p className="text-[12px] leading-4 text-danger">{errorFor(validation, 'creative')}</p>
       )}
 
-      <div className="pt-1">
-        <p className="text-[11px] font-medium text-gray-600 mb-1.5">Layout</p>
-        <div className="flex items-center p-1 bg-gray-100 rounded-lg">
-          {POPUP_TEMPLATES.map((template) => (
-            <button
-              key={template.key}
-              onClick={() => onTemplateChange(template.key)}
-              title={template.description}
-              className={`flex-1 px-2 py-1.5 text-[11px] font-medium rounded-md transition-all cursor-pointer ${
-                popup.templateKey === template.key
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {template.label}
-            </button>
-          ))}
-        </div>
+      <div>
+        <p className={labelClass}>Layout</p>
+        <SegmentedControl
+          options={LAYOUT_OPTIONS}
+          value={popup.templateKey}
+          onChange={onTemplateChange}
+          size="sm"
+          className={fullWidth}
+        />
       </div>
     </Section>
   );

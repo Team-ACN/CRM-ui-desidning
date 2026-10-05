@@ -99,10 +99,10 @@ const PopupBannerPreview = ({
           >
             {showSlots && (
               <div
-                className="absolute border-2 border-dashed border-emerald-400 rounded-lg"
+                className="absolute border-2 border-dashed border-accent rounded-lg"
                 style={{ inset: `${px(-8)}px` }}
               >
-                <span className="absolute -top-5 left-0 text-[9px] font-semibold text-white bg-emerald-600 px-1.5 py-0.5 rounded">
+                <span className="absolute -top-5 left-0 text-[10px] font-semibold text-white bg-accent px-1.5 py-0.5 rounded">
                   CTA well · 420pt
                 </span>
               </div>
@@ -141,7 +141,7 @@ const PopupBannerPreview = ({
                   onClick={() => onSelectSlot && onSelectSlot(button.slotIndex)}
                   title={button.redirectUrl || 'No destination set'}
                   className={`w-full flex items-center justify-center ${
-                    selectedSlotIndex === button.slotIndex ? 'ring-2 ring-emerald-400' : ''
+                    selectedSlotIndex === button.slotIndex ? 'ring-2 ring-accent' : ''
                   }`}
                   style={{
                     height: px(WEB_WELL.ctaHeight),
