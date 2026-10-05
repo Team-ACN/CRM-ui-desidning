@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Search, Plus, ArrowUpDown, LayoutTemplate, Activity, Users, Layers, Lock, MessageSquareDashed } from 'lucide-react';
+import { Plus, ArrowUpDown, LayoutTemplate, Activity, Users, Layers, Lock, MessageSquareDashed, Check } from 'lucide-react';
 import CohortCard from './CohortCard';
 import CreateCohortModal from './CreateCohortModal';
 import LiveOverview from './LiveOverview';
@@ -15,14 +15,21 @@ import PopupBuilder from '../Popups/PopupBuilder';
 import PopupPriorityManager from '../Popups/PopupPriorityManager';
 import PopupViewModal from '../Popups/PopupViewModal';
 import { usePopups, createEmptyPopup } from '../Popups/usePopups';
+import { Button, SegmentedControl, SearchField, ListGroup, pageTitleClass } from '../cms-ui';
 import { mockCohorts as initialCohorts, mockTemplates as initialTemplates, mockComponents as initialComponents } from '../../data/mockCohorts';
 
 const TABS = [
-  { id: 'templates', label: 'Templates', icon: <LayoutTemplate size={18} /> },
-  { id: 'components', label: 'Components', icon: <Layers size={18} /> },
-  { id: 'popups', label: 'Popups', icon: <MessageSquareDashed size={18} /> },
-  { id: 'cohorts', label: 'Cohorts', icon: <Users size={18} /> },
-  { id: 'overview', label: 'Overview', icon: <Activity size={18} />, locked: true },
+  { id: 'templates', label: 'Templates', icon: <LayoutTemplate size={16} strokeWidth={1.75} /> },
+  { id: 'components', label: 'Components', icon: <Layers size={16} strokeWidth={1.75} /> },
+  { id: 'popups', label: 'Popups', icon: <MessageSquareDashed size={16} strokeWidth={1.75} /> },
+  { id: 'cohorts', label: 'Cohorts', icon: <Users size={16} strokeWidth={1.75} /> },
+  { id: 'overview', label: 'Overview', icon: <Activity size={16} strokeWidth={1.75} />, locked: true },
+];
+
+const PAGE_TYPES = [
+  { value: 'HOME', label: 'Home Page' },
+  { value: 'PROPERTIES', label: 'Properties Page' },
+  { value: 'WEBSITE', label: 'Website Page' },
 ];
 
 const CohortsPage = () => {
@@ -170,7 +177,7 @@ const CohortsPage = () => {
     };
 
     return (
-      <>
+      <div className="cms bg-canvas min-h-screen">
         <PopupPriorityManager
           popups={priorityPopups}
           surface={popupSurface}
@@ -203,27 +210,29 @@ const CohortsPage = () => {
           onClose={() => setViewingPopup(null)}
           onMakeLive={livePopup}
         />
-      </>
+      </div>
     );
   }
 
   if (currentView === 'popupBuilder') {
     return (
-      <PopupBuilder
-        popup={editingPopup}
-        cohorts={cohorts}
-        onSave={handleSavePopup}
-        onBack={() => {
-          setCurrentView('tabs');
-          setEditingPopup(null);
-        }}
-      />
+      <div className="cms bg-canvas min-h-screen">
+        <PopupBuilder
+          popup={editingPopup}
+          cohorts={cohorts}
+          onSave={handleSavePopup}
+          onBack={() => {
+            setCurrentView('tabs');
+            setEditingPopup(null);
+          }}
+        />
+      </div>
     );
   }
 
   if (currentView === 'builder') {
     return (
-      <>
+      <div className="cms bg-canvas min-h-screen">
         <TemplateBuilder
           template={editingTemplate}
           pageType={pageType}
@@ -268,14 +277,14 @@ const CohortsPage = () => {
             }
           }}
         />
-      </>
+      </div>
     );
   }
 
   if (currentView === 'priority') {
     const priorityTemplates = activeTemplates.filter(t => t.status !== 'Draft');
     return (
-      <>
+      <div className="cms bg-canvas min-h-screen">
         <PriorityManager
           templates={priorityTemplates}
           cohorts={cohorts}
@@ -298,143 +307,95 @@ const CohortsPage = () => {
           template={viewingTemplate}
           onMakeLive={handleMakeLive}
         />
-      </>
+      </div>
     );
   }
 
   return (
-    <div className="pb-8">
-      {/* Header - simplified */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="h-16 px-6 flex items-center">
-          <h1 className="text-xl font-bold text-gray-900">CMS</h1>
-        </div>
+    <div className="cms bg-canvas min-h-screen pb-8">
+      {/* Page header */}
+      <header className="px-8 pt-8 pb-5">
+        <h1 className={pageTitleClass}>CMS</h1>
+        <p className="mt-1 text-[13px] text-secondary">Manage what agents see across app and website</p>
       </header>
-      
+
       {/* Tabs Menu */}
-      <div className="bg-white border-b border-gray-200 px-6 mb-6 sticky top-0 z-10">
-        <div className="flex gap-6">
+      <div className="material bg-surface/80 backdrop-blur-xl backdrop-saturate-150 border-b border-separator px-8 sticky top-0 z-10">
+        <div role="tablist" className="flex gap-7">
           {TABS.map((tab) => (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
               onClick={() => !tab.locked && setActiveTab(tab.id)}
               disabled={tab.locked}
-              className={`flex items-center gap-2 py-4 text-sm font-medium border-b-2 transition-colors ${
+              className={`relative flex items-center gap-2 h-11 text-[14px] font-medium transition-colors ${
                 tab.locked
-                  ? 'border-transparent text-gray-300 cursor-not-allowed'
+                  ? 'text-tertiary cursor-not-allowed'
                   : activeTab === tab.id
-                    ? 'border-gray-900 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'text-label'
+                    : 'text-secondary hover:text-label'
               }`}
             >
               {tab.icon}
               {tab.label}
-              {tab.locked && <Lock size={14} className="text-gray-300" />}
+              {tab.locked && <Lock size={12} strokeWidth={1.75} className="text-tertiary" />}
+              <span
+                className={`absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-accent transition-opacity duration-200 ${
+                  !tab.locked && activeTab === tab.id ? 'opacity-100' : 'opacity-0'
+                }`}
+              />
             </button>
           ))}
         </div>
       </div>
 
       {/* Main Content Area */}
-      <main className="max-w-6xl mx-auto mt-6">
+      <main className="max-w-6xl mx-auto mt-8">
         {/* In-page toolbar: Page Switcher + Actions — the Popups tab brings its own */}
         {activeTab !== 'popups' && (
-        <div className="px-6 mb-6 flex items-center justify-between">
+        <div className="px-8 mb-6 flex items-center justify-between gap-4">
           {/* Page Context Switcher (Segmented Control) — hidden on Cohorts tab */}
           {activeTab !== 'cohorts' ? (
-            <div className="flex items-center p-1 bg-gray-100 rounded-xl">
-              <button
-                onClick={() => setPageType('HOME')}
-                className={`flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
-                  pageType === 'HOME'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Home Page
-              </button>
-              <button
-                onClick={() => setPageType('PROPERTIES')}
-                className={`flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
-                  pageType === 'PROPERTIES'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Properties Page
-              </button>
-              <button
-                onClick={() => setPageType('WEBSITE')}
-                className={`flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
-                  pageType === 'WEBSITE'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Website Page
-              </button>
-            </div>
+            <SegmentedControl options={PAGE_TYPES} value={pageType} onChange={setPageType} />
           ) : <div />}
 
           {/* Right side: search + tab-specific actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Search — shown for templates and cohorts */}
             {(activeTab === 'templates' || activeTab === 'cohorts') && (
-              <div className="relative">
-                <Search
-                  size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={activeTab === 'cohorts' ? "Search cohorts..." : "Search templates..."}
-                  className="pl-10 pr-4 py-2 w-56 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                />
-              </div>
+              <SearchField
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder={activeTab === 'cohorts' ? "Search cohorts" : "Search templates"}
+                className="w-56 mr-1"
+              />
             )}
 
             {/* Template actions */}
             {activeTab === 'templates' && (
               <>
-                <button
-                  onClick={() => setCurrentView('priority')}
-                  className="flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                >
-                  <ArrowUpDown size={16} />
+                <Button icon={ArrowUpDown} onClick={() => setCurrentView('priority')}>
                   Manage Priority
-                </button>
-                <button
-                  onClick={() => handleCreateTemplate()}
-                  className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-                >
-                  <Plus size={18} />
+                </Button>
+                <Button variant="primary" icon={Plus} onClick={() => handleCreateTemplate()}>
                   Create Template
-                </button>
+                </Button>
               </>
             )}
 
             {/* Cohort actions */}
             {activeTab === 'cohorts' && (
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-              >
-                <Plus size={18} />
+              <Button variant="primary" icon={Plus} onClick={() => setIsModalOpen(true)}>
                 Create Cohort
-              </button>
+              </Button>
             )}
 
             {/* Component actions */}
             {activeTab === 'components' && (
-              <button
-                onClick={() => setCurrentView('componentBuilder')}
-                className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-              >
-                <Plus size={18} />
+              <Button variant="primary" icon={Plus} onClick={() => setCurrentView('componentBuilder')}>
                 Create Component
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -463,17 +424,25 @@ const CohortsPage = () => {
         )}
 
         {activeTab === 'cohorts' && (
-          <div className="p-6 space-y-3">
-            {filteredCohorts.map((cohort) => (
-              <CohortCard 
-                key={cohort.id} 
-                cohort={cohort} 
-                onView={(c) => setViewingCohort(c)}
-              />
-            ))}
+          <div className="px-8">
+            {filteredCohorts.length > 0 && (
+              <ListGroup>
+                {filteredCohorts.map((cohort) => (
+                  <CohortCard 
+                    key={cohort.id} 
+                    cohort={cohort} 
+                    onView={(c) => setViewingCohort(c)}
+                  />
+                ))}
+              </ListGroup>
+            )}
             {filteredCohorts.length === 0 && (
-              <div className="text-center py-12 text-gray-400 text-sm">
-                No cohorts found.
+              <div className="flex flex-col items-center text-center py-16">
+                <div className="w-12 h-12 bg-fill rounded-2xl flex items-center justify-center mb-3">
+                  <Users size={20} strokeWidth={1.75} className="text-secondary" />
+                </div>
+                <p className="text-[15px] font-semibold text-label">No cohorts found</p>
+                <p className="mt-1 text-[13px] text-secondary">Try a different search, or create a new cohort.</p>
               </div>
             )}
           </div>
@@ -535,11 +504,11 @@ const CohortsPage = () => {
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-[100] flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-xl shadow-xl animate-in fade-in slide-in-from-bottom-5">
-          <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
-            <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-white" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <div className="fixed bottom-6 right-6 z-[100] flex items-center gap-2.5 pl-3 pr-4 h-11 bg-label/90 backdrop-blur-xl text-white rounded-full shadow-raised animate-sheet-in">
+          <div className="w-5 h-5 bg-positive-dot rounded-full flex items-center justify-center">
+            <Check size={12} strokeWidth={3} className="text-white" />
           </div>
-          <span className="text-sm font-medium">{toastMessage}</span>
+          <span className="text-[14px] font-medium">{toastMessage}</span>
         </div>
       )}
     </div>

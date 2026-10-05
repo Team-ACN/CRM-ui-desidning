@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Save, Send, Circle, CheckCircle2 } from 'lucide-react';
+import { Button, IconButton } from '../cms-ui';
 
 const PAGE_TYPE_LABELS = {
   HOME: 'Home',
@@ -10,32 +11,24 @@ const PAGE_TYPE_LABELS = {
 const StepIndicator = ({ label, done }) => {
   const Icon = done ? CheckCircle2 : Circle;
   return (
-    <span className={`flex items-center gap-1 text-[10px] font-medium ${done ? 'text-emerald-600' : 'text-gray-400'}`}>
-      <Icon size={9} strokeWidth={2.5} />
+    <span className={`flex items-center gap-1 text-[12px] ${done ? 'text-label' : 'text-tertiary'}`}>
+      <Icon size={13} strokeWidth={2} className={done ? 'text-accent' : 'text-tertiary'} />
       {label}
     </span>
   );
 };
 
 const BuilderHeader = ({ isEditing, pageType, steps, canSave, onBack, onSaveDraft, onSubmit }) => (
-  <div className="h-[60px] bg-white border-b border-gray-200 px-4 flex items-center justify-between shrink-0">
+  <div className="material sticky top-0 z-20 h-[60px] bg-surface/80 backdrop-blur-xl backdrop-saturate-150 border-b border-separator px-4 flex items-center justify-between shrink-0">
     <div className="flex items-center gap-3">
-      <button
-        onClick={onBack}
-        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
-        aria-label="Back to templates"
-      >
-        <ArrowLeft size={18} />
-      </button>
+      <IconButton icon={ArrowLeft} label="Back to templates" onClick={onBack} size={18} />
       <div>
-        <div className="flex items-center gap-2">
-          <h2 className="text-[15px] font-semibold text-gray-900">
-            {isEditing ? 'Edit Template' : 'Create Template'}
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-[17px] leading-[22px] font-semibold tracking-[-0.01em] text-label">
+            {isEditing ? 'Edit template' : 'Create template'}
           </h2>
           {PAGE_TYPE_LABELS[pageType] && (
-            <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-semibold uppercase tracking-wide">
-              {PAGE_TYPE_LABELS[pageType]}
-            </span>
+            <span className="text-[13px] text-secondary">{PAGE_TYPE_LABELS[pageType]}</span>
           )}
         </div>
         <div className="flex items-center gap-3 mt-0.5">
@@ -45,23 +38,13 @@ const BuilderHeader = ({ isEditing, pageType, steps, canSave, onBack, onSaveDraf
         </div>
       </div>
     </div>
-    <div className="flex items-center gap-2.5">
-      <button
-        onClick={onSaveDraft}
-        disabled={!canSave}
-        className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors"
-      >
-        <Save size={15} />
-        Save Draft
-      </button>
-      <button
-        onClick={onSubmit}
-        disabled={!canSave}
-        className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
-      >
-        <Send size={15} />
-        Submit for Review
-      </button>
+    <div className="flex items-center gap-2">
+      <Button variant="secondary" icon={Save} onClick={onSaveDraft} disabled={!canSave}>
+        Save draft
+      </Button>
+      <Button variant="primary" icon={Send} onClick={onSubmit} disabled={!canSave}>
+        Submit for review
+      </Button>
     </div>
   </div>
 );

@@ -151,7 +151,7 @@ const TemplateBuilder = ({ template, pageType, cohorts, components, onSave, onBa
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex flex-col h-[calc(100vh-0px)]">
+      <div className="flex flex-col h-[calc(100vh-0px)] bg-canvas">
         <BuilderHeader
           isEditing={isEditing}
           pageType={pageType}
@@ -177,7 +177,7 @@ const TemplateBuilder = ({ template, pageType, cohorts, components, onSave, onBa
           />
 
           {/* Right: Settings */}
-          <div className="w-72 bg-white border-l border-gray-200 flex flex-col">
+          <div className="w-72 bg-surface border-l border-separator flex flex-col">
             {selectedWidgetId ? (() => {
                const activeW = widgets.find((w) => w.id === selectedWidgetId);
                return (
@@ -214,13 +214,13 @@ const TemplateBuilder = ({ template, pageType, cohorts, components, onSave, onBa
       {/* Drag overlay */}
       <DragOverlay>
         {activeWidget ? (
-          <div className="flex items-center gap-3 p-3 bg-white border-2 border-emerald-400 rounded-xl shadow-lg opacity-90 w-56">
-            <span className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center text-lg">
+          <div className="flex items-center gap-3 p-3 bg-surface ring-2 ring-accent rounded-2xl shadow-raised w-56">
+            <span className="w-8 h-8 shrink-0 bg-fill rounded-lg flex items-center justify-center text-secondary">
               {activeWidget.icon}
             </span>
             <div>
-              <p className="text-sm font-medium text-gray-900">{activeWidget.label}</p>
-              <p className="text-xs text-gray-400">{activeWidget.description}</p>
+              <p className="text-[14px] font-medium text-label">{activeWidget.label}</p>
+              <p className="text-[12px] text-secondary">{activeWidget.description}</p>
             </div>
           </div>
         ) : null}

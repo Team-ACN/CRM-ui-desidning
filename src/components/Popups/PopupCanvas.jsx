@@ -1,5 +1,6 @@
 import React from 'react';
 import { Smartphone, Monitor, Frame, MessageSquare } from 'lucide-react';
+import { pressable } from '../cms-ui';
 import AppHeaderMock from '../Cohorts/AppHeaderMock';
 import PropertiesHeaderMock from '../Cohorts/PropertiesHeaderMock';
 import DesktopFrameMock from './DesktopFrameMock';
@@ -9,7 +10,7 @@ import { pageLabel } from './popupConstants';
 
 // The popup dims the whole screen, so the overlay sits above the app chrome too.
 const PhoneFrame = ({ children, header }) => (
-  <div className="w-[390px] h-[844px] bg-[#FAFAFA] rounded-[40px] shadow-2xl overflow-hidden border-[8px] border-gray-800 relative shrink-0 origin-top scale-[0.78]">
+  <div className="w-[390px] h-[844px] bg-[#FAFAFA] rounded-[48px] shadow-[0_0_0_1px_rgb(0_0_0/0.06),0_24px_60px_rgb(0_0_0/0.14)] overflow-hidden border-[10px] border-[#1d1d1f] relative shrink-0 origin-top scale-[0.78]">
     <div className="absolute inset-0 flex flex-col items-center">
       {header}
       <div className="flex-1 w-full px-3 py-3 space-y-2.5">
@@ -57,36 +58,32 @@ const PopupCanvas = ({
   );
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50 overflow-y-auto">
-      <div className="flex items-center justify-center gap-2 px-6 py-3 shrink-0">
-        <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-600">
-          {isApp ? <Smartphone size={14} /> : <Monitor size={14} />}
+    <div className="flex-1 flex flex-col bg-canvas overflow-y-auto">
+      <div className="flex items-center justify-center gap-2 px-6 py-4 shrink-0">
+        <span className="flex items-center gap-1.5 mr-2 text-[13px] font-medium text-secondary">
+          {isApp ? <Smartphone size={14} strokeWidth={1.75} /> : <Monitor size={14} strokeWidth={1.75} />}
           {isApp ? 'App' : 'Web'}
         </span>
 
         <button
           onClick={onToggleSlots}
           title="Outline where the system draws the button and the close icon, so you can check the artwork leaves room for them"
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
-            showSlots
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : 'bg-white text-gray-500 border-gray-200 hover:text-gray-700'
+          className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-medium cursor-pointer ${pressable} ${
+            showSlots ? 'bg-accent-soft text-accent' : 'bg-fill text-secondary hover:bg-fill-strong hover:text-label'
           }`}
         >
-          <Frame size={14} />
+          <Frame size={14} strokeWidth={1.75} />
           {showSlots ? 'Hide guides' : 'Show guides'}
         </button>
 
         <button
           onClick={onToggleToast}
           title="Preview the toast that appears after a CTA tap"
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
-            showToast
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : 'bg-white text-gray-500 border-gray-200 hover:text-gray-700'
+          className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-medium cursor-pointer ${pressable} ${
+            showToast ? 'bg-accent-soft text-accent' : 'bg-fill text-secondary hover:bg-fill-strong hover:text-label'
           }`}
         >
-          <MessageSquare size={14} />
+          <MessageSquare size={14} strokeWidth={1.75} />
           Toast
         </button>
       </div>
@@ -111,7 +108,7 @@ const PopupCanvas = ({
         )}
 
         {isApp && (
-          <p className="text-[11px] text-gray-400 mt-2">
+          <p className="text-[12px] text-secondary mt-2">
             Swiping the poster down closes the popup.
           </p>
         )}

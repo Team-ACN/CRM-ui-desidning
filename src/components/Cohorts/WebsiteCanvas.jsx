@@ -96,14 +96,14 @@ const heroStyle = (imageUrl) => ({
 
 const HeroControls = ({ hasImage, isSelected }) => (
   <>
-    <div className={`absolute top-[72px] left-3 z-10 flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider ${
-      isSelected ? 'bg-emerald-600 text-white' : 'bg-white/90 text-gray-700'
+    <div className={`absolute top-[72px] left-3 z-10 flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[12px] font-medium shadow-card ${
+      isSelected ? 'bg-accent text-white' : 'bg-surface/90 backdrop-blur-xl text-label'
     }`}>
-      <ImageIcon size={12} /> Top Banner
+      <ImageIcon size={14} strokeWidth={1.75} /> Top banner
     </div>
     {!hasImage && (
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <p className="text-sm font-medium text-gray-500 bg-white/80 px-3 py-1.5 rounded-lg">
+        <p className="text-[13px] font-medium text-secondary bg-surface/85 backdrop-blur-xl px-3 py-1.5 rounded-full shadow-card">
           Upload a {TOP_BANNER_SPEC.width}×{TOP_BANNER_SPEC.height} hero image in widget settings
         </p>
       </div>
@@ -157,7 +157,7 @@ const WebsiteHeader = ({ hero, isHeroSelected, onSelectHero }) => {
       <div
         onClick={onSelectHero}
         style={heroStyle(heroImage)}
-        className={`relative bg-gray-200 bg-no-repeat cursor-pointer ${isHeroSelected ? 'ring-4 ring-inset ring-emerald-500' : ''}`}
+        className={`relative bg-gray-200 bg-no-repeat cursor-pointer ${isHeroSelected ? 'ring-4 ring-inset ring-accent' : ''}`}
       >
         <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
         <HeroControls hasImage={!!heroImage} isSelected={isHeroSelected} />
@@ -212,7 +212,13 @@ const WebsiteCanvas = ({
 
   return (
     <div className="w-full flex justify-center">
-      <div className="w-[1180px] max-w-[95vw] bg-[#FAFAFA] rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+      <div className="w-[1180px] max-w-[95vw] bg-[#FAFAFA] rounded-2xl shadow-raised overflow-hidden">
+        {/* Browser window bar */}
+        <div className="h-10 px-4 flex items-center gap-2 bg-surface border-b border-separator">
+          <span className="w-2.5 h-2.5 rounded-full bg-fill-strong" />
+          <span className="w-2.5 h-2.5 rounded-full bg-fill-strong" />
+          <span className="w-2.5 h-2.5 rounded-full bg-fill-strong" />
+        </div>
         <WebsiteHeader
           hero={hero}
           isHeroSelected={!!hero && selectedWidgetId === hero.id}
@@ -221,15 +227,17 @@ const WebsiteCanvas = ({
 
         <div
           ref={setNodeRef}
-          className={`px-12 pt-24 pb-10 transition-colors ${isOver ? 'bg-emerald-50/70' : ''}`}
+          className={`px-12 pt-24 pb-10 transition-colors ${isOver ? 'bg-accent-soft' : ''}`}
         >
           {bodyWidgets.length === 0 ? (
-            <div className="h-56 rounded-2xl border-2 border-dashed border-gray-200 bg-white flex flex-col items-center justify-center text-center">
-              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
-                <Monitor size={18} className="text-gray-400" />
+            <div className={`h-56 rounded-2xl border-2 border-dashed bg-surface flex flex-col items-center justify-center text-center transition-colors ${
+              isOver ? 'border-accent/40' : 'border-separator'
+            }`}>
+              <div className="w-12 h-12 bg-fill rounded-2xl flex items-center justify-center mb-3">
+                <Monitor size={20} strokeWidth={1.75} className="text-secondary" />
               </div>
-              <p className="text-sm font-semibold text-gray-700">Drop widgets here</p>
-              <p className="text-xs text-gray-500 mt-1">This is the Website Page canvas</p>
+              <p className="text-[15px] font-semibold tracking-[-0.01em] text-label">Drop widgets here</p>
+              <p className="text-[13px] text-secondary mt-1">Drag from the widget library to build the website page</p>
             </div>
           ) : (
             <SortableContext items={widgetIds} strategy={verticalListSortingStrategy}>

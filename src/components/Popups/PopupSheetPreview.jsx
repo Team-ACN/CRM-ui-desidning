@@ -134,8 +134,8 @@ const PopupSheetPreview = ({
                     onClick={() => onSelectSlot && onSelectSlot(button.slotIndex)}
                     title={button.redirectUrl || 'No destination set'}
                     className={`w-full flex items-center justify-center ${
-                      selectedSlotIndex === button.slotIndex ? 'ring-2 ring-emerald-400' : ''
-                    } ${showSlots ? 'outline outline-2 outline-dashed outline-emerald-400' : ''}`}
+                      selectedSlotIndex === button.slotIndex ? 'ring-2 ring-accent' : ''
+                    } ${showSlots ? 'outline outline-2 outline-dashed outline-accent' : ''}`}
                     style={{
                       height: px(48),
                       borderRadius: px(8),

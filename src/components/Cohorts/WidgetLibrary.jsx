@@ -3,7 +3,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { Puzzle, Zap, SlidersHorizontal } from 'lucide-react';
 import { availableWidgets } from '../../data/mockCohorts';
 
-const DraggableWidget = ({ widget, title, subtitle, icon, isComponent, config, badge }) => {
+const DraggableWidget = ({ widget, title, subtitle, icon, isComponent, config }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `library-${isComponent ? widget.id : widget.type}`,
     data: { 
@@ -26,22 +26,17 @@ const DraggableWidget = ({ widget, title, subtitle, icon, isComponent, config, b
       {...listeners}
       {...attributes}
       style={style}
-      className={`flex items-center gap-2.5 p-2.5 bg-white border border-gray-200 rounded-lg cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md hover:border-gray-300 ${
-        isDragging ? 'opacity-50 shadow-lg z-50' : ''
+      className={`relative flex items-center gap-3 px-3 py-2.5 bg-surface first:rounded-t-2xl last:rounded-b-2xl cursor-grab active:cursor-grabbing transition-colors hover:bg-black/[0.02] active:bg-black/[0.04] ${
+        isDragging ? 'opacity-50 z-50' : ''
       }`}
     >
-      <span className="w-8 h-8 bg-gray-50 border border-gray-100 rounded-md flex items-center justify-center text-gray-600 shrink-0">
-        {icon || widget.icon || <Puzzle size={16} />}
+      <span className="w-8 h-8 bg-fill rounded-lg flex items-center justify-center text-secondary shrink-0">
+        {icon || widget.icon || <Puzzle size={16} strokeWidth={1.75} />}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold text-gray-900 truncate">{title}</p>
-        <p className="text-[11px] text-gray-500 truncate">{subtitle}</p>
+        <p className="text-[14px] font-medium text-label truncate">{title}</p>
+        <p className="text-[12px] text-secondary truncate">{subtitle}</p>
       </div>
-      {badge && (
-        <span className={`px-1.5 py-0.5 rounded border text-[9px] font-bold uppercase tracking-wide shrink-0 ${badge.className}`}>
-          {badge.label}
-        </span>
-      )}
     </div>
   );
 };
@@ -52,37 +47,30 @@ const isCmsWidget = (widget) => widget.hasConfig || widget.category === 'cms';
 const WIDGET_GROUPS = [
   {
     key: 'auto',
-    title: 'Auto Widgets',
-    subtitle: 'No config needed — system-driven',
-    icon: <Zap size={11} className="text-emerald-600" />,
-    badge: { label: 'Auto', className: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
+    title: 'Auto widgets',
+    subtitle: 'No setup needed. Content comes from system data.',
+    icon: <Zap size={14} strokeWidth={1.75} />,
     match: (widget) => !isCmsWidget(widget),
   },
   {
     key: 'cms',
-    title: 'CMS Widgets',
-    subtitle: 'Requires a linked component',
-    icon: <SlidersHorizontal size={11} className="text-indigo-500" />,
-    badge: { label: 'CMS', className: 'bg-indigo-50 border-indigo-200 text-indigo-600' },
+    title: 'CMS widgets',
+    subtitle: 'Each needs a linked component you configure.',
+    icon: <SlidersHorizontal size={14} strokeWidth={1.75} />,
     match: isCmsWidget,
   },
 ];
 
 const WidgetGroup = ({ group, widgets }) => (
   <section>
-    <div className="px-1 mb-2">
-      <div className="flex items-center justify-between">
-        <h4 className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-          {group.icon}
-          {group.title}
-        </h4>
-        <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-gray-200 text-[9px] font-semibold text-gray-600 flex items-center justify-center">
-          {widgets.length}
-        </span>
-      </div>
-      <p className="text-[10px] text-gray-400 mt-0.5">{group.subtitle}</p>
+    <div className="px-3 mb-2">
+      <h4 className="flex items-center gap-1.5 text-[13px] font-medium text-secondary">
+        {group.icon}
+        {group.title}
+      </h4>
+      <p className="text-[12px] text-tertiary mt-0.5">{group.subtitle}</p>
     </div>
-    <div className="space-y-1.5">
+    <div className="rounded-2xl bg-surface shadow-card divide-y divide-separator">
       {widgets.map((widget) => (
         <DraggableWidget
           key={widget.type}
@@ -90,7 +78,6 @@ const WidgetGroup = ({ group, widgets }) => (
           title={widget.label}
           subtitle={widget.description}
           icon={widget.icon}
-          badge={group.badge}
         />
       ))}
     </div>
@@ -103,13 +90,13 @@ const WidgetLibrary = ({ pageType }) => {
   );
 
   return (
-    <div className="w-60 bg-gray-50 border-r border-gray-200 flex flex-col h-full overflow-hidden">
-      <div className="px-3 py-3.5 border-b border-gray-200 bg-white shrink-0">
-        <h3 className="text-sm font-semibold text-gray-900">Widget Library</h3>
-        <p className="text-[11px] text-gray-400 mt-0.5">Drag onto the canvas</p>
+    <div className="w-60 bg-canvas border-r border-separator flex flex-col h-full overflow-hidden">
+      <div className="px-4 py-3.5 border-b border-separator bg-surface shrink-0">
+        <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-label">Widget library</h3>
+        <p className="text-[13px] text-secondary mt-0.5">Drag onto the canvas</p>
       </div>
 
-      <div className="p-2 pt-3 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
+      <div className="p-3 pt-4 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
         {WIDGET_GROUPS.map((group) => {
           const groupWidgets = pageWidgets.filter(group.match);
           return groupWidgets.length > 0 && (

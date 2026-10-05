@@ -1,17 +1,17 @@
 import React from 'react';
+import { fieldClass, labelClass } from '../../cms-ui';
 import Section from './Section';
 import CohortSelect from '../CohortSelect';
 import { EVENT_KEYS, PAGE_KEYS, TRIGGER_TYPES } from '../popupConstants';
 import { errorFor } from '../popupValidation';
 
-const selectClass =
-  'w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-gray-900';
+const selectClass = `${fieldClass} cursor-pointer`;
 
 const Field = ({ label, error, children }) => (
   <div>
-    <label className="block text-[11px] font-medium text-gray-600 mb-1">{label}</label>
+    <label className={labelClass}>{label}</label>
     {children}
-    {error && <p className="mt-1 text-[10px] text-red-600">{error}</p>}
+    {error && <p className="mt-1.5 text-[12px] leading-4 text-danger">{error}</p>}
   </div>
 );
 
@@ -23,7 +23,7 @@ const PlacementSection = ({ popup, validation, cohorts, onChange }) => {
 
   return (
     <Section step={3} title="Where it shows" hint="One trigger, one audience.">
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-3">
         <Field label="Trigger" error={errorFor(validation, 'trigger.type')}>
           <select
             value={trigger.type || ''}
@@ -92,7 +92,7 @@ const PlacementSection = ({ popup, validation, cohorts, onChange }) => {
             step={5}
             value={trigger.scrollDepthPct || 50}
             onChange={(e) => updateTrigger({ scrollDepthPct: Number(e.target.value) })}
-            className="w-full accent-emerald-600"
+            className="w-full accent-accent"
           />
         </Field>
       )}

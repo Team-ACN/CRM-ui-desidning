@@ -1,73 +1,48 @@
 import React from 'react';
 import { Pencil, Trash2, Puzzle } from 'lucide-react';
 import { availableWidgets } from '../../data/mockCohorts';
+import { ListRow, IconButton } from '../cms-ui';
 
 const ComponentCard = ({ component, onEdit, onDelete }) => {
   const widgetDefinition = availableWidgets.find((w) => w.type === component.type);
 
   return (
-    <div className="grid items-center px-6 py-4 border border-gray-200 rounded-xl bg-white hover:border-gray-300 transition-colors" style={{ gridTemplateColumns: '280px 120px 1fr auto' }}>
+    <ListRow>
       {/* Left: Icon & Name */}
-      <div className="flex items-center gap-4 pr-4 overflow-hidden">
-        <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-gray-50 border border-gray-100 rounded-lg text-gray-600">
-          {widgetDefinition?.icon || <Puzzle size={16} />}
-        </div>
-        <div className="overflow-hidden">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-gray-900 truncate">{component.name}</h3>
-            <span className="flex-shrink-0 text-[10px] font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">
-              {component.id}
-            </span>
-          </div>
-          <p className="text-xs text-gray-500 mt-0.5 truncate">
-            {widgetDefinition?.label || 'Unknown Widget'}
-          </p>
-        </div>
+      <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 bg-fill rounded-lg text-secondary">
+        {widgetDefinition?.icon || <Puzzle size={16} strokeWidth={1.75} />}
       </div>
-
-      {/* Date */}
-      <div>
-        <p className="text-xs text-gray-500 text-center whitespace-nowrap">
+      <div className="flex-1 min-w-0">
+        <h3 className="text-[15px] font-medium tracking-[-0.01em] text-label truncate">{component.name}</h3>
+        <p className="text-[13px] text-secondary mt-0.5 truncate">
           {new Date(component.createdAt).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
             day: 'numeric'
           })}
+          {/* Config summary */}
+          {component.type === 'banner_carousel' && (
+            <> · <span className="tabular-nums">{component.config?.items?.length || 0}</span> slides</>
+          )}
+          {component.type === 'inventory_discovery' && (
+            <> · {component.config?.assetType || 'All Assets'} · {component.config?.zone || 'All Zones'}</>
+          )}
         </p>
       </div>
 
-      {/* Config Indicators */}
-      <div className="flex items-center gap-4 px-4">
-         {component.type === 'banner_carousel' && (
-           <span className="text-xs text-gray-600 bg-gray-50 px-2.5 py-1 rounded-md border border-gray-100 whitespace-nowrap">
-             {component.config?.items?.length || 0} Slides
-           </span>
-         )}
-         {component.type === 'inventory_discovery' && (
-           <span className="text-xs text-gray-600 bg-gray-50 px-2.5 py-1 rounded-md border border-gray-100 whitespace-nowrap">
-             {component.config?.assetType || 'All Assets'} • {component.config?.zone || 'All Zones'}
-           </span>
-         )}
-      </div>
+      <span className="shrink-0 text-[12px] text-tertiary tabular-nums">{component.id}</span>
 
       {/* Actions */}
-      <div className="flex items-center gap-5 justify-end">
-        <button
-          onClick={() => onEdit(component)}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
-        >
-          <Pencil size={16} />
-          Edit
-        </button>
-        <button
+      <div className="flex items-center gap-1 justify-end shrink-0">
+        <IconButton icon={Pencil} label="Edit" onClick={() => onEdit(component)} />
+        <IconButton
+          icon={Trash2}
+          label="Delete"
           onClick={() => onDelete(component.id)}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 transition-colors cursor-pointer"
-        >
-          <Trash2 size={16} />
-          Delete
-        </button>
+          className="hover:text-danger! hover:bg-danger-soft!"
+        />
       </div>
-    </div>
+    </ListRow>
   );
 };
 

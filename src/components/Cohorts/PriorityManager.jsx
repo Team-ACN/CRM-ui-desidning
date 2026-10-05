@@ -13,8 +13,9 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, X, Save, ArrowLeft, Check, Power, Eye } from 'lucide-react';
+import { GripVertical, X, Save, ArrowLeft, Check, Eye, ArrowUpDown } from 'lucide-react';
 import { mockCohorts as allCohorts, availableWidgets } from '../../data/mockCohorts';
+import { Button, IconButton, pressable, sectionTitleClass } from '../cms-ui';
 
 const SortableItem = ({ template, index, cohorts, onToggleActive, onPreview }) => {
   const targetCohorts = template.cohortIds?.map(id => cohorts.find(c => c.id === id)).filter(Boolean) || [];
@@ -37,28 +38,29 @@ const SortableItem = ({ template, index, cohorts, onToggleActive, onPreview }) =
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-4 px-4 py-3.5 bg-white border rounded-xl ${
-        isDragging ? 'border-emerald-300 shadow-lg' : 'border-gray-200'
+      className={`relative flex items-center gap-3 px-4 min-h-[60px] py-3 bg-surface first:rounded-t-2xl last:rounded-b-2xl ${
+        isDragging ? 'z-10 rounded-2xl shadow-raised' : ''
       }`}
     >
       {/* Drag handle */}
       <button
         {...attributes}
         {...listeners}
-        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 touch-none"
+        aria-label="Drag to reorder"
+        className="-ml-1 p-1 rounded-md cursor-grab active:cursor-grabbing text-tertiary hover:text-secondary touch-none"
       >
-        <GripVertical size={18} />
+        <GripVertical size={16} strokeWidth={1.75} />
       </button>
 
       {/* Rank */}
-      <div className="w-8 h-8 bg-gray-900 text-white rounded-lg flex items-center justify-center text-sm font-bold shrink-0">
+      <span className="w-5 shrink-0 text-right text-[13px] font-medium text-tertiary tabular-nums">
         {index + 1}
-      </div>
+      </span>
 
       {/* Template info */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">{template.name}</p>
-        <p className="text-xs text-gray-400 truncate">{targetCohorts.map(tc => tc.name).join(', ') || 'No valid cohorts'}</p>
+      <div className="flex-1 min-w-0 ml-1">
+        <p className="text-[15px] font-medium tracking-[-0.01em] text-label truncate">{template.name}</p>
+        <p className="text-[13px] text-secondary truncate mt-0.5">{targetCohorts.map(tc => tc.name).join(', ') || 'No valid cohorts'}</p>
       </div>
 
       {/* Widget icons */}
@@ -70,25 +72,25 @@ const SortableItem = ({ template, index, cohorts, onToggleActive, onPreview }) =
 
       {/* Active toggle / Preview */}
       {template.status === 'Not Live' ? (
-        <button
+        <Button
+          size="sm"
+          icon={Eye}
           onClick={(e) => {
             e.stopPropagation();
             onPreview(template);
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 transition-colors"
         >
-          <Eye size={12} />
           Preview to Activate
-        </button>
+        </Button>
       ) : (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onToggleActive(template.id);
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 transition-colors"
+          className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-[13px] font-medium text-positive ${pressable}`}
         >
-          <Power size={12} />
+          <span className="w-1.5 h-1.5 rounded-full bg-positive-dot" />
           Live
         </button>
       )}
@@ -139,43 +141,25 @@ const PriorityManager = ({ templates, cohorts, onSave, onBack, onPreview }) => {
   return (
     <div className="pb-8">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="h-16 px-6 flex items-center justify-between">
+      <div className="material bg-surface/80 backdrop-blur-xl backdrop-saturate-150 border-b border-separator sticky top-0 z-20">
+        <div className="h-16 px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button
-              onClick={onBack}
-              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </button>
+            <IconButton icon={ArrowLeft} label="Back" onClick={onBack} className="-ml-2" />
             <div>
-              <h1 className="text-lg font-bold text-gray-900">Manage Priority</h1>
-              <p className="text-xs text-gray-400">
-                Drag to reorder • Toggle to activate • {liveCount} live, {items.length - liveCount} not live
+              <h1 className={sectionTitleClass}>Manage Priority</h1>
+              <p className="text-[13px] text-secondary">
+                Drag to reorder · Toggle to activate · <span className="tabular-nums">{liveCount}</span> live, <span className="tabular-nums">{items.length - liveCount}</span> not live
               </p>
             </div>
           </div>
-          <button
-            onClick={handleSave}
-            className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            <Check size={16} />
+          <Button variant="primary" icon={Check} onClick={handleSave}>
             Save & Apply
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Info banner */}
-      <div className="mx-6 mt-5 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-        <p className="text-xs text-blue-700 font-medium">How priority works</p>
-        <p className="text-xs text-blue-600 mt-0.5">
-          When an agent belongs to multiple cohorts, they see the template with the highest priority (1 = highest). 
-          Drag templates to reorder and toggle them Live to activate.
-        </p>
-      </div>
-
       {/* Sortable list */}
-      <div className="px-6 mt-5">
+      <div className="max-w-4xl mx-auto px-8 mt-8">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -185,24 +169,40 @@ const PriorityManager = ({ templates, cohorts, onSave, onBack, onPreview }) => {
             items={items.map((t) => t.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-2">
-              {items.map((template, index) => (
-                <SortableItem
-                  key={template.id}
-                  template={template}
-                  index={index}
-                  cohorts={cohorts}
-                  onToggleActive={handleToggleActive}
-                  onPreview={onPreview}
-                />
-              ))}
-            </div>
+            {/* Grouped surface without overflow clipping, so a dragged row can leave it */}
+            {items.length > 0 && (
+              <section>
+                <h3 className="px-4 mb-2 text-[13px] font-medium text-secondary">Priority order</h3>
+                <div className="bg-surface rounded-2xl shadow-card divide-y divide-separator">
+                  {items.map((template, index) => (
+                    <SortableItem
+                      key={template.id}
+                      template={template}
+                      index={index}
+                      cohorts={cohorts}
+                      onToggleActive={handleToggleActive}
+                      onPreview={onPreview}
+                    />
+                  ))}
+                </div>
+                <p className="px-4 mt-2 text-[12px] leading-4 text-secondary">
+                  When an agent belongs to multiple cohorts, they see the template with the highest priority (1 = highest).
+                  Drag templates to reorder and toggle them Live to activate.
+                </p>
+              </section>
+            )}
           </SortableContext>
         </DndContext>
 
         {items.length === 0 && (
-          <div className="text-center py-12 text-gray-400 text-sm">
-            No templates created yet. Create templates first, then come here to set priority.
+          <div className="flex flex-col items-center text-center py-16">
+            <div className="w-12 h-12 bg-fill rounded-2xl flex items-center justify-center mb-3">
+              <ArrowUpDown size={20} strokeWidth={1.75} className="text-secondary" />
+            </div>
+            <p className="text-[15px] font-semibold text-label">No templates yet</p>
+            <p className="mt-1 text-[13px] text-secondary">
+              No templates created yet. Create templates first, then come here to set priority.
+            </p>
           </div>
         )}
       </div>

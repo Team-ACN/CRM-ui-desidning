@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle2, Wand2 } from 'lucide-react';
+import { fieldClass, hintClass, labelClass } from '../../cms-ui';
 import Section from './Section';
 import ColorField from '../ColorField';
 import { contrastLevel, formatRatio } from '../contrast';
@@ -8,14 +9,13 @@ import { errorFor } from '../popupValidation';
 
 const Field = ({ label, error, children }) => (
   <div>
-    <label className="block text-[11px] font-medium text-gray-600 mb-1">{label}</label>
+    <label className={labelClass}>{label}</label>
     {children}
-    {error && <p className="mt-1 text-[10px] text-red-600">{error}</p>}
+    {error && <p className="mt-1.5 text-[12px] leading-4 text-danger">{error}</p>}
   </div>
 );
 
-const inputClass =
-  'w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-gray-900';
+const inputClass = fieldClass;
 
 // App popups render the buttons in a solid action area under the poster. That colour
 // is read off the poster's bottom edge so the sheet reads as one surface — the author
@@ -26,19 +26,19 @@ const ActionColorField = ({ popup, onChange, onMatchPoster }) => {
 
   return (
     <div>
-      <label className="block text-[11px] font-medium text-gray-600 mb-1">Action area colour</label>
+      <label className={labelClass}>Action area colour</label>
 
       {isMatched ? (
-        <div className="flex items-center gap-2 px-2 py-1.5 border border-gray-200 rounded-lg bg-gray-50">
+        <div className="flex items-center gap-2 pl-1.5 pr-3 h-9 rounded-[10px] bg-fill">
           <span
-            className="w-7 h-7 rounded border border-gray-200 shrink-0"
+            className="w-6 h-6 rounded-md shadow-[inset_0_0_0_1px_rgb(0_0_0/0.08)] shrink-0"
             style={{ backgroundColor: popup.actionBarColor || '#111111' }}
           />
-          <span className="flex-1 min-w-0 text-xs font-mono text-gray-600 truncate">
+          <span className="flex-1 min-w-0 text-[13px] font-mono text-label truncate">
             {popup.actionBarColor || '—'}
           </span>
-          <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-700 shrink-0">
-            <Wand2 size={11} />
+          <span className="flex items-center gap-1 text-[12px] font-medium text-accent shrink-0">
+            <Wand2 size={14} strokeWidth={1.75} />
             Matched
           </span>
         </div>
@@ -50,15 +50,15 @@ const ActionColorField = ({ popup, onChange, onMatchPoster }) => {
         />
       )}
 
-      <div className="flex items-center justify-between mt-1">
-        <p className="text-[10px] text-gray-400">
+      <div className="flex items-center justify-between gap-3 mt-1.5">
+        <p className={hintClass}>
           {isMatched
             ? `Taken from the ${creativeWord}'s bottom edge.`
             : `Set by hand — may not line up with the ${creativeWord}.`}
         </p>
         <button
           onClick={() => onMatchPoster(!isMatched)}
-          className="text-[10px] font-medium text-emerald-600 hover:text-emerald-700 transition-colors cursor-pointer shrink-0"
+          className="text-[12px] font-medium text-accent hover:text-accent-hover transition-colors cursor-pointer shrink-0"
         >
           {isMatched ? 'Set manually' : `Match ${creativeWord}`}
         </button>
@@ -77,7 +77,7 @@ const ActionAreaFields = ({ popup, onChange, onMatchPoster }) => (
         placeholder="TRY IT YOURSELF"
         className={inputClass}
       />
-      <p className="mt-1 text-[10px] text-gray-400">
+      <p className={`mt-1.5 ${hintClass}`}>
         Text is yours; the font is fixed (Inter Medium 14).
       </p>
     </Field>
@@ -94,10 +94,10 @@ const ToastField = ({ popup, onChange }) => {
   const value = popup.toastMessage ?? '';
 
   return (
-    <div className="pt-1">
-      <div className="flex items-center justify-between mb-1">
-        <label className="text-[11px] font-medium text-gray-600">Toast message</label>
-        <span className="text-[10px] text-gray-400">
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="text-[13px] font-medium text-label">Toast message</label>
+        <span className="text-[12px] text-tertiary tabular-nums">
           {value.length}/{TOAST_MAX}
         </span>
       </div>
@@ -109,7 +109,7 @@ const ToastField = ({ popup, onChange }) => {
         placeholder="We'll call you back shortly"
         className={inputClass}
       />
-      <p className="mt-1 text-[10px] text-gray-400">
+      <p className={`mt-1.5 ${hintClass}`}>
         Shown after a CTA tap. Leave empty for no toast.
       </p>
     </div>
@@ -191,12 +191,12 @@ const ButtonsSection = ({
           <div
             key={slot.index}
             onClick={() => onSelectSlot(slot.index)}
-            className={`rounded-xl border p-3 space-y-3 transition-colors ${
-              isSelected ? 'border-emerald-300 bg-emerald-50/30' : 'border-gray-200'
+            className={`rounded-2xl p-4 space-y-4 transition-shadow duration-200 ${
+              isSelected ? 'ring-2 ring-accent' : 'ring-1 ring-separator'
             }`}
           >
             {template.slots.length > 1 && (
-              <p className="text-[11px] font-semibold text-gray-700">
+              <p className="text-[13px] font-semibold text-label">
                 {slot.index === 0 ? 'Primary' : 'Secondary'}
               </p>
             )}
@@ -211,7 +211,7 @@ const ButtonsSection = ({
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <ColorField
                 label="Background"
                 value={button.bgColor || ''}
@@ -225,11 +225,11 @@ const ButtonsSection = ({
             </div>
 
             <p
-              className={`flex items-center gap-1.5 text-[10px] font-medium ${
-                contrast.pass ? 'text-gray-400' : 'text-red-600'
+              className={`flex items-center gap-1.5 text-[12px] font-medium tabular-nums ${
+                contrast.pass ? 'text-secondary' : 'text-danger'
               }`}
             >
-              {contrast.pass ? <CheckCircle2 size={11} /> : <AlertTriangle size={11} />}
+              {contrast.pass ? <CheckCircle2 size={14} strokeWidth={1.75} /> : <AlertTriangle size={14} strokeWidth={1.75} />}
               {contrast.level} · {formatRatio(contrast.ratio)}
               {!contrast.pass && ' — hard to read'}
             </p>

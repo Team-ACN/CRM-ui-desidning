@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { availableWidgets } from '../../data/mockCohorts';
-import { Trash2, Plus, ArrowLeft, Upload, Check, Puzzle, Layers, Search, X, Hash } from 'lucide-react';
+import { Trash2, Plus, ArrowLeft, Upload, Check, Puzzle, Layers, X, Hash } from 'lucide-react';
 import TopBannerSettings from './TopBannerSettings';
+import { Button, IconButton, SearchField, fieldClass, labelClass, hintClass, cardClass } from '../cms-ui';
 
 const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponentBuilder, isComponent, componentName, onOpenComponentBuilder, components = [], pageType }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,32 +39,26 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
 
         return (
           <div className="flex flex-col mt-4 space-y-4">
-            <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                 <Puzzle size={16} className="text-emerald-600" />
-                 <h4 className="text-sm font-semibold text-gray-900">Link Component</h4>
+            <div className={`${cardClass} p-4`}>
+              <div className="flex items-center gap-2 mb-1">
+                 <Puzzle size={16} strokeWidth={1.75} className="text-secondary" />
+                 <h4 className="text-[15px] font-semibold text-label">Link component</h4>
               </div>
-              <p className="text-xs text-gray-500 mb-4">
+              <p className={`${hintClass} mb-4`}>
                 {widgetDef.label} widgets require a pre-configured component. Search for an existing one below.
               </p>
               
               {/* Search Autocomplete */}
-              <div className="relative mb-3">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search size={14} className="text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search by name or ID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-gray-50 focus:bg-white transition-colors"
-                />
-              </div>
+              <SearchField
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search by name or ID"
+                className="w-full mb-3"
+              />
 
               {/* Search Results */}
               {searchQuery.trim() && (
-                <div className="mb-4 max-h-40 overflow-y-auto custom-scrollbar border border-gray-100 rounded-lg divide-y divide-gray-100">
+                <div className="mb-4 max-h-40 overflow-y-auto custom-scrollbar rounded-[10px] bg-surface shadow-card divide-y divide-separator">
                   {filteredComponents.length > 0 ? (
                     filteredComponents.map(comp => (
                       <button
@@ -78,45 +73,46 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
                           });
                           setSearchQuery('');
                         }}
-                        className="w-full text-left px-3 py-2 hover:bg-emerald-50 focus:bg-emerald-50 transition-colors flex flex-col gap-0.5"
+                        className="w-full text-left px-3 py-2 hover:bg-black/[0.02] active:bg-black/[0.04] focus:bg-accent-soft outline-none transition-colors flex flex-col gap-0.5"
                       >
-                        <span className="text-sm font-medium text-gray-900 truncate">{comp.name}</span>
-                        <span className="text-[10px] text-gray-400 font-mono">{comp.id}</span>
+                        <span className="text-[14px] font-medium text-label truncate">{comp.name}</span>
+                        <span className="text-[12px] text-tertiary tabular-nums">{comp.id}</span>
                       </button>
                     ))
                   ) : (
                     <div className="text-center py-4 px-3">
-                      <p className="text-xs text-gray-500">No matching components found.</p>
+                      <p className="text-[13px] text-secondary">No matching components found.</p>
                     </div>
                   )}
                 </div>
               )}
 
               <div className="relative flex items-center py-2">
-                <div className="flex-grow border-t border-gray-100"></div>
-                <span className="flex-shrink-0 flex items-center justify-center px-3 text-[10px] uppercase tracking-wider font-semibold text-gray-400 bg-white">Or</span>
-                <div className="flex-grow border-t border-gray-100"></div>
+                <div className="flex-grow border-t border-separator"></div>
+                <span className="flex-shrink-0 flex items-center justify-center px-3 text-[12px] text-tertiary">or</span>
+                <div className="flex-grow border-t border-separator"></div>
               </div>
 
-              <button
+              <Button
+                variant="secondary"
+                icon={Plus}
                 onClick={() => onOpenComponentBuilder && onOpenComponentBuilder(widget.type)}
-                className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium transition-colors border border-emerald-200"
+                className="mt-2 w-full"
               >
-                <Plus size={16} />
-                Create New Component
-              </button>
+                Create new component
+              </Button>
             </div>
           </div>
         );
       } else {
         return (
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl mt-4">
+          <div className="p-4 bg-fill rounded-2xl mt-4">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-emerald-600"><Layers size={16} /></span>
-              <span className="text-xs font-semibold text-gray-900">Linked Component</span>
+              <span className="text-secondary"><Layers size={16} strokeWidth={1.75} /></span>
+              <span className="text-[13px] font-medium text-secondary">Linked component</span>
             </div>
-            <p className="text-sm text-gray-700 font-medium">{componentName || 'Unknown Component'}</p>
-            <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wide">Read-Only Configuration</p>
+            <p className="text-[15px] text-label font-medium">{componentName || 'Unknown Component'}</p>
+            <p className={`${hintClass} mt-1`}>Read-only configuration</p>
           </div>
         );
       }
@@ -130,11 +126,11 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
         return (
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Asset Type</label>
+              <label className={labelClass}>Asset Type</label>
               <select
                 value={config.assetType || ''}
                 onChange={(e) => handleUpdate({ assetType: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className={fieldClass}
               >
                 <option value="">Select type...</option>
                 <option value="Apartment">Apartment</option>
@@ -144,11 +140,11 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Configuration</label>
+              <label className={labelClass}>Configuration</label>
               <select
                 value={config.configuration || ''}
                 onChange={(e) => handleUpdate({ configuration: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className={fieldClass}
               >
                 <option value="">Select config...</option>
                 <option value="1BHK">1 BHK</option>
@@ -158,11 +154,11 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Zone</label>
+              <label className={labelClass}>Zone</label>
               <select
                 value={config.zone || ''}
                 onChange={(e) => handleUpdate({ zone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className={fieldClass}
               >
                 <option value="">Select zone...</option>
                 <option value="North">North Bangalore</option>
@@ -175,29 +171,29 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
 
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Price Min (₹)</label>
+                <label className={labelClass}>Price Min (₹)</label>
                 <input
                   type="text"
                   placeholder="e.g. 50L"
                   value={config.priceMin || ''}
                   onChange={(e) => handleUpdate({ priceMin: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={fieldClass}
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Price Max (₹)</label>
+                <label className={labelClass}>Price Max (₹)</label>
                 <input
                   type="text"
                   placeholder="e.g. 2Cr"
                   value={config.priceMax || ''}
                   onChange={(e) => handleUpdate({ priceMax: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={fieldClass}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              <label className={labelClass}>
                 {config.assetType === 'Plot' ? 'Plot Size (sq.ft)' : 'SBUA (sq.ft)'}
               </label>
               <input
@@ -205,7 +201,7 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
                 placeholder={config.assetType === 'Plot' ? 'e.g. 1200' : 'e.g. 1500'}
                 value={config.sbua || ''}
                 onChange={(e) => handleUpdate({ sbua: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className={fieldClass}
               />
             </div>
 
@@ -215,24 +211,24 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
                 type="checkbox"
                 checked={config.hasImages || false}
                 onChange={(e) => handleUpdate({ hasImages: e.target.checked })}
-                className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                className="w-4 h-4 accent-accent"
               />
-              <span className="text-sm font-medium text-gray-700">Must have images / video</span>
+              <span className="text-[14px] text-label">Must have images / video</span>
             </label>
 
             {/* Divider */}
             <div className="relative flex items-center py-3 mt-4">
-              <div className="flex-grow border-t border-gray-200"></div>
-              <span className="flex-shrink-0 flex items-center gap-1 px-3 text-[10px] uppercase tracking-wider font-semibold text-gray-400 bg-white">
-                <Hash size={10} /> Manual Override
+              <div className="flex-grow border-t border-separator"></div>
+              <span className="flex-shrink-0 flex items-center gap-1 px-3 text-[13px] font-medium text-secondary">
+                <Hash size={13} strokeWidth={1.75} /> Manual override
               </span>
-              <div className="flex-grow border-t border-gray-200"></div>
+              <div className="flex-grow border-t border-separator"></div>
             </div>
 
             {/* Manual Property IDs */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Property IDs</label>
-              <p className="text-[11px] text-gray-400 mb-2">
+              <label className={labelClass}>Property IDs</label>
+              <p className={`${hintClass} mb-2`}>
                 Add specific property IDs to show only these properties. When IDs are specified, filters above are ignored.
               </p>
               <div className="flex gap-2">
@@ -252,10 +248,11 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
                       setPropertyIdInput('');
                     }
                   }}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`${fieldClass} flex-1`}
                 />
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  icon={Plus}
                   onClick={() => {
                     if (propertyIdInput.trim()) {
                       const currentIds = config.propertyIds || [];
@@ -266,11 +263,9 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
                       setPropertyIdInput('');
                     }
                   }}
-                  className="px-3 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
                 >
-                  <Plus size={14} />
                   Add
-                </button>
+                </Button>
               </div>
 
               {/* Chips / Tags */}
@@ -279,7 +274,7 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
                   {config.propertyIds.map((id) => (
                     <span
                       key={id}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium rounded-full"
+                      className="inline-flex items-center gap-1 pl-2.5 pr-1 h-7 bg-fill text-label text-[13px] tabular-nums rounded-full"
                     >
                       {id}
                       <button
@@ -288,9 +283,10 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
                           const newIds = config.propertyIds.filter((pid) => pid !== id);
                           handleUpdate({ propertyIds: newIds });
                         }}
-                        className="p-0.5 rounded-full hover:bg-amber-200 text-amber-500 hover:text-amber-700 transition-colors"
+                        aria-label={`Remove ${id}`}
+                        className="w-5 h-5 flex items-center justify-center rounded-full text-secondary hover:bg-fill-strong hover:text-label transition-colors"
                       >
-                        <X size={10} />
+                        <X size={12} strokeWidth={2} />
                       </button>
                     </span>
                   ))}
@@ -310,10 +306,10 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
         
         return (
           <div className="space-y-4">
-            <p className="text-xs text-gray-500 pb-2 border-b border-gray-100">Add multiple banners (minimum 3 required).</p>
+            <p className={`${hintClass} pb-2 border-b border-separator`}>Add multiple banners (minimum 3 required).</p>
             {items.map((item, index) => (
-              <div key={item.id} className="p-3 bg-gray-50 border border-gray-200 rounded-lg relative group">
-                <span className="absolute top-2 left-2 text-[10px] font-bold text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded">
+              <div key={item.id} className="p-3 bg-fill rounded-xl relative group">
+                <span className="absolute top-2.5 left-3 text-[12px] font-medium text-tertiary tabular-nums">
                   {index + 1}
                 </span>
                 {items.length > 3 && (
@@ -322,17 +318,18 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
                       const newItems = items.filter((i) => i.id !== item.id);
                       handleUpdate({ items: newItems });
                     }}
-                    className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Remove banner"
+                    className="absolute top-1.5 right-1.5 w-7 h-7 flex items-center justify-center rounded-full text-secondary hover:text-danger hover:bg-danger-soft opacity-0 group-hover:opacity-100 transition-[opacity,color,background-color]"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={14} strokeWidth={1.75} />
                   </button>
                 )}
-                <div className="space-y-3 mb-1 mt-4">
+                <div className="space-y-3 mb-1 mt-6">
                   <div>
-                    <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Banner Image</label>
-                    <label className="flex items-center justify-center w-full bg-white border border-gray-200 hover:bg-gray-50 hover:border-emerald-300 rounded px-2 py-1.5 text-xs text-gray-600 font-medium transition-colors cursor-pointer">
-                      <Upload size={12} className="mr-1.5 text-emerald-600" />
-                      {item.imageUrl ? 'Replace Image' : 'Upload Image'}
+                    <label className={labelClass}>Banner image</label>
+                    <label className="flex items-center justify-center w-full h-9 bg-surface hover:bg-black/[0.02] shadow-card rounded-[10px] px-3 text-[13px] text-label font-medium transition-colors cursor-pointer">
+                      <Upload size={14} strokeWidth={1.75} className="mr-1.5 text-secondary" />
+                      {item.imageUrl ? 'Replace image' : 'Upload image'}
                       <input
                         type="file"
                         accept="image/*"
@@ -345,13 +342,13 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
                       />
                     </label>
                     {item.imageUrl && (
-                      <div className="mt-1.5 text-[9px] text-emerald-600 flex items-center gap-1 font-medium bg-emerald-50 px-1.5 py-0.5 rounded inline-flex">
-                        <Check size={10} /> Image attached
+                      <div className="mt-1.5 text-[12px] text-positive flex items-center gap-1">
+                        <Check size={13} strokeWidth={2} /> Image attached
                       </div>
                     )}
                   </div>
                   <div>
-                    <label className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Link URL</label>
+                    <label className={labelClass}>Link URL</label>
                     <input
                       type="text"
                       value={item.linkUrl || ''}
@@ -360,29 +357,30 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
                         newItems[index].linkUrl = e.target.value;
                         handleUpdate({ items: newItems });
                       }}
-                      className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className={`${fieldClass} bg-surface!`}
                     />
                   </div>
                 </div>
               </div>
             ))}
-            <button
+            <Button
+              variant="plain"
+              icon={Plus}
               onClick={() => {
                 const newItems = [...items, { id: `b-${Date.now()}`, imageUrl: '', linkUrl: '' }];
                 handleUpdate({ items: newItems });
               }}
-              className="w-full py-2 flex items-center justify-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-100"
+              className="w-full"
             >
-              <Plus size={14} />
-              Add Banner
-            </button>
+              Add banner
+            </Button>
           </div>
         );
 
       default:
         return (
           <div className="text-center py-8">
-            <p className="text-xs text-gray-400">No additional configuration required for this widget type.</p>
+            <p className="text-[13px] text-secondary">No additional configuration required for this widget type.</p>
           </div>
         );
     }
@@ -391,15 +389,13 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
   return (
     <div className="flex flex-col h-full">
       {!hideHeader && (
-        <div className="p-4 border-b border-gray-200 flex items-center gap-3 bg-gray-50/50">
-          <button onClick={onBack} className="p-1 rounded-md hover:bg-gray-200 text-gray-500 transition-colors">
-            <ArrowLeft size={16} />
-          </button>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">Widget Settings</h3>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[10px]">{widgetDef?.icon}</span>
-              <span className="text-[11px] font-medium text-gray-500">{widgetDef?.label}</span>
+        <div className="px-3 py-3 border-b border-separator flex items-center gap-2">
+          <IconButton icon={ArrowLeft} label="Back to template settings" onClick={onBack} />
+          <div className="min-w-0">
+            <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-label">Widget settings</h3>
+            <div className="flex items-center gap-1.5 mt-0.5 text-secondary">
+              <span className="text-[12px]">{widgetDef?.icon}</span>
+              <span className="text-[13px] truncate">{widgetDef?.label}</span>
             </div>
           </div>
         </div>
@@ -410,13 +406,13 @@ const WidgetSettingsPanel = ({ widget, onUpdate, onBack, hideHeader, isComponent
         {widget.type !== 'top_banner' && (
         <div className="mb-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">Section Heading</label>
+            <label className={labelClass}>Section heading</label>
             <input
               type="text"
               placeholder="e.g. Featured Properties"
               value={config.heading || ''}
               onChange={(e) => handleUpdate({ heading: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+              className={fieldClass}
             />
           </div>
         </div>

@@ -1,46 +1,38 @@
 import React, { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, LayoutTemplate } from 'lucide-react';
 import TemplateCard from './TemplateCard';
+import { ListGroup } from '../cms-ui';
 
-const TemplatesTab = ({ templates, setTemplates, onEditTemplate, onPreviewTemplate, searchQuery }) => {
+const TemplatesTab = ({ templates, onEditTemplate, onPreviewTemplate, searchQuery }) => {
   const filteredTemplates = templates
     .filter((t) => t.name.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => a.priority - b.priority);
 
-  const handleToggle = (id) => {
-    setTemplates((prev) =>
-      prev.map((t) =>
-        t.id === id
-          ? {
-              ...t,
-              isActive: !t.isActive,
-              status: t.isActive ? 'Not Live' : 'Live',
-            }
-          : t
-      )
-    );
-  };
-
   return (
-    <div className="p-6">
+    <div className="px-8">
 
       {/* Template list */}
-      <div className="space-y-3">
-        {filteredTemplates.map((template) => (
-          <TemplateCard
-            key={template.id}
-            template={template}
-            onToggle={handleToggle}
-            onEdit={() => onEditTemplate(template)}
-            onPreview={() => onPreviewTemplate(template)}
-          />
-        ))}
-        {filteredTemplates.length === 0 && (
-          <div className="text-center py-12 text-gray-400 text-sm">
-            No templates found.
+      {filteredTemplates.length > 0 && (
+        <ListGroup>
+          {filteredTemplates.map((template) => (
+            <TemplateCard
+              key={template.id}
+              template={template}
+              onEdit={() => onEditTemplate(template)}
+              onPreview={() => onPreviewTemplate(template)}
+            />
+          ))}
+        </ListGroup>
+      )}
+      {filteredTemplates.length === 0 && (
+        <div className="flex flex-col items-center text-center py-16">
+          <div className="w-12 h-12 bg-fill rounded-2xl flex items-center justify-center mb-3">
+            <LayoutTemplate size={20} strokeWidth={1.75} className="text-secondary" />
           </div>
-        )}
-      </div>
+          <p className="text-[15px] font-semibold text-label">No templates found</p>
+          <p className="mt-1 text-[13px] text-secondary">Try a different search, or create a new template.</p>
+        </div>
+      )}
     </div>
   );
 };
