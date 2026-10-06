@@ -84,7 +84,7 @@
  * @property {PageOrderSection[]} project_page_order    Display order + visibility of /project page sections (PRD §8.2)
  */
 
-export const ZONES = ['East Bangalore', 'West Bangalore', 'North Bangalore', 'South Bangalore', 'Central Bangalore'];
+export const ZONES = ['Overall Bangalore', 'East Bangalore', 'North Bangalore', 'South Bangalore', 'West Bangalore', 'Central Bangalore'];
 
 export const ZONE_MICROMARKETS = {
   'East Bangalore': ['Whitefield', 'Marathahalli', 'Sarjapur Road', 'Bellandur', 'Varthur', 'ITPL', 'KR Puram', 'Indiranagar', 'Domlur', 'HAL', 'Old Airport Road'],
