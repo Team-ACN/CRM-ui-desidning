@@ -163,7 +163,10 @@ let ecScrapes = [
     json_data: blankJsonData(),
     status: { ...blankStatus(), project: 'yes' },
     pushed_project_id: null,
-    _demo: { kmlOutcome: 'clear', overlapWith: [], sitePlanOutcome: 'extracted' },
+    // roughCoords: an approximate location pulled from the proponent's address, not a surveyed
+    // boundary — sits nowhere near an existing project, so the location-based overlap check below
+    // should come back empty even though a KML hasn't been uploaded yet.
+    _demo: { kmlOutcome: 'clear', overlapWith: [], sitePlanOutcome: 'extracted', roughCoords: { lat: 12.7040, lng: 77.4180 } },
   },
   {
     id: 'EC0004',
@@ -223,7 +226,9 @@ let ecScrapes = [
     json_data: { ...blankJsonData(), developer_name: 'Adarsh Group' },
     status: { ...blankStatus(), developer: 'found', project: 'yes' },
     pushed_project_id: null,
-    _demo: { kmlOutcome: 'missing', overlapWith: [], sitePlanOutcome: 'extracted' },
+    // roughCoords sits ~500m from Sobha Neopolis (P0002, 12.9351/77.6812) — close enough that the
+    // location-based overlap check should flag it as worth confirming with a real KML.
+    _demo: { kmlOutcome: 'missing', overlapWith: [], sitePlanOutcome: 'extracted', roughCoords: { lat: 12.9385, lng: 77.6840 } },
   },
   {
     id: 'EC0008',
@@ -363,7 +368,9 @@ let ecScrapes = [
     json_data: blankJsonData(),
     status: { ...blankStatus(), project: 'yes' },
     pushed_project_id: null,
-    _demo: { kmlOutcome: 'clear', overlapWith: [], sitePlanOutcome: 'extracted' },
+    // roughCoords sits ~450m from Godrej Air NXT (P0004, 13.2437/77.6910) — another "no KML yet,
+    // but location says look here" case for the overlap-by-coordinates demo.
+    _demo: { kmlOutcome: 'clear', overlapWith: [], sitePlanOutcome: 'extracted', roughCoords: { lat: 13.2470, lng: 77.6940 } },
   },
   {
     id: 'EC0016',

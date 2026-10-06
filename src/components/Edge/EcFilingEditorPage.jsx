@@ -12,7 +12,7 @@ import {
   DEVELOPER_STATUS_OPTIONS, PROJECT_STATUS_OPTIONS, KML_STATUS_OPTIONS, SITE_PLAN_STATUS_OPTIONS,
   LAYOUT_TYPES, CONFIGURATIONS,
 } from '../../data/mockEc';
-import { getProject, updateProject } from '../../data/mockEdge';
+import { getProject, getProjects, updateProject } from '../../data/mockEdge';
 
 const inp = 'w-full bg-white border border-stone-200 rounded-xl px-4 py-3.5 text-base text-stone-800 focus:border-neutral-400 focus:shadow-sm outline-none transition-all placeholder:text-stone-300';
 
@@ -215,19 +215,56 @@ function overlapProjects(e) {
   }).filter(o => o.id);
 }
 
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+// Before a real KML boundary exists we still often have a rough location (e.g. from the
+// proponent's address) — close enough to flag a likely overlap worth confirming, even though
+// there's no polygon yet to actually intersect. Same remediation as a confirmed KML overlap
+// (push specs into the existing project); the KML itself is still what should get uploaded to
+// make it official. Kept deliberately tight (500m) and capped to the 5 nearest — this is meant to
+// read as "these are almost certainly the same site", not a general-purpose nearby-projects list.
+const NEARBY_RADIUS_KM = 0.5;
+const MAX_NEARBY_PROJECTS = 5;
+function nearbyProjectsByCoords(e) {
+  const rough = e._demo?.roughCoords;
+  if (!rough) return [];
+  return getProjects()
+    .filter(p => p.latitude != null && p.longitude != null)
+    .map(p => ({ project: p, distanceKm: haversineKm(rough.lat, rough.lng, p.latitude, p.longitude) }))
+    .filter(x => x.distanceKm <= NEARBY_RADIUS_KM)
+    .sort((a, b) => a.distanceKm - b.distanceKm)
+    .slice(0, MAX_NEARBY_PROJECTS)
+    .map(({ project, distanceKm }) => ({
+      id: project.id,
+      name: project.name,
+      developerName: project.builder_name || project.rawBuilderName || null,
+      distanceKm,
+    }));
+}
+
 function RealKmlMap({ e, mode, onModeChange, onUploadKml }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const tileLayerRef = useRef(null);
   const dataLayerRef = useRef(null);
+  const markersLayerRef = useRef(null);
   const hasKml = !!e.kml_file;
   const overlap = e.status.kml === 'overlap';
+  // Without a KML yet, a rough location (if we have one) is still enough to show the surrounding
+  // projects for context — the map doesn't have to wait on an actual boundary to be useful.
+  const canShowMap = hasKml || !!e._demo?.roughCoords;
 
-  // No KML yet → no map container is rendered at all (see below), so this waits on hasKml
-  // rather than mounting once — it (re)runs the moment a KML gets attached and the container
-  // div actually exists to initialize into.
+  // Nothing to show yet → no map container is rendered at all (see below), so this waits on
+  // canShowMap rather than mounting once — it (re)runs the moment a KML gets attached (or a rough
+  // location becomes available) and the container div actually exists to initialize into.
   useEffect(() => {
-    if (!hasKml || !containerRef.current || mapRef.current) return;
+    if (!canShowMap || !containerRef.current || mapRef.current) return;
     const map = L.map(containerRef.current, { attributionControl: false }).setView([12.9716, 77.7], 12);
     mapRef.current = map;
     // The container is sized by an aspect-ratio class, which can settle a tick after Leaflet's
@@ -237,7 +274,7 @@ function RealKmlMap({ e, mode, onModeChange, onUploadKml }) {
       map.remove();
       mapRef.current = null;
     };
-  }, [hasKml]);
+  }, [canShowMap]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -285,7 +322,56 @@ function RealKmlMap({ e, mode, onModeChange, onUploadKml }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [e.id, e.status.kml, e.kml_file]);
 
-  if (!hasKml) {
+  // Pins for nearby projects — labeled markers like the main deployment's project map, scoped to
+  // the area around this filing instead of the whole city. Runs whether or not there's an own KML
+  // boundary yet: without one, it's the only thing giving this filing a location on the map at
+  // all, using the rough coords; with one, it layers on top of the own-boundary polygon above.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return undefined;
+    if (markersLayerRef.current) {
+      map.removeLayer(markersLayerRef.current);
+      markersLayerRef.current = null;
+    }
+
+    const center = hasKml ? sampleCentroidFor(e) : (e._demo?.roughCoords || null);
+    if (!center) return undefined;
+    const nearby = nearbyProjectsByCoords(e);
+
+    const group = L.layerGroup();
+    const color = '#dc2626';
+    nearby.forEach(o => {
+      const project = getProject(o.id);
+      if (!project || project.latitude == null || project.longitude == null) return;
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="display:flex;align-items:center;gap:4px;white-space:nowrap;transform:translate(0,-4px);pointer-events:none;">`
+          + `<span style="width:8px;height:8px;border-radius:9999px;background:${color};box-shadow:0 0 0 2px #fff;flex-shrink:0;"></span>`
+          + `<span style="color:${color};font-weight:700;font-size:11px;text-shadow:0 0 3px #fff,0 0 3px #fff;">${o.name}</span>`
+          + `</div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+      });
+      L.marker([project.latitude, project.longitude], { icon, interactive: false }).addTo(group);
+    });
+    group.addTo(map);
+    markersLayerRef.current = group;
+
+    // The own-boundary effect above already calls fitBounds once its polygon loads — only drive
+    // the view from these pins when there's no polygon to fit to instead (no KML yet).
+    if (!hasKml) {
+      const nearbyCoords = nearby
+        .map(o => getProject(o.id))
+        .filter(p => p && p.latitude != null && p.longitude != null)
+        .map(p => [p.latitude, p.longitude]);
+      const bounds = L.latLngBounds([[center.lat, center.lng], ...nearbyCoords]);
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+    }
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [e.id, e.kml_file, e.status.kml, hasKml]);
+
+  if (!canShowMap) {
     return (
       <div className="rounded-2xl border border-stone-200 overflow-hidden">
         <button
@@ -303,7 +389,17 @@ function RealKmlMap({ e, mode, onModeChange, onUploadKml }) {
     <div className="rounded-2xl border border-stone-200 overflow-hidden">
       <div className="relative isolate">
         <div ref={containerRef} className="w-full aspect-[4/3]" />
+        {!hasKml && (
+          <div className="absolute top-2 left-2 z-[1000] px-2.5 py-1 bg-white rounded-lg shadow border border-stone-200 text-[11px] font-medium text-stone-500">
+            No KML yet — showing approximate location &amp; nearby projects
+          </div>
+        )}
         <div className="absolute bottom-2 left-2 z-[1000] flex items-center gap-1 bg-white rounded-lg shadow border border-stone-200 p-1">
+          {!hasKml && (
+            <button onClick={onUploadKml} title="Upload KML" className="p-1.5 rounded text-stone-400 hover:text-stone-700 transition-colors">
+              <UploadCloud size={14} />
+            </button>
+          )}
           <button onClick={() => onModeChange('normal')} title="Normal view" className={`p-1.5 rounded transition-colors ${mode === 'normal' ? 'bg-stone-200 text-stone-900' : 'text-stone-400 hover:text-stone-700'}`}><MapIcon size={14} /></button>
           <button onClick={() => onModeChange('satellite')} title="Satellite view" className={`p-1.5 rounded transition-colors ${mode === 'satellite' ? 'bg-stone-200 text-stone-900' : 'text-stone-400 hover:text-stone-700'}`}><Satellite size={14} /></button>
         </div>
@@ -318,6 +414,7 @@ export default function EcFilingEditorPage() {
   const [refreshTick, setRefreshTick] = useState(0);
   const [mapMode, setMapMode] = useState('normal');
   const [copiedLatLng, setCopiedLatLng] = useState(false);
+  const [copiedSitePlan, setCopiedSitePlan] = useState(false);
   const [savedSpecs, setSavedSpecs] = useState(false);
   const [specsDirty, setSpecsDirty] = useState(false);
   const [updatedProjectIds, setUpdatedProjectIds] = useState([]);
@@ -364,6 +461,19 @@ export default function EcFilingEditorPage() {
     refresh();
   }
   function runKmlCheck() {
+    // A rough-coords match (flagged before any KML existed) must win over the canned demo outcome
+    // — otherwise "Run" would silently downgrade a filing we already know is a likely overlap back
+    // to whatever _demo.kmlOutcome happens to say (usually 'clear'/'missing').
+    const nearby = nearbyProjectsByCoords(e);
+    if (nearby.length > 0) {
+      updateEcScrape(e.id, {
+        status: { kml: 'overlap' },
+        kml_file: e.kml_file || `/mock/kml/${e.id.toLowerCase()}.kml`,
+        _demo: { overlapWith: nearby.map(o => `${o.name} (${o.id})`) },
+      });
+      refresh();
+      return;
+    }
     const outcome = e._demo?.kmlOutcome || 'missing';
     updateEcScrape(e.id, { status: { kml: outcome }, kml_file: outcome !== 'missing' ? (e.kml_file || `/mock/kml/${e.id.toLowerCase()}.kml`) : e.kml_file });
     refresh();
@@ -376,6 +486,13 @@ export default function EcFilingEditorPage() {
       setTimeout(() => setCopiedLatLng(false), 1500);
     });
   }
+  function handleCopySitePlan() {
+    if (!e.site_plan) return;
+    navigator.clipboard.writeText(e.site_plan).then(() => {
+      setCopiedSitePlan(true);
+      setTimeout(() => setCopiedSitePlan(false), 1500);
+    });
+  }
   // Every field here already writes through on change (same pattern as the rest of this page) —
   // this button is a deliberate confirmation step, not a real pending-save gate. It only lights up
   // once specsDirty is set, so it doesn't look actionable when there's nothing new to confirm.
@@ -385,7 +502,17 @@ export default function EcFilingEditorPage() {
     setTimeout(() => setSavedSpecs(false), 1500);
   }
   function attachKmlManually() {
-    updateEcScrape(e.id, { status: { kml: 'clear' }, kml_file: `/mock/kml/${e.id.toLowerCase()}-manual.kml` });
+    // A rough-coords match (flagged before any KML existed) must carry over — otherwise attaching
+    // the KML would silently clear a filing we already know is a likely overlap.
+    const nearby = nearbyProjectsByCoords(e);
+    const patch = { kml_file: e.kml_file || `/mock/kml/${e.id.toLowerCase()}-manual.kml` };
+    if (nearby.length > 0) {
+      patch.status = { kml: 'overlap' };
+      patch._demo = { overlapWith: nearby.map(o => `${o.name} (${o.id})`) };
+    } else {
+      patch.status = { kml: 'clear' };
+    }
+    updateEcScrape(e.id, patch);
     refresh();
   }
   // Overlap means this filing is really the same site as an already-live project — instead of
@@ -524,9 +651,16 @@ export default function EcFilingEditorPage() {
 
               <div className="lg:col-span-1 self-start p-4 bg-stone-50 border border-stone-200 rounded-2xl space-y-4">
                 <div className="flex items-center justify-between">
-                  <button onClick={attachSitePlanManually} title="Upload manually" className="p-1.5 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors">
-                    <UploadCloud size={14} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button onClick={attachSitePlanManually} title="Upload manually" className="p-1.5 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors">
+                      <UploadCloud size={14} />
+                    </button>
+                    {e.site_plan && (
+                      <button onClick={handleCopySitePlan} title="Copy site plan link" className="p-1.5 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors">
+                        {copiedSitePlan ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                      </button>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1">
                     <Pill dim="site_plan" value={e.status.site_plan} options={SITE_PLAN_STATUS_OPTIONS} />
                     <button onClick={runSitePlanSearch} title="Run" className="p-1.5 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors">
@@ -617,6 +751,31 @@ export default function EcFilingEditorPage() {
                   </div>
                 </div>
 
+                {/* Independent of the overlap-project list below — this filing can be pushed in as
+                    its own new project any time it's still in play, whether or not it happens to
+                    overlap anything. Only hidden once it's settled as Live or Removed. */}
+                {e.status.overall !== 'live' && e.status.overall !== 'new' && (
+                  <button onClick={addAsNewProject} className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-950 transition-colors">
+                    {addedProjectId ? <><Check size={14} /> Added as new project</> : 'Add new project'}
+                  </button>
+                )}
+
+                {!e.kml_file && nearbyProjectsByCoords(e).length > 0 && (
+                  <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl space-y-3">
+                    {nearbyProjectsByCoords(e).map(o => (
+                      <div key={o.id} className="flex items-center justify-between text-sm text-stone-600">
+                        <span>{o.developerName || 'Unknown developer'} <span className="font-mono text-stone-400">({o.id})</span></span>
+                        <span className="text-[11px] text-stone-400">~{o.distanceKm.toFixed(2)} km away</span>
+                      </div>
+                    ))}
+                    {/* No real boundary yet, so pushing data into any of these would be a guess —
+                        the CTA here is to get a real KML in, not to resolve the overlap blind. */}
+                    <button onClick={attachKmlManually} className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium border border-stone-200 bg-white text-stone-800 hover:bg-stone-50 transition-colors">
+                      <UploadCloud size={14} /> Add KML file
+                    </button>
+                  </div>
+                )}
+
                 {e.status.kml === 'overlap' && (
                   <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl space-y-3">
                     {overlapProjects(e).map(o => (
@@ -630,15 +789,6 @@ export default function EcFilingEditorPage() {
                       </div>
                     ))}
                   </div>
-                )}
-
-                {/* Independent of the overlap-project list above — this filing can be pushed in as
-                    its own new project any time it's still in play, whether or not it happens to
-                    overlap anything. Only hidden once it's settled as Live or Removed. */}
-                {e.status.overall !== 'live' && e.status.overall !== 'new' && (
-                  <button onClick={addAsNewProject} className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-950 transition-colors">
-                    {addedProjectId ? <><Check size={14} /> Added as new project</> : 'Add new project'}
-                  </button>
                 )}
               </div>
             </div>

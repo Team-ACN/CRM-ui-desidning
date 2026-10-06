@@ -353,13 +353,14 @@ export default function EdgeProjectsPage() {
             <span className="text-xs font-medium uppercase tracking-widest">Loading…</span>
           </div>
         ) : (
-          <table className="text-left text-[13px] text-stone-600 whitespace-nowrap min-w-[1500px] w-full">
+          <table className="text-left text-[13px] text-stone-600 whitespace-nowrap min-w-[1700px] w-full">
               <thead className="bg-white text-[11px] font-medium uppercase tracking-wider text-stone-500 sticky top-0 z-10 shadow-[0_1px_0_0_#e7e5e4]">
                 <tr>
                   <th className="pl-6 pr-4 py-4 font-mono min-w-[130px]">ID</th>
                   <th className="px-4 py-4">State</th>
                   <th className="px-4 py-4">Launch Status</th>
-                  <th className="px-4 py-4 min-w-[160px]">Developer</th>
+                  <th className="px-4 py-4 min-w-[110px]">Added Date</th>
+                  <th className="px-4 py-4 min-w-[220px]">Developer</th>
                   <th className="px-4 py-4 min-w-[180px]">Name</th>
                   <th className="px-4 py-4">Price</th>
                   <th className="px-4 py-4">Micromarket</th>
@@ -367,6 +368,7 @@ export default function EdgeProjectsPage() {
                   <th className="px-6 py-4 min-w-[90px]">Units</th>
                   <th className="px-6 py-4 min-w-[90px]">Area</th>
                   <th className="px-6 py-4 min-w-[90px]">Floor</th>
+                  <th className="px-6 py-4 min-w-[120px]">Layout</th>
                   <th className="px-4 py-4 text-center">Media</th>
                   <th className="px-4 py-4">Possession</th>
                   <th className="px-4 py-4 sticky right-0 z-20 bg-white border-l border-stone-200">Actions</th>
@@ -394,7 +396,11 @@ export default function EdgeProjectsPage() {
                           </span>
                         ) : '-'}
                       </td>
-                      <td className="px-4 py-3 text-stone-700 truncate max-w-[160px]" title={getDeveloperName(p)}>{getDeveloperName(p)}</td>
+                      <td className="px-4 py-3 text-stone-500">{p.created_at ? new Date(p.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</td>
+                      <td className="px-4 py-3 text-stone-700 truncate max-w-[220px]">
+                        {getDeveloperCategory(p) && <span className="mr-1 text-stone-400">{getDeveloperCategory(p)}</span>}
+                        <span title={getDeveloperName(p)}>{getDeveloperName(p)}</span>
+                      </td>
                       <td className="px-4 py-3">
                         <span className="font-semibold text-stone-900 truncate max-w-[200px] inline-block" title={p.name || p.codename}>
                           {p.name || p.codename || '-'}
@@ -406,6 +412,7 @@ export default function EdgeProjectsPage() {
                       <td className="px-6 py-3 text-stone-800">{p.total_units || '-'}</td>
                       <td className="px-6 py-3 text-stone-800">{p.land_area_acres ? p.land_area_acres.toFixed(2) : '-'}</td>
                       <td className="px-6 py-3 text-stone-800">{p.floor || '-'}</td>
+                      <td className="px-6 py-3 text-stone-800 truncate max-w-[140px]" title={(p.configurations || []).join(', ')}>{(p.configurations && p.configurations.length) ? p.configurations.join(', ') : '-'}</td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-2 text-stone-300">
                           <span title={hasImg ? "Has Cover Image" : "No Cover Image"} className={hasImg ? "text-neutral-700" : "opacity-40"}><ImageIcon size={16} /></span>
@@ -434,7 +441,7 @@ export default function EdgeProjectsPage() {
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan="14" className="px-6 py-16 text-center">
+                    <td colSpan="16" className="px-6 py-16 text-center">
                       <div className="flex flex-col items-center justify-center text-stone-400 gap-2">
                         <Search size={32} className="opacity-50" />
                         <span className="font-medium text-[13px]">No projects found matching filters.</span>

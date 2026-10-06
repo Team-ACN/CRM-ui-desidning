@@ -367,7 +367,7 @@ export default function EcPipelinePage() {
               <th className="px-4 py-4">Status</th>
               <th className="px-4 py-4">Added</th>
               <th className="px-2 py-4">Manual Check</th>
-              <th className="px-4 py-4">Developer</th>
+              <th className="px-4 py-4 min-w-[220px]">Developer</th>
               <th className="px-4 py-4">Project Name</th>
             </tr>
           </thead>
@@ -380,8 +380,13 @@ export default function EcPipelinePage() {
                 <td className="px-2 py-1.5">
                   <ManualCheckBadge value={e.status.overall} />
                 </td>
-                <td className="px-4 py-3 text-stone-700 truncate max-w-[160px]">
-                  {e.json_data.developer_name || <span className="text-stone-300">Unmatched</span>}
+                <td className="px-4 py-3 text-stone-700 truncate max-w-[220px]">
+                  {e.json_data.developer_name ? (
+                    <>
+                      {!['unassigned', 'blank'].includes(developerCategoryFor(e)) && <span className="mr-1 text-stone-400">{developerCategoryFor(e)}</span>}
+                      {e.json_data.developer_name}
+                    </>
+                  ) : <span className="text-stone-300">Unmatched</span>}
                 </td>
                 <td className="px-4 py-3">
                   <span title={e.proponent} className="text-stone-900 truncate max-w-[560px] inline-block">{e.name}</span>
