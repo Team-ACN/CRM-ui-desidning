@@ -1,20 +1,18 @@
 import React from 'react';
+import { fieldClass, hintClass, labelClass } from '../../cms-ui';
 import Section from './Section';
 import { describeFrequency, errorFor } from '../popupValidation';
 
-const inputClass =
-  'w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-gray-900';
-
 const NumberField = ({ label, value, min = 0, placeholder, onChange }) => (
   <div>
-    <label className="block text-[11px] font-medium text-gray-600 mb-1">{label}</label>
+    <label className={labelClass}>{label}</label>
     <input
       type="number"
       min={min}
       value={value ?? ''}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-      className={inputClass}
+      className={`${fieldClass} tabular-nums`}
     />
   </div>
 );
@@ -25,7 +23,7 @@ const DeliverySection = ({ popup, validation, onChange }) => {
 
   return (
     <Section step={4} title="How often" hint="Capped by default so a popup can never nag.">
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-3">
         <NumberField
           label="Max shows"
           min={1}
@@ -40,14 +38,14 @@ const DeliverySection = ({ popup, validation, onChange }) => {
         />
       </div>
       {errorFor(validation, 'frequency.maxImpressions') && (
-        <p className="text-[10px] text-red-600">{errorFor(validation, 'frequency.maxImpressions')}</p>
+        <p className="text-[12px] leading-4 text-danger">{errorFor(validation, 'frequency.maxImpressions')}</p>
       )}
 
-      <p className="text-[11px] text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+      <p className="text-[13px] text-secondary bg-fill rounded-[10px] px-3 py-2">
         {describeFrequency(popup)}
       </p>
 
-      <p className="text-[11px] text-gray-400">
+      <p className={hintClass}>
         Priority is set by dragging popups in the list — it only matters against popups sharing
         this trigger.
       </p>

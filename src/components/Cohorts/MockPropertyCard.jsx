@@ -86,7 +86,7 @@ const MockPropertyCard = () => {
       </div>
 
       {/* Footer Contact Card */}
-      <div className="w-full flex flex-row items-center p-3 gap-3 h-[68px] border-t border-dashed border-[#D4D4D4] box-border">
+      <div className="w-full flex flex-row items-center p-3 gap-3 h-[68px] border-t border-dashed border-[#E5E5E5] box-border">
          <div className="flex-1 flex flex-row items-center gap-2 h-[44px]">
              {/* Agent Avatar */}
             <div className="w-[40px] h-[40px] bg-[#FCA5A5] rounded-full flex flex-col justify-center items-center">

@@ -10,8 +10,8 @@ const matchesSurface = (popup, surface) => popup.surface === surface;
 
 const Kpi = ({ label, value }) => (
   <div>
-    <p className="text-[11px] font-medium text-gray-500">{label}</p>
-    <p className="text-xl font-bold text-gray-900 tabular-nums mt-0.5">{value}</p>
+    <p className="text-[24px] leading-7 font-semibold tracking-[-0.02em] text-label tabular-nums">{value}</p>
+    <p className="text-[13px] text-secondary mt-1">{label}</p>
   </div>
 );
 
@@ -20,17 +20,17 @@ const Kpi = ({ label, value }) => (
 const SurfacePanel = ({ label, stats, isActive, onSelect }) => (
   <button
     onClick={onSelect}
-    className={`text-left bg-white border rounded-xl px-5 py-4 transition-colors cursor-pointer ${
-      isActive ? 'border-gray-900 shadow-sm' : 'border-gray-200 hover:border-gray-300'
+    className={`text-left bg-surface rounded-2xl px-5 py-4 cursor-pointer transition-[transform,box-shadow,background-color] duration-100 ease-out active:scale-[0.99] ${
+      isActive ? 'ring-2 ring-accent' : 'shadow-card hover:bg-black/[0.01]'
     }`}
   >
-    <div className="flex items-center justify-between mb-3">
-      <span className="text-xs font-semibold text-gray-900 uppercase tracking-wider">{label}</span>
-      <span className={`text-[10px] font-medium ${isActive ? 'text-gray-500' : 'text-gray-300'}`}>
+    <div className="flex items-center justify-between mb-4">
+      <span className="text-[15px] font-semibold tracking-[-0.01em] text-label">{label}</span>
+      <span className={`text-[13px] ${isActive ? 'text-accent font-medium' : 'text-tertiary'}`}>
         {isActive ? 'Viewing' : 'View'}
       </span>
     </div>
-    <div className="grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-4 gap-4">
       <Kpi label="Live" value={stats.liveCount} />
       <Kpi label="Impressions" value={formatCount(stats.impressions)} />
       <Kpi label="Avg CTR" value={formatPct(stats.ctr)} />
@@ -68,7 +68,7 @@ const PopupsTab = ({
   const webTotals = useMemo(() => aggregateStats(popups.filter((p) => p.surface === 'web')), [popups]);
 
   return (
-    <div className="px-6 pb-12 space-y-5">
+    <div className="px-8 pb-12 space-y-6">
       {/* Performance at a glance — both surfaces, kept apart */}
       <div className="grid grid-cols-2 gap-4">
         <SurfacePanel
@@ -95,21 +95,21 @@ const PopupsTab = ({
       />
 
       {groups.length === 0 ? (
-        <div className="text-center py-16 bg-white border border-dashed border-gray-200 rounded-xl">
-          <div className="flex items-center justify-center text-gray-300 mb-3">
-            <MonitorSmartphone size={36} />
+        <div className="flex flex-col items-center text-center py-16 bg-surface rounded-2xl shadow-card">
+          <div className="w-12 h-12 rounded-2xl bg-fill flex items-center justify-center text-secondary mb-4">
+            <MonitorSmartphone size={22} strokeWidth={1.75} />
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-1">
+          <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-label">
             {searchQuery ? 'No popups match that search' : 'No popups here yet'}
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-[13px] text-secondary mt-1">
             {searchQuery
               ? 'Try a different name.'
               : 'Upload a creative, pick a layout, and the system renders the CTA.'}
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {groups.map((group) => (
             <PopupGroup
               key={group.key}
@@ -119,7 +119,7 @@ const PopupsTab = ({
               onToggle={onToggle}
             />
           ))}
-          <p className="text-[11px] text-gray-400 px-4">
+          <p className="text-[12px] text-secondary px-4">
             Only one popup shows per view — use Manage priority to change which one wins its slot.
           </p>
         </div>

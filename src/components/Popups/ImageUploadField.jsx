@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Upload, Trash2, AlertTriangle } from 'lucide-react';
+import { pressable } from '../cms-ui';
 import { IMAGE_CONSTRAINTS } from './popupConstants';
 
 const readImage = (file) =>
@@ -53,17 +54,17 @@ const ImageUploadField = ({ label, hint, value, minWidth, minHeight, onChange })
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <p className="text-[11px] font-medium text-gray-600">{label}</p>
-        <span className="text-[10px] text-gray-400">{hint}</span>
+        <p className="text-[13px] font-medium text-label">{label}</p>
+        <span className="text-[12px] text-tertiary tabular-nums">{hint}</span>
       </div>
 
       {value ? (
-        <div className="relative group rounded-lg overflow-hidden border border-gray-200">
+        <div className="relative group rounded-xl overflow-hidden bg-fill shadow-[inset_0_0_0_1px_rgb(0_0_0/0.04)]">
           <img src={value} alt="" className="w-full h-24 object-cover" />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-[background-color,opacity] duration-200 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
             <button
               onClick={() => inputRef.current?.click()}
-              className="px-2.5 py-1 bg-white text-gray-800 rounded-md text-[11px] font-medium cursor-pointer"
+              className={`h-8 px-3 bg-white border border-gray-200 text-gray-700 rounded-lg text-[13px] font-medium cursor-pointer ${pressable}`}
             >
               Replace
             </button>
@@ -73,19 +74,20 @@ const ImageUploadField = ({ label, hint, value, minWidth, minHeight, onChange })
                 setNote('');
                 setError('');
               }}
-              className="p-1.5 bg-white text-red-600 rounded-md cursor-pointer"
+              aria-label="Remove creative"
+              className={`w-8 h-8 flex items-center justify-center bg-white text-danger rounded-full cursor-pointer ${pressable}`}
             >
-              <Trash2 size={13} />
+              <Trash2 size={14} strokeWidth={1.75} />
             </button>
           </div>
         </div>
       ) : (
         <button
           onClick={() => inputRef.current?.click()}
-          className="w-full h-20 flex flex-col items-center justify-center gap-1 border border-dashed border-gray-300 rounded-lg text-gray-400 hover:border-emerald-400 hover:text-emerald-600 transition-colors cursor-pointer"
+          className="w-full h-24 flex flex-col items-center justify-center gap-1.5 border border-dashed border-separator rounded-2xl text-secondary hover:border-accent/50 hover:bg-accent-soft hover:text-accent transition-colors cursor-pointer"
         >
-          <Upload size={15} />
-          <span className="text-[11px] font-medium">Upload creative</span>
+          <Upload size={16} strokeWidth={1.75} />
+          <span className="text-[13px] font-medium">Upload creative</span>
         </button>
       )}
 
@@ -98,8 +100,8 @@ const ImageUploadField = ({ label, hint, value, minWidth, minHeight, onChange })
       />
 
       {(error || note) && (
-        <p className={`mt-1.5 flex items-start gap-1.5 text-[10px] ${error ? 'text-red-600' : 'text-amber-600'}`}>
-          <AlertTriangle size={11} className="mt-px shrink-0" />
+        <p className={`mt-1.5 flex items-start gap-1.5 text-[12px] leading-4 ${error ? 'text-danger' : 'text-warning'}`}>
+          <AlertTriangle size={14} strokeWidth={1.75} className="shrink-0" />
           {error || note}
         </p>
       )}

@@ -24,7 +24,7 @@ const AppHeaderMock = ({ pageType }) => {
 
           <div className="flex flex-row items-center gap-3">
             {/* Coins */}
-            <div className="h-[40px] bg-[#FAFAFA] border-[1.5px] border-[#D4D4D4] rounded-full flex flex-row items-center px-4 gap-1.5 shadow-sm">
+            <div className="h-[40px] bg-[#FAFAFA] border border-[#E5E5E5] rounded-full flex flex-row items-center px-4 gap-1.5">
               <Coins size={20} className="text-amber-500" />
               <span className="text-[#0F766E] text-[16px] font-semibold font-['Outfit']">100</span>
             </div>
@@ -54,7 +54,7 @@ const AppHeaderMock = ({ pageType }) => {
 
         {/* Search Bar */}
         <div className="w-full px-4 pb-4">
-          <div className="w-full h-[52px] bg-[#FAFAFA] border border-[#D4D4D4] rounded-xl flex items-center px-4 gap-3">
+          <div className="w-full h-[52px] bg-[#FAFAFA] border border-[#E5E5E5] rounded-[12px] flex items-center px-4 gap-3">
             <Search size={20} className="text-[#737373]" strokeWidth={2.5} />
             <span className="text-[#737373] text-[15px] font-medium font-['Inter']">Search for the property here s</span>
           </div>

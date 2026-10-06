@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
+import { IconButton } from '../cms-ui';
 
 // Small overflow menu — keeps one control per row instead of three inline links.
 const RowMenu = ({ items }) => {
@@ -17,18 +18,20 @@ const RowMenu = ({ items }) => {
 
   return (
     <div ref={ref} className="relative">
-      <button
+      <IconButton
+        icon={MoreHorizontal}
+        label="More actions"
+        size={18}
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen((prev) => !prev);
         }}
-        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-      >
-        <MoreHorizontal size={18} />
-      </button>
+        className={isOpen ? 'bg-fill text-label' : ''}
+      />
 
       {isOpen && (
-        <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
+        // Grows out of the trigger's corner so it reads as coming from the button.
+        <div className="absolute right-0 top-full mt-1 w-48 bg-surface rounded-xl shadow-raised z-20 p-1 origin-top-right transition-[opacity,transform] duration-200 ease-apple starting:opacity-0 starting:scale-95">
           {items.map((item) => (
             <button
               key={item.label}
@@ -37,10 +40,10 @@ const RowMenu = ({ items }) => {
                 setIsOpen(false);
                 item.onSelect();
               }}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${
+              className={`w-full flex items-center gap-2.5 px-2.5 h-9 rounded-lg text-[14px] text-left transition-colors ${
                 item.tone === 'danger'
-                  ? 'text-red-600 hover:bg-red-50'
-                  : 'text-gray-700 hover:bg-gray-50'
+                  ? 'text-danger hover:bg-danger-soft'
+                  : 'text-label hover:bg-fill [&>svg]:text-secondary'
               }`}
             >
               {item.icon}

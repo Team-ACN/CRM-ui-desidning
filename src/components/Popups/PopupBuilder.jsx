@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Button, IconButton, fieldClass, labelClass } from '../cms-ui';
 import PopupCanvas from './PopupCanvas';
 import CreativeSection from './settings/CreativeSection';
 import ButtonsSection from './settings/ButtonsSection';
@@ -83,48 +84,43 @@ const PopupBuilder = ({ popup: initialPopup, cohorts, onSave, onBack }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-canvas">
       {/* Header — the name is the title, not another form field */}
-      <header className="h-14 bg-white border-b border-gray-200 pl-3 pr-4 flex items-center justify-between shrink-0">
+      <header className="material h-14 bg-surface/80 backdrop-blur-xl backdrop-saturate-150 border-b border-separator pl-3 pr-4 flex items-center justify-between shrink-0 relative z-10">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <button
-            onClick={onBack}
-            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors cursor-pointer"
-          >
-            <ArrowLeft size={18} />
-          </button>
+          <IconButton icon={ArrowLeft} label="Back" size={18} onClick={onBack} />
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-gray-900 truncate">
+            <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-label truncate">
               {popup.name || 'Untitled popup'}
             </h2>
-            <p className="text-[11px] text-gray-400">{isEditing ? 'Editing' : 'New popup'}</p>
+            <p className="text-[12px] text-secondary">{isEditing ? 'Editing' : 'New popup'}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {validation.errors.length > 0 && (
             <span
               title={validation.errors.map((e) => e.message).join('\n')}
-              className="flex items-center gap-1.5 text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg"
+              className="flex items-center gap-1.5 mr-2 text-[13px] font-medium text-warning tabular-nums"
             >
-              <AlertTriangle size={12} />
+              <AlertTriangle size={14} strokeWidth={1.75} />
               {validation.errors.length} to fix
             </span>
           )}
-          <button
+          <Button
+            variant="secondary"
             onClick={() => onSave({ ...popup, status: 'Draft', isActive: false })}
             disabled={!popup.name.trim()}
-            className="px-3 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:text-gray-300 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors cursor-pointer"
           >
             Save draft
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
             onClick={() => onSave({ ...popup, status: 'Not Live', isActive: false })}
             disabled={!validation.isValid}
-            className="px-4 py-2 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
           >
             Send for approval
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -140,14 +136,14 @@ const PopupBuilder = ({ popup: initialPopup, cohorts, onSave, onBack }) => {
         />
 
         {/* One column, four steps, no sub-tabs */}
-        <aside className="w-[380px] bg-white border-l border-gray-200 overflow-y-auto shrink-0">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <label className="block text-[11px] font-medium text-gray-600 mb-1">Popup name</label>
+        <aside className="w-[380px] bg-surface border-l border-separator overflow-y-auto shrink-0">
+          <div className="px-5 py-5 border-b border-separator">
+            <label className={labelClass}>Popup name</label>
             <input
               value={popup.name}
               onChange={(e) => handleChange({ name: e.target.value })}
               placeholder="e.g. Whitefield premium — book a demo"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className={fieldClass}
             />
           </div>
 
