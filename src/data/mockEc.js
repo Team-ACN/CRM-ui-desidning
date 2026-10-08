@@ -135,6 +135,9 @@ let ecScrapes = [
     date_of_submission: '2026-09-01',
     kml_file: '/mock/kml/ec0002.kml',
     site_plan: '/site-plans/goyal-hariyana-orchid-greens.pdf',
+    // UI-only mock flag (no real PDF parsing) — demos the inline page picker that appears
+    // whenever a saved site plan is assumed to have more than one page.
+    site_plan_multi_page: true,
     added_date: '2026-09-02T09:00:00.000Z',
     json_data: {
       codename: null,
@@ -539,6 +542,35 @@ let ecScrapes = [
     status: { developer: 'found', project: 'yes', kml: 'clear', site_plan: 'extracted', overall: 'live' },
     pushed_project_id: null,
     _demo: { kmlOutcome: 'clear', overlapWith: [], sitePlanOutcome: 'extracted' },
+  },
+  {
+    id: 'EC0026',
+    source: 'EC',
+    sia_id: 'SIA/KA/INFRA2/12451/2026',
+    name: 'Sipani Modification & Expansion (test fixture)',
+    proponent: 'Sipani Properties Private Limited',
+    date_of_submission: '2026-09-23',
+    kml_file: null,
+    // Points at the real Firebase Storage file so the normal (resolved) view shows the actual
+    // PDF — the page-picker flow above it is still the UI-only mock (site_plan_multi_page).
+    site_plan: 'https://firebasestorage.googleapis.com/v0/b/acn-inventories-497906.firebasestorage.app/o/edge%2Fec%2FEC1521%2Fmaster-plan%2Fedge_ec_EC1521_master-plan_1244117408_CONCEPTUAL_PLAN_1791267918841_drawings_and_maps.pdf?alt=media',
+    site_plan_multi_page: true,
+    // Newest added_date in the set — the pipeline list sorts by this (desc) by default, so this
+    // filing sits at the top without needing any special-case sort logic.
+    added_date: '2026-09-23T09:00:00.000Z',
+    json_data: {
+      codename: null,
+      units: null,
+      floor: null,
+      land_area_acres: null,
+      layout: [],
+      config: [],
+      description: null,
+      developer_name: null,
+    },
+    status: { developer: 'not-found', project: 'no', kml: 'missing', site_plan: 'manual', overall: 'pending' },
+    pushed_project_id: null,
+    _demo: { kmlOutcome: 'missing', overlapWith: [], sitePlanOutcome: 'manual' },
   },
 ];
 

@@ -13,6 +13,12 @@ import {
   LAYOUT_TYPES, CONFIGURATIONS,
 } from '../../data/mockEc';
 import { getProject, getProjects, updateProject } from '../../data/mockEdge';
+import SitePlanPageStrip from './SitePlanPagePicker';
+import { sitePlanPlaceholderImageUrl } from './sitePlanPlaceholder';
+
+// Purely cosmetic — there's no real PDF parsing here, so a freshly-attached site plan is just
+// assumed to look like this many pages until "Save" on the picker resolves it down to one.
+const FAKE_SITE_PLAN_PAGE_COUNT = 4;
 
 const inp = 'w-full bg-white border border-stone-200 rounded-xl px-4 py-3.5 text-base text-stone-800 focus:border-neutral-400 focus:shadow-sm outline-none transition-all placeholder:text-stone-300';
 
@@ -420,12 +426,15 @@ export default function EcFilingEditorPage() {
   const [updatedProjectIds, setUpdatedProjectIds] = useState([]);
   const [addedProjectId, setAddedProjectId] = useState(null);
   const [pendingOverall, setPendingOverall] = useState(null);
+  const [sitePlanSelectedPage, setSitePlanSelectedPage] = useState(1);
+  const sitePlanInputRef = useRef(null);
   const refresh = () => setRefreshTick(t => t + 1);
 
   // Save Specs should only light up once there's actually something unsaved for this filing.
   useEffect(() => setSpecsDirty(false), [id]);
   // Same deal for the header status toggle — picking a value stages it, Save commits it.
   useEffect(() => setPendingOverall(null), [id]);
+  useEffect(() => setSitePlanSelectedPage(1), [id]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const e = useMemo(() => getEcScrape(id), [id, refreshTick]);
@@ -542,7 +551,14 @@ export default function EcFilingEditorPage() {
   // one action here, since extracting only ever makes sense once a site plan has been found.
   function runSitePlanSearch() {
     const outcome = e._demo?.sitePlanOutcome || 'missing';
-    const patch = { status: { site_plan: outcome }, site_plan: outcome === 'extracted' ? (e.site_plan || '/site-plans/goyal-hariyana-orchid-greens.pdf') : e.site_plan };
+    const patch = {
+      status: { site_plan: outcome },
+      site_plan: outcome === 'extracted' ? (e.site_plan || '/site-plans/goyal-hariyana-orchid-greens.pdf') : e.site_plan,
+      // UI-only mock: assume whatever just came back might be a multi-page filing, same as a
+      // manual upload would — there's no real PDF parsing behind this, it's just so the picker
+      // below has something to demo.
+      site_plan_multi_page: outcome === 'extracted' ? true : e.site_plan_multi_page,
+    };
     if (outcome === 'extracted' && !e.json_data.description) {
       patch.json_data = {
         units: 800, floor: 'G+20', land_area_acres: 5, layout: ['Apartment'], config: ['2BHK', '3BHK'],
@@ -553,8 +569,29 @@ export default function EcFilingEditorPage() {
     updateEcScrape(e.id, patch);
     refresh();
   }
-  function attachSitePlanManually() {
-    updateEcScrape(e.id, { status: { site_plan: 'manual' }, site_plan: '/site-plans/goyal-hariyana-orchid-greens.pdf' });
+  function commitSitePlan(url) {
+    // Previous manual uploads are blob: URLs we created — free them once they're replaced so
+    // they don't pile up for the life of the tab.
+    if (e.site_plan?.startsWith('blob:')) URL.revokeObjectURL(e.site_plan);
+    updateEcScrape(e.id, { status: { site_plan: 'manual' }, site_plan: url, site_plan_multi_page: true });
+    refresh();
+  }
+  function openSitePlanFileChooser() {
+    sitePlanInputRef.current?.click();
+  }
+  // Whatever's picked gets saved as-is — same as a scraper writing straight to the record.
+  // `site_plan_multi_page` is a UI-only flag (no real PDF is inspected): it just assumes any
+  // freshly-attached file might have more than one page, so the picker below has a reason to
+  // show up, until "Save" there resolves it.
+  function handleSitePlanFileChosen(file) {
+    commitSitePlan(URL.createObjectURL(file));
+  }
+  // Resolves the picker — doesn't actually touch the PDF, just marks the record as settled on
+  // one page, same as if that page had been trimmed out of a real multi-page file.
+  // Resolves the picker — keeps showing the picked page's placeholder image from here on,
+  // instead of switching back to the original (unpicked) PDF view.
+  function handleSaveSitePlanPage() {
+    updateEcScrape(e.id, { site_plan_multi_page: false, site_plan_picked_page: sitePlanSelectedPage });
     refresh();
   }
   function setManualCheck(value) {
@@ -634,13 +671,37 @@ export default function EcFilingEditorPage() {
 
           {/* Part 2 — Site Plan */}
           <div>
+            {e.site_plan_multi_page && (
+              <SitePlanPageStrip
+                numPages={FAKE_SITE_PLAN_PAGE_COUNT}
+                selected={sitePlanSelectedPage}
+                onSelect={setSitePlanSelectedPage}
+                onSave={handleSaveSitePlanPage}
+              />
+            )}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 bg-white border border-stone-200 rounded-2xl overflow-hidden">
-                {e.site_plan ? (
+                {e.site_plan_multi_page ? (
+                  <div className="w-full h-[460px]">
+                    <img
+                      src={sitePlanPlaceholderImageUrl(sitePlanSelectedPage, 900, 1273)}
+                      alt={`Page ${sitePlanSelectedPage}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : e.site_plan_picked_page ? (
+                  <div className="w-full h-[460px]">
+                    <img
+                      src={sitePlanPlaceholderImageUrl(e.site_plan_picked_page, 900, 1273)}
+                      alt={`Page ${e.site_plan_picked_page}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : e.site_plan ? (
                   <iframe src={`${e.site_plan}#toolbar=0&navpanes=0`} title="Site plan" className="w-full h-full min-h-[460px] block" />
                 ) : (
                   <button
-                    onClick={attachSitePlanManually}
+                    onClick={openSitePlanFileChooser}
                     className="w-full min-h-[460px] flex flex-col items-center justify-center gap-3 py-10 text-center cursor-pointer hover:bg-stone-50 transition-colors"
                   >
                     <UploadCloud size={32} className="text-stone-300" />
@@ -652,7 +713,7 @@ export default function EcFilingEditorPage() {
               <div className="lg:col-span-1 self-start p-4 bg-stone-50 border border-stone-200 rounded-2xl space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
-                    <button onClick={attachSitePlanManually} title="Upload manually" className="p-1.5 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors">
+                    <button onClick={openSitePlanFileChooser} title="Upload manually" className="p-1.5 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors">
                       <UploadCloud size={14} />
                     </button>
                     {e.site_plan && (
@@ -795,6 +856,18 @@ export default function EcFilingEditorPage() {
           </div>
         </div>
       </div>
+
+      <input
+        ref={sitePlanInputRef}
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        onChange={ev => {
+          const file = ev.target.files?.[0];
+          ev.target.value = '';
+          if (file) handleSitePlanFileChosen(file);
+        }}
+      />
     </div>
   );
 }
