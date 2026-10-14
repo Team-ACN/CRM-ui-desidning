@@ -9,7 +9,97 @@ export const mockStats = [
   { label: 'Agents Enquired', value: '24' },
 ];
 
+export const CONNECT_DIRECTION_OPTIONS = [
+  { value: 'outbound', label: 'Outbound' },
+  { value: 'inbound', label: 'Inbound' },
+];
+
+export const CONNECT_MEDIUM_OPTIONS = [
+  { value: 'on call', label: 'On Call' },
+  { value: 'on whatsapp', label: 'On WhatsApp' },
+];
+
+export const CONNECTION_STATUS_OPTIONS = [
+  { value: 'connected', label: 'Connected' },
+  { value: 'not connected', label: 'Not Connected' },
+  { value: 'call back', label: 'Call Back' },
+];
+
+export const CONNECT_TOPIC_OPTIONS = [
+  { value: 'inventory', label: 'Inventory' },
+  { value: 'enquiry', label: 'Enquiry' },
+  { value: 'mashal_ai', label: 'Masal AI' },
+  { value: 'primary', label: 'Primary' },
+  { value: 'services', label: 'Services' },
+  { value: 'loan', label: 'Loan' },
+];
+
+// Appends a connect-history entry for an agent and, for a "call back" outcome,
+// records/updates that KAM's pending callback so the sidebar's callback
+// banner always reflects the latest scheduled one.
+export function addConnectHistoryEntry(agentId, entry) {
+  const agent = mockAgents.find((a) => a.agentId === agentId);
+  if (!agent) return null;
+
+  const newEntry = {
+    id: `ch_${Date.now()}`,
+    timestamp: Date.now(),
+    direction: '',
+    connectMedium: '',
+    connection: '',
+    note: '',
+    topics: [],
+    callbackAt: null,
+    ...entry,
+  };
+
+  agent.connectHistory = [...(agent.connectHistory || []), newEntry];
+
+  if (newEntry.connection === 'call back' && newEntry.callbackAt && newEntry.kamId) {
+    agent.nextCallbacks = {
+      ...(agent.nextCallbacks || {}),
+      [newEntry.kamId]: { at: newEntry.callbackAt, entryId: newEntry.id },
+    };
+  }
+
+  return newEntry;
+}
+
 export const mockAgents = [
+  {
+    id: 9,
+    name: 'Ramesh Gowda',
+    contact: '+919845019980',
+    agentId: 'CPC980',
+    plan: 'Premium',
+    credits: 300,
+    renewal: 'In 90 days',
+    inventories: 8,
+    enquiriesDid: 20,
+    enquiriesRec: 14,
+    lastConnected: '2 hours ago',
+    lastTried: '2 hours ago',
+    lastStatus: 'Connected',
+    kam: 'Sandeep',
+    agentStatus: 'Interested',
+  },
+  {
+    id: 10,
+    name: 'Deepika Nair',
+    contact: '+919845019981',
+    agentId: 'CPC981',
+    plan: 'Trial',
+    credits: 100,
+    renewal: 'In 29 days',
+    inventories: 0,
+    enquiriesDid: 0,
+    enquiriesRec: 0,
+    lastConnected: 'Never',
+    lastTried: 'Never',
+    lastStatus: 'No Contact',
+    kam: 'Siddharth',
+    agentStatus: 'Not Contact',
+  },
   {
     id: 1,
     name: 'Vedamurthy N',
@@ -25,7 +115,48 @@ export const mockAgents = [
     lastTried: '1 hour ago',
     lastStatus: 'Connected',
     kam: 'Sandeep',
-    agentStatus: 'Interested'
+    agentStatus: 'Interested',
+    connectHistory: [
+      {
+        id: 'ch_1001',
+        timestamp: Date.now() - 1000 * 60 * 60 * 24 * 3,
+        kamId: 'sandeep',
+        kamName: 'Sandeep',
+        direction: 'outbound',
+        connectMedium: 'on call',
+        connection: 'not connected',
+        note: 'RNR, will retry tomorrow.',
+        topics: ['primary'],
+        callbackAt: null,
+      },
+      {
+        id: 'ch_1002',
+        timestamp: Date.now() - 1000 * 60 * 60 * 20,
+        kamId: 'sandeep',
+        kamName: 'Sandeep',
+        direction: 'outbound',
+        connectMedium: 'on whatsapp',
+        connection: 'call back',
+        note: 'Asked to call back after 6pm, interested in inventory listing.',
+        topics: ['inventory', 'primary'],
+        callbackAt: Date.now() + 1000 * 60 * 60 * 5,
+      },
+      {
+        id: 'ch_1003',
+        timestamp: Date.now() - 1000 * 60 * 60,
+        kamId: 'sandeep',
+        kamName: 'Sandeep',
+        direction: 'inbound',
+        connectMedium: 'on call',
+        connection: 'connected',
+        note: 'Asked about Masal AI credits and loan services.',
+        topics: ['mashal_ai', 'loan'],
+        callbackAt: null,
+      },
+    ],
+    nextCallbacks: {
+      sandeep: { at: Date.now() + 1000 * 60 * 60 * 5, entryId: 'ch_1002' },
+    },
   },
   {
     id: 2,
@@ -59,7 +190,33 @@ export const mockAgents = [
     lastTried: '2 days ago',
     lastStatus: 'Connected',
     kam: 'Siddharth',
-    agentStatus: 'Active'
+    agentStatus: 'Active',
+    connectHistory: [
+      {
+        id: 'ch_2001',
+        timestamp: Date.now() - 1000 * 60 * 60 * 24 * 4,
+        kamId: 'siddharth',
+        kamName: 'Siddharth',
+        direction: 'outbound',
+        connectMedium: 'on call',
+        connection: 'rnr1',
+        note: 'Did not pick up, will try again.',
+        topics: ['enquiry'],
+        callbackAt: null,
+      },
+      {
+        id: 'ch_2002',
+        timestamp: Date.now() - 1000 * 60 * 60 * 24 * 2,
+        kamId: 'siddharth',
+        kamName: 'Siddharth',
+        direction: 'outbound',
+        connectMedium: 'on call',
+        connection: 'connected',
+        note: 'Wants to list 3 more inventories this week.',
+        topics: ['inventory'],
+        callbackAt: null,
+      },
+    ],
   },
   {
     id: 4,
@@ -76,7 +233,24 @@ export const mockAgents = [
     lastTried: '1 hour ago',
     lastStatus: 'Connected',
     kam: 'Surendra',
-    agentStatus: 'Not Contact'
+    agentStatus: 'Not Contact',
+    connectHistory: [
+      {
+        id: 'ch_2101',
+        timestamp: Date.now() - 1000 * 60 * 60 * 3,
+        kamId: 'surendra',
+        kamName: 'Surendra',
+        direction: 'inbound',
+        connectMedium: 'on whatsapp',
+        connection: 'call back',
+        note: 'Wants to discuss loan against property for a client, asked to call back tomorrow morning.',
+        topics: ['loan', 'services'],
+        callbackAt: Date.now() + 1000 * 60 * 60 * 18,
+      },
+    ],
+    nextCallbacks: {
+      surendra: { at: Date.now() + 1000 * 60 * 60 * 18, entryId: 'ch_2101' },
+    },
   },
   {
     id: 5,
@@ -110,7 +284,45 @@ export const mockAgents = [
     lastTried: '3 hours ago',
     lastStatus: 'Connected',
     kam: 'Sandeep',
-    agentStatus: 'Active'
+    agentStatus: 'Active',
+    connectHistory: [
+      {
+        id: 'ch_2201',
+        timestamp: Date.now() - 1000 * 60 * 60 * 24 * 5,
+        kamId: 'sandeep',
+        kamName: 'Sandeep',
+        direction: 'outbound',
+        connectMedium: 'on call',
+        connection: 'rnr1',
+        note: 'No answer, tried again later same day.',
+        topics: ['primary'],
+        callbackAt: null,
+      },
+      {
+        id: 'ch_2202',
+        timestamp: Date.now() - 1000 * 60 * 60 * 24 * 5 + 1000 * 60 * 60 * 2,
+        kamId: 'sandeep',
+        kamName: 'Sandeep',
+        direction: 'outbound',
+        connectMedium: 'on call',
+        connection: 'rnr2',
+        note: 'Still no answer.',
+        topics: ['primary'],
+        callbackAt: null,
+      },
+      {
+        id: 'ch_2203',
+        timestamp: Date.now() - 1000 * 60 * 60 * 3,
+        kamId: 'sandeep',
+        kamName: 'Sandeep',
+        direction: 'inbound',
+        connectMedium: 'on whatsapp',
+        connection: 'connected',
+        note: 'Asked about Masal AI for her team, very interested.',
+        topics: ['mashal_ai', 'primary'],
+        callbackAt: null,
+      },
+    ],
   },
   {
     id: 7,
@@ -144,7 +356,21 @@ export const mockAgents = [
     lastTried: '1 day ago',
     lastStatus: 'Connected',
     kam: 'Siddharth',
-    agentStatus: 'Interested'
+    agentStatus: 'Interested',
+    connectHistory: [
+      {
+        id: 'ch_2301',
+        timestamp: Date.now() - 1000 * 60 * 60 * 24,
+        kamId: 'siddharth',
+        kamName: 'Siddharth',
+        direction: 'inbound',
+        connectMedium: 'on whatsapp',
+        connection: 'connected',
+        note: 'Asked how to raise an enquiry for a client property.',
+        topics: ['enquiry'],
+        callbackAt: null,
+      },
+    ],
   }
 ];
 

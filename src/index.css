@@ -36,7 +36,12 @@
 
   --animate-sheet-in: sheet-in 320ms var(--ease-apple);
   --animate-scrim-in: scrim-in 240ms ease-out;
+  --animate-drawer-in: drawer-in 260ms var(--ease-apple);
 
+  @keyframes drawer-in {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
   @keyframes sheet-in {
     from { opacity: 0; transform: translateY(8px) scale(0.97); }
     to { opacity: 1; transform: none; }

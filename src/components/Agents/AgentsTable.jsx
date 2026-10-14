@@ -1,9 +1,11 @@
-import React from 'react';
-import { Phone, Trash2, Edit2, Link, ChevronDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { MessageSquare, Link, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import AgentConnectPanel from './AgentConnectPanel';
 
 const AgentsTable = ({ agents }) => {
   const navigate = useNavigate();
+  const [connectAgent, setConnectAgent] = useState(null);
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -26,7 +28,7 @@ const AgentsTable = ({ agents }) => {
               <th className="p-4 min-w-[150px]">Last Connected Status</th>
               <th className="p-4 min-w-[120px]">KAM</th>
               <th className="p-4 min-w-[100px]">Agent Status</th>
-              <th className="p-4 min-w-[100px]">Actions</th>
+              <th className="p-4 min-w-[100px] text-center sticky right-0 z-20 bg-gray-50 shadow-[inset_1px_0_0_0_rgb(229,231,235)]">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -35,7 +37,7 @@ const AgentsTable = ({ agents }) => {
                 if (e.target.type !== 'checkbox' && e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
                   navigate(`/agents/${agent.agentId}`);
                 }
-              }} className="hover:bg-gray-50 cursor-pointer">
+              }} className="group hover:bg-gray-50 cursor-pointer">
                 <td className="px-4 py-3"><input type="checkbox" className="rounded border-gray-300" onClick={(e) => e.stopPropagation()} /></td>
                 <td className="px-4 py-3 font-medium text-gray-900">{agent.name}</td>
                 <td className="px-4 py-3 text-gray-500">{agent.contact}</td>
@@ -86,13 +88,16 @@ const AgentsTable = ({ agents }) => {
                     <ChevronDown size={12} className="text-gray-400" />
                   </div>
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <button className="p-1.5 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors">
-                      <Phone size={14} />
-                    </button>
-                    <button className="p-1.5 text-gray-400 hover:text-red-600 bg-gray-50 hover:bg-red-50 rounded border border-gray-200 transition-colors">
-                      <Trash2 size={14} />
+                <td className="px-4 py-3 sticky right-0 z-10 bg-white group-hover:bg-gray-50 shadow-[inset_1px_0_0_0_rgb(229,231,235)]">
+                  <div className="flex items-center justify-center">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConnectAgent(agent);
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors"
+                    >
+                      <MessageSquare size={14} />
                     </button>
                   </div>
                 </td>
@@ -114,6 +119,10 @@ const AgentsTable = ({ agents }) => {
           ))}
         </div>
       </div>
+
+      {connectAgent && (
+        <AgentConnectPanel agent={connectAgent} onClose={() => setConnectAgent(null)} />
+      )}
     </div>
   );
 };

@@ -21,6 +21,12 @@ import EdgeDevelopersPage from './components/Edge/EdgeDevelopersPage';
 import EdgeProjectEditorPage from './components/Edge/EdgeProjectEditorPage';
 import EcPipelinePage from './components/Edge/EcPipelinePage';
 import EcFilingEditorPage from './components/Edge/EcFilingEditorPage';
+import LegalDocListPage from './components/LegalDoc/LegalDocListPage';
+import LegalDocLeadsPage from './components/LegalDoc/LegalDocLeadsPage';
+import LegalDocQualifyPage from './components/LegalDoc/LegalDocQualifyPage';
+import LegalDocServicePage from './components/LegalDoc/LegalDocServicePage';
+import LegalDocHomePage from './components/LegalDoc/LegalDocHomePage';
+import LegalDocPage from './components/LegalDoc/LegalDocPage';
 
 function App() {
   return (
@@ -51,6 +57,13 @@ function App() {
           <Route path="/edge/projects/:id" element={<EdgeProjectEditorPage />} />
           <Route path="/ec" element={<EcPipelinePage />} />
           <Route path="/ec/:id" element={<EcFilingEditorPage />} />
+          <Route path="/legal-doc" element={<Navigate to="/legal-doc/lead" replace />} />
+          <Route path="/legal-doc/home" element={<LegalDocHomePage />} />
+          <Route path="/legal-doc/lead" element={<LegalDocLeadsPage />} />
+          <Route path="/legal-doc/qualify" element={<LegalDocQualifyPage />} />
+          <Route path="/legal-doc/service" element={<LegalDocServicePage />} />
+          <Route path="/legal-doc/agent/:id" element={<LegalDocPage />} />
+          <Route path="/legal-doc/:stage" element={<LegalDocListPage />} />
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </Layout>
