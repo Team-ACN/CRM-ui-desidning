@@ -7,44 +7,89 @@ import {
   ChevronLeft,
   Copy,
   Check,
-  ArrowRight,
   Ban,
   RotateCcw,
-  FileText,
-  FileCheck,
-  Receipt,
-  IndianRupee,
-  Send,
-  Paperclip,
-  PackageCheck,
   PlusCircle,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  StickyNote,
+  PhoneCall,
+  Phone,
+  ArrowUpRight,
+  ArrowDownLeft,
 } from 'lucide-react';
 import { MultiFilterSelect, FilterSelect } from '../Edge/FilterControls';
 import AgentIdentityCard from '../shared/AgentIdentityCard';
 import AddLeadRecordModal from '../shared/AddLeadRecordModal';
+import SegmentedToggle from '../shared/SegmentedToggle';
+import WhatsAppLogo from '../shared/WhatsAppLogo';
+import { CONNECT_TOPIC_OPTIONS } from '../../data/mockAgents';
 import { summarize } from '../../utils/filters';
 import {
   getLegalDocRecords,
   updateRequestStatus,
   setAgentLegalStatus,
   setSalesPoc,
-  addDocumentToService,
-  toggleDocumentReceived,
-  removeDocumentFromService,
-  attachDocumentFile,
+  addClientConnection,
   addLeadRequest,
   setServiceChargeableAmount,
+  toggleServiceDocumentsReceived,
+  toggleServiceAdvanceReceived,
+  toggleServiceLost,
+  setServiceVaultId,
+  setClientInvoiceId,
   effectiveStage,
   currentStatus,
   REQUEST_STATUS_OPTIONS,
   STATUS_STYLES,
   SERVICE_STAGE_STATUSES,
-  NEXT_STATUS_MAP,
   SERVICE_NAME_OPTIONS,
   SOURCE_OPTIONS,
   KAM_OPTIONS,
+  CONNECTION_STATUS_OPTIONS,
   optionLabel,
 } from '../../data/mockLegalDoc';
+
+// Same palette the Leads/Qualify Connect History uses, condensed to a single table badge.
+const CONNECTION_STATUS_STYLES = {
+  connected: 'bg-emerald-100 text-emerald-700',
+  call_back: 'bg-amber-100 text-amber-700',
+  rnr: 'bg-red-100 text-red-700',
+  not_reachable: 'bg-neutral-100 text-neutral-500',
+  switched_off: 'bg-neutral-100 text-neutral-500',
+};
+
+function lastConnectionForClient(client) {
+  const conns = client?.connections || [];
+  if (conns.length === 0) return null;
+  return conns.reduce((latest, c) => (c.time > latest.time ? c : latest));
+}
+
+// Same flattening as the Leads/Qualify Call Log — every client's connections, newest first.
+function allConnectionsFor(request) {
+  return request.clients.flatMap((c) => c.connections || []).sort((a, b) => b.time - a.time);
+}
+
+function connectionStatusMeta(value) {
+  if (value === 'connected') return { Icon: CheckCircle2, iconClass: 'text-emerald-500', badgeClass: 'bg-emerald-50 text-emerald-600' };
+  if (value === 'call_back') return { Icon: Clock, iconClass: 'text-amber-500', badgeClass: 'bg-amber-50 text-amber-600' };
+  return { Icon: XCircle, iconClass: 'text-red-500', badgeClass: 'bg-red-50 text-red-600' };
+}
+
+// "services" reads as "Legal" here — same relabel the Agent Connect panel uses, since this is
+// the Legal & Doc module and that's the topic that's actually relevant on this page.
+const topicLabel = (value) => (value === 'services' ? 'Legal' : CONNECT_TOPIC_OPTIONS.find((t) => t.value === value)?.label || value);
+
+const TOPIC_COLORS = {
+  inventory: { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
+  enquiry: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
+  mashal_ai: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
+  primary: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+  services: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+  loan: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
+};
+const topicColor = (value) => TOPIC_COLORS[value] || { bg: 'bg-neutral-100', text: 'text-neutral-500', border: 'border-neutral-200' };
 
 const PAGE_SIZE = 20;
 
@@ -54,10 +99,14 @@ const SORT_OPTIONS = [
   { value: 'name', label: 'Name (A-Z)' },
 ];
 
+// Agent contacts already carry a country code ("+919845011287"); client POC numbers are
+// entered locally without one ("98450 11287"), so this normalizes both to "+91 98450 11287".
 function formatPhone(raw) {
   if (!raw) return raw;
-  const match = raw.match(/^(\+\d{2})(\d{5})(\d{5})$/);
-  return match ? `${match[1]} ${match[2]} ${match[3]}` : raw;
+  const digits = raw.replace(/\D/g, '');
+  const local = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
+  if (local.length !== 10) return raw;
+  return `+91 ${local.slice(0, 5)} ${local.slice(5)}`;
 }
 
 function relativeTime(ts) {
@@ -66,6 +115,24 @@ function relativeTime(ts) {
   if (diffDays <= 0) return 'today';
   if (diffDays === 1) return 'yesterday';
   return `${diffDays}d ago`;
+}
+
+function formatDate(ts) {
+  if (!ts) return null;
+  const d = new Date(ts);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+// Time the request entered the Service stage — the table's Status Time column shows this.
+function serviceAt(request) {
+  const entry = (request.statusLog || []).find((s) => SERVICE_STAGE_STATUSES.includes(s.status));
+  return entry ? entry.time : request.createdAt;
+}
+
+function boolBadge(value, trueClass = 'bg-emerald-100 text-emerald-700', falseClass = 'bg-neutral-100 text-neutral-500') {
+  return <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${value ? trueClass : falseClass}`}>{value ? 'True' : 'False'}</span>;
 }
 
 const serviceLabel = (name) => SERVICE_NAME_OPTIONS.find((s) => s.value === name)?.label || name;
@@ -80,14 +147,6 @@ const POC_TYPE_OPTIONS = [
   { value: 'client', label: 'Client' },
 ];
 
-// How far along document collection is for a single service — this is the tracking the
-// Service stage runs on: "2/4 collected" tells you at a glance what's left on that one
-// service before it can move to Documents Collected / Invoice Sent.
-function docsProgressForService(service) {
-  const docs = service.documents || [];
-  return { received: docs.filter((d) => d.received).length, total: docs.length };
-}
-
 const emptyNewService = {
   agentId: '',
   agentName: '',
@@ -98,22 +157,148 @@ const emptyNewService = {
   source: SOURCE_OPTIONS[0].value,
 };
 
-const AddDocumentInput = ({ onAdd }) => {
-  const [value, setValue] = useState('');
+// One card for the clicked (client, service) pair — non-editable identity facts on top,
+// editable fields below with a single Save button. Own local state (reset by the `key` the
+// caller puts on it, one per row) so edits can be buffered until Save instead of committing
+// per keystroke/blur.
+const ServiceDetailCard = ({
+  client,
+  service,
+  contact,
+  onSaveInvoiceId,
+  onSaveVaultId,
+  onToggleDocsReceived,
+  onToggleAdvanceReceived,
+  onToggleLost,
+}) => {
+  const [invoiceId, setInvoiceId] = useState(client.invoiceId || '');
+  const [vaultId, setVaultId] = useState(service.vaultServiceId || '');
+  const [docsReceived, setDocsReceived] = useState(!!service.documentsReceived);
+  const [advanceReceived, setAdvanceReceived] = useState(!!service.advanceReceived);
+  const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const pocPhone = client.pocType === 'agent' ? contact : client.phone;
+  const hasChanges =
+    invoiceId.trim() !== (client.invoiceId || '') ||
+    vaultId.trim() !== (service.vaultServiceId || '') ||
+    docsReceived !== !!service.documentsReceived ||
+    advanceReceived !== !!service.advanceReceived;
+
+  const handleCopyPhone = () => {
+    navigator.clipboard?.writeText(pocPhone).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  const handleSave = () => {
+    if (!hasChanges) return;
+    onSaveInvoiceId(invoiceId.trim() || null);
+    onSaveVaultId(vaultId.trim() || null);
+    if (docsReceived !== !!service.documentsReceived) onToggleDocsReceived();
+    if (advanceReceived !== !!service.advanceReceived) onToggleAdvanceReceived();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+
+  const inputClass = 'w-full border border-neutral-200 rounded-xl px-3 py-1.5 text-[13px] outline-none focus:border-neutral-400';
+
   return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' && value.trim()) {
-          onAdd(value.trim());
-          setValue('');
-        }
-      }}
-      placeholder="+ Add a document requirement, press Enter..."
-      className="w-full border border-neutral-200 rounded-md px-2.5 py-1.5 text-[12px] outline-none focus:border-neutral-400 mt-1.5"
-    />
+    <div className="border border-neutral-200 rounded-2xl p-4 space-y-3">
+      <div className="grid grid-cols-2 gap-y-1.5 text-[13px] items-center">
+        <span className="text-neutral-400">Name</span>
+        <span className="text-neutral-700">{clientLabel(client)}</span>
+        <span className="text-neutral-400">Number</span>
+        {pocPhone ? (
+          <div className="flex items-center gap-1.5">
+            <span className="text-neutral-700">{formatPhone(pocPhone)}</span>
+            <button onClick={handleCopyPhone} title="Copy number" className="p-1 text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 rounded transition-colors">
+              {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+            </button>
+          </div>
+        ) : (
+          <span className="text-neutral-700">—</span>
+        )}
+        <span className="text-neutral-400">Service</span>
+        <span className="text-neutral-700 font-medium">
+          {serviceLabel(service.name)}
+          {(service.qty || 1) > 1 ? ` ×${service.qty}` : ''}
+        </span>
+      </div>
+
+      <div className="pt-3 border-t border-neutral-100 space-y-2.5">
+        <div>
+          <div className="text-[11px] text-neutral-400 mb-1">Invoice ID</div>
+          <input type="text" value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} placeholder="Add invoice ID..." className={`${inputClass} font-mono`} />
+        </div>
+        <div>
+          <div className="text-[11px] text-neutral-400 mb-1">Service ID</div>
+          <input type="text" value={vaultId} onChange={(e) => setVaultId(e.target.value)} placeholder="Service ID" className={inputClass} />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDocsReceived((v) => !v)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-medium transition-colors ${
+              docsReceived
+                ? 'bg-white border-neutral-900 text-neutral-900 font-semibold'
+                : 'bg-neutral-100 border-transparent text-neutral-500 hover:bg-neutral-200'
+            }`}
+          >
+            {docsReceived && <Check size={12} />} Docs received
+          </button>
+          <button
+            type="button"
+            onClick={() => setAdvanceReceived((v) => !v)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-medium transition-colors ${
+              advanceReceived
+                ? 'bg-white border-neutral-900 text-neutral-900 font-semibold'
+                : 'bg-neutral-100 border-transparent text-neutral-500 hover:bg-neutral-200'
+            }`}
+          >
+            {advanceReceived && <Check size={12} />} Advance received
+          </button>
+        </div>
+
+        {service.lost ? (
+          // Lost — editing this service no longer applies, so Save/toggles give way to
+          // the one action that makes sense: reopening it.
+          <button
+            type="button"
+            onClick={onToggleLost}
+            className="w-full flex items-center justify-center gap-1.5 py-2.5 border border-neutral-200 text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl font-medium text-[13px] transition-colors"
+          >
+            <RotateCcw size={13} /> Reopen
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!hasChanges}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-medium text-[13px] transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-neutral-900"
+            >
+              {saved ? (
+                <>
+                  <Check size={14} /> Saved
+                </>
+              ) : (
+                'Save'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={onToggleLost}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-neutral-200 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50 rounded-xl font-medium text-[13px] transition-colors"
+            >
+              <Ban size={13} /> Mark Lost
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -130,9 +315,16 @@ const LegalDocServicePage = () => {
   const [page, setPage] = useState(1);
   const [copiedKey, setCopiedKey] = useState(null);
   const [selected, setSelected] = useState(null);
-  const [actionNote, setActionNote] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [newService, setNewService] = useState(emptyNewService);
+  const [onlyWithNotes, setOnlyWithNotes] = useState(false);
+  const [callForm, setCallForm] = useState({
+    connectMedium: 'on call',
+    direction: 'outbound',
+    status: 'connected',
+    notes: '',
+    topics: ['services'],
+  });
 
   const bump = () => setVersion((v) => v + 1);
 
@@ -150,9 +342,9 @@ const LegalDocServicePage = () => {
           agentStatus: r.legalAndLoan.status,
           agentNotes: r.legalAndLoan.notes,
           ...req,
-          // req.status is the full status log — keep it under statusLog for the Status History
-          // list, and flatten status itself to the current stage string so every existing
-          // `.status` read in this file (filters, badges, NEXT_STATUS_MAP lookups) keeps working.
+          // req.status is the full status log — keep it under statusLog (serviceAt reads it),
+          // and flatten status itself to the current stage string so every existing `.status`
+          // read in this file (filters, badges) keeps working.
           statusLog: req.status,
           status: currentStatus(req),
         })
@@ -182,6 +374,8 @@ const LegalDocServicePage = () => {
           pocLabel: clientLabel(client),
           pocName: client.pocType === 'agent' ? req.agentName : client.name || 'Unnamed client',
           pocPhone: client.pocType === 'agent' ? req.contact : client.phone || '',
+          lastConnection: lastConnectionForClient(client),
+          invoiceId: client.invoiceId,
           serviceName: s.name,
           service: s,
         });
@@ -285,15 +479,17 @@ const LegalDocServicePage = () => {
   const paged = sortedRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const selectedLead = selected ? allInService.find((l) => l.agentId === selected.agentId && l.id === selected.id) : null;
+  const panelClient = selectedLead?.clients[selected?.clientIndex];
+  const panelService = panelClient?.services.find((s) => s.name === selected?.serviceName);
 
-  function openPanel(lead) {
-    setSelected({ agentId: lead.agentId, id: lead.id });
-    setActionNote('');
+  // Opened from a table row, which is already scoped to one client + one service — the panel
+  // shows only that service, not every service on the request.
+  function openPanel(row) {
+    setSelected({ agentId: row.agentId, id: row.requestId, clientIndex: row.clientIndex, serviceName: row.serviceName });
   }
 
   function closePanel() {
     setSelected(null);
-    setActionNote('');
   }
 
   // Legal Status (good/maybe/bad) is one value per agent, shared with the Agent Connect panel —
@@ -310,14 +506,36 @@ const LegalDocServicePage = () => {
     });
   }
 
-  function handleStatusChange(lead, status, notes = '') {
-    updateRequestStatus(lead.agentId, lead.id, status, { notes, user: lead.salesPoc || lead.kam });
+  // One shared connect timeline for the whole request, same as the Leads/Qualify pages —
+  // logged against the first client/POC on the request, no picker shown.
+  function submitLogCall(lead) {
+    addClientConnection(lead.agentId, lead.id, 0, { ...callForm, user: lead.salesPoc || lead.kam });
+    setCallForm({ connectMedium: 'on call', direction: 'outbound', status: 'connected', notes: '', topics: ['services'] });
     bump();
-    if (selected?.agentId === lead.agentId && selected?.id === lead.id) closePanel();
   }
 
-  function handleAssignSalesPoc(lead, user) {
-    setSalesPoc(lead.agentId, lead.id, user);
+  function handleToggleDocumentsReceived(lead, clientIndex, serviceName) {
+    toggleServiceDocumentsReceived(lead.agentId, lead.id, clientIndex, serviceName);
+    bump();
+  }
+
+  function handleToggleAdvanceReceived(lead, clientIndex, serviceName) {
+    toggleServiceAdvanceReceived(lead.agentId, lead.id, clientIndex, serviceName);
+    bump();
+  }
+
+  function handleToggleLost(lead, clientIndex, serviceName) {
+    toggleServiceLost(lead.agentId, lead.id, clientIndex, serviceName);
+    bump();
+  }
+
+  function handleSetVaultId(lead, clientIndex, serviceName, vaultServiceId) {
+    setServiceVaultId(lead.agentId, lead.id, clientIndex, serviceName, vaultServiceId);
+    bump();
+  }
+
+  function handleSetInvoiceId(lead, clientIndex, invoiceId) {
+    setClientInvoiceId(lead.agentId, lead.id, clientIndex, invoiceId);
     bump();
   }
 
@@ -339,16 +557,6 @@ const LegalDocServicePage = () => {
     setAddOpen(false);
     bump();
   }
-
-  const ACTION_META = {
-    documents_collected: { label: 'Docs Collected', icon: FileCheck, primary: true },
-    invoice_sent: { label: 'Send Invoice', icon: Receipt, primary: true },
-    payment_received: { label: 'Payment Received', icon: IndianRupee, primary: true },
-    service_forwarded: { label: 'Forward Service', icon: Send, primary: true },
-    service_delivered: { label: 'Mark Delivered', icon: PackageCheck, primary: true },
-    lost: { label: 'Mark Lost', icon: Ban, primary: false },
-  };
-  const defaultActionMeta = (target) => ({ label: `Reopen (${optionLabel(REQUEST_STATUS_OPTIONS, target)})`, icon: RotateCcw, primary: true });
 
   return (
     <div className="flex flex-col bg-neutral-50 h-full text-[13px]">
@@ -470,32 +678,36 @@ const LegalDocServicePage = () => {
 
       {/* Table */}
       <div className="flex-1 min-h-0 overflow-auto bg-white">
-        <table className="text-left text-[13px] text-neutral-600 whitespace-nowrap min-w-[1350px] w-full">
+        <table className="text-left text-[13px] text-neutral-600 whitespace-nowrap min-w-[1400px] w-full">
           <thead className="bg-white text-[11px] font-medium uppercase tracking-wider text-neutral-500 sticky top-0 z-10 shadow-[0_1px_0_0_#e7e5e4]">
             <tr>
-              <th className="pl-6 pr-4 py-4">POC</th>
-              <th className="px-4 py-4">POC Name</th>
-              <th className="px-4 py-4">POC Number</th>
-              <th className="px-4 py-4">Status</th>
+              <th className="pl-6 pr-4 py-4">Req ID</th>
+              <th className="px-4 py-4">Status Time</th>
+              <th className="px-4 py-4">POC</th>
+              <th className="px-4 py-4">Name</th>
+              <th className="px-4 py-4">Number</th>
+              <th className="px-4 py-4">Connection Status</th>
+              <th className="px-4 py-4 min-w-[130px]">Invoice ID</th>
               <th className="px-4 py-4">Service Name</th>
-              <th className="px-4 py-4">Negotiable Price</th>
-              <th className="px-4 py-4">Document Status</th>
-              <th className="px-4 py-4">CP ID</th>
-              <th className="px-4 py-4">Agent Name</th>
-              <th className="pl-4 pr-6 py-4">Agent Number</th>
+              <th className="px-4 py-4">Service ID</th>
+              <th className="px-4 py-4">Lost</th>
+              <th className="px-4 py-4">Doc Received</th>
+              <th className="pl-4 pr-6 py-4">Adv Received</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {paged.map((row) => {
-              const { received, total } = docsProgressForService(row.service);
-              const amount = row.service.chargeableAmount;
               return (
                 <tr
                   key={row.key}
-                  onClick={() => openPanel({ agentId: row.agentId, id: row.requestId })}
+                  onClick={() => openPanel(row)}
                   className="hover:bg-neutral-50/50 transition-colors group cursor-pointer"
                 >
                   <td className="pl-6 pr-4 py-3">
+                    <span className="font-mono text-[11px] bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded">{row.requestId}</span>
+                  </td>
+                  <td className="px-4 py-3 text-neutral-400">{relativeTime(serviceAt(row)) || '—'}</td>
+                  <td className="px-4 py-3">
                     <span
                       className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold ${
                         row.pocType === 'agent' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'
@@ -505,37 +717,14 @@ const LegalDocServicePage = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-neutral-700">{row.pocName}</td>
-                  <td className="px-4 py-3 text-neutral-500">{row.pocPhone ? formatPhone(row.pocPhone) : '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_STYLES[row.status] || 'bg-neutral-100 text-neutral-600'}`}>
-                      {optionLabel(REQUEST_STATUS_OPTIONS, row.status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-neutral-700 font-medium">{serviceLabel(row.serviceName)}</td>
-                  <td className="px-4 py-3 text-neutral-600">{amount ? `₹${amount.toLocaleString('en-IN')}` : '—'}</td>
-                  <td className="px-4 py-3">
-                    {total === 0 ? (
-                      <span className="text-neutral-400">—</span>
-                    ) : (
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[12px] font-medium ${
-                          received === total ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                        }`}
-                      >
-                        {received}/{total} collected
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-neutral-500">{row.agentId}</td>
-                  <td className="px-4 py-3 font-semibold text-neutral-900">{row.agentName}</td>
-                  <td className="pl-4 pr-6 py-3 text-neutral-500">
-                    {row.contact ? (
+                  <td className="px-4 py-3 text-neutral-500">
+                    {row.pocPhone ? (
                       <div className="flex items-center gap-1.5">
-                        <span>{formatPhone(row.contact)}</span>
+                        <span>{formatPhone(row.pocPhone)}</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleCopy(row.key, row.contact);
+                            handleCopy(row.key, row.pocPhone);
                           }}
                           title="Copy number"
                           className="p-1 text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 rounded transition-colors"
@@ -547,12 +736,38 @@ const LegalDocServicePage = () => {
                       '—'
                     )}
                   </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {row.lastConnection ? (
+                      <>
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                            CONNECTION_STATUS_STYLES[row.lastConnection.status] || 'bg-neutral-100 text-neutral-500'
+                          }`}
+                        >
+                          {optionLabel(CONNECTION_STATUS_OPTIONS, row.lastConnection.status)}
+                        </span>
+                        <span className="text-neutral-400 text-[11px] ml-1.5">{relativeTime(row.lastConnection.time) || '—'}</span>
+                      </>
+                    ) : (
+                      <span className="text-neutral-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-neutral-500">{row.invoiceId || '—'}</td>
+                  <td className="px-4 py-3 text-neutral-700 font-medium">{serviceLabel(row.serviceName)}</td>
+                  <td className="px-4 py-3 font-mono text-neutral-500">{row.service.vaultServiceId || '—'}</td>
+                  <td className="px-4 py-3">
+                    {row.service.lost && (
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 text-red-700">Lost</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">{boolBadge(row.service.documentsReceived)}</td>
+                  <td className="pl-4 pr-6 py-3">{boolBadge(row.service.advanceReceived)}</td>
                 </tr>
               );
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-6 py-16 text-center text-neutral-400">
+                <td colSpan={12} className="px-6 py-16 text-center text-neutral-400">
                   No services in progress match these filters.
                 </td>
               </tr>
@@ -627,211 +842,249 @@ const LegalDocServicePage = () => {
                 })()}
               </AgentIdentityCard>
 
-              <div className="border border-neutral-200 rounded-2xl p-5">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Sales POC</div>
-                <select
-                  value={selectedLead.salesPoc || ''}
-                  onChange={(e) => handleAssignSalesPoc(selectedLead, e.target.value)}
-                  className="w-full border border-neutral-200 rounded-xl px-3 py-1.5 text-[13px] bg-white"
-                >
-                  <option value="" disabled>Assign a POC...</option>
-                  {KAM_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedLead.clients.map((client, ci) => (
-                <div key={ci} className="border border-neutral-200 rounded-2xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText size={14} className="text-neutral-400" />
-                    <span className="font-medium text-neutral-800 text-[13px]">{clientLabel(client)}</span>
-                    {client.phone && (
-                      <>
-                        <span className="text-neutral-300">·</span>
-                        <span className="text-neutral-400 text-[12px]">{formatPhone(client.phone)}</span>
-                      </>
-                    )}
-                  </div>
-                  {/* Fixed once in Service stage — the service was locked in back at Qualify,
-                      so this is read-only here, no add/remove/qty controls. */}
-                  {client.services.length === 0 ? (
-                    <p className="text-neutral-400 text-[13px]">No services yet.</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {client.services.map((s) => (
-                        <span
-                          key={s.name}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-neutral-200 text-neutral-900 text-[13px] font-medium"
-                        >
-                          {serviceLabel(s.name)}
-                          {(s.qty || 1) > 1 ? ` ×${s.qty}` : ''}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {client.services.map((s) => {
-                    const docs = s.documents || [];
-                    return (
-                      <div key={s.name} className="mt-3 pt-3 border-t border-neutral-100">
-                        <div className="text-[12px] font-medium text-neutral-700 mb-1.5">
-                          {serviceLabel(s.name)} documents
-                          {docs.length > 0 && (
-                            <span className="text-neutral-400 font-normal"> · {docs.filter((d) => d.received).length}/{docs.length}</span>
-                          )}
-                        </div>
-                        {docs.length === 0 ? (
-                          <p className="text-neutral-400 text-[12px]">No documents added yet.</p>
-                        ) : (
-                          <div className="space-y-1">
-                            {docs.map((d, di) => {
-                              const inputId = `doc-upload-${ci}-${s.name}-${di}`;
-                              return (
-                                <div key={di} className="flex items-center gap-2 text-[12.5px]">
-                                  <input
-                                    type="checkbox"
-                                    checked={!!d.received}
-                                    onChange={() => {
-                                      toggleDocumentReceived(selectedLead.agentId, selectedLead.id, ci, s.name, di);
-                                      bump();
-                                    }}
-                                    className="accent-neutral-900"
-                                  />
-                                  <span className={d.received ? 'line-through text-neutral-400' : 'text-neutral-700'}>{d.name}</span>
-                                  <div className="ml-auto flex items-center gap-2">
-                                    {d.fileUrl && (
-                                      <a
-                                        href={d.fileUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-blue-600 hover:underline text-[11px] truncate max-w-[90px]"
-                                      >
-                                        {d.fileName}
-                                      </a>
-                                    )}
-                                    <input
-                                      type="file"
-                                      id={inputId}
-                                      className="hidden"
-                                      onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (!file) return;
-                                        const fileUrl = URL.createObjectURL(file);
-                                        attachDocumentFile(selectedLead.agentId, selectedLead.id, ci, s.name, di, {
-                                          fileName: file.name,
-                                          fileUrl,
-                                        });
-                                        bump();
-                                        e.target.value = '';
-                                      }}
-                                    />
-                                    <label
-                                      htmlFor={inputId}
-                                      title={d.fileUrl ? 'Replace uploaded file' : 'Upload file'}
-                                      className="text-neutral-300 hover:text-neutral-700 cursor-pointer"
-                                    >
-                                      <Paperclip size={12} />
-                                    </label>
-                                    <button
-                                      onClick={() => {
-                                        removeDocumentFromService(selectedLead.agentId, selectedLead.id, ci, s.name, di);
-                                        bump();
-                                      }}
-                                      className="text-neutral-300 hover:text-red-500"
-                                    >
-                                      <X size={11} />
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                        <AddDocumentInput
-                          onAdd={(name) => {
-                            addDocumentToService(selectedLead.agentId, selectedLead.id, ci, s.name, name);
-                            bump();
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 mb-2.5">Status History</div>
-                <div className="space-y-2">
-                  {[...(selectedLead.statusLog || [])].reverse().map((entry, i) => (
-                    <div key={i} className="border border-neutral-200 rounded-2xl p-3.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_STYLES[entry.status] || 'bg-neutral-100 text-neutral-600'}`}>
-                          {optionLabel(REQUEST_STATUS_OPTIONS, entry.status)}
-                        </span>
-                        <span className="text-neutral-400 text-[12px] whitespace-nowrap">{relativeTime(entry.time) || '—'}</span>
-                      </div>
-                      {entry.notes && <p className="text-neutral-600 text-[13px] mt-1.5">{entry.notes}</p>}
-                    </div>
-                  ))}
-                  {(selectedLead.statusLog || []).length === 0 && (
-                    <p className="text-neutral-400 text-[13px] border border-dashed border-neutral-200 rounded-2xl p-4 text-center">
-                      No status history yet.
-                    </p>
-                  )}
+              <div className="border border-neutral-200 rounded-2xl p-4">
+                <div className="grid grid-cols-2 gap-y-1.5 text-[13px] items-center">
+                  <span className="text-neutral-400">Status</span>
+                  <span
+                    className={`inline-flex w-fit px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                      STATUS_STYLES[selectedLead.status] || 'bg-neutral-100 text-neutral-600'
+                    }`}
+                  >
+                    {optionLabel(REQUEST_STATUS_OPTIONS, selectedLead.status)}
+                  </span>
+                  <span className="text-neutral-400">Status Date</span>
+                  <span className="text-neutral-700">{formatDate(serviceAt(selectedLead)) || '—'}</span>
+                  <span className="text-neutral-400">Request ID</span>
+                  <span className="text-neutral-700 font-mono">{selectedLead.id}</span>
+                  <span className="text-neutral-400">Request Date</span>
+                  <span className="text-neutral-700">{formatDate(selectedLead.createdAt) || '—'}</span>
+                  <span className="text-neutral-400">Source</span>
+                  <span className="text-neutral-700 capitalize">{selectedLead.source}</span>
                 </div>
               </div>
-            </div>
 
-            <div className="shrink-0 border-t border-neutral-100 px-5 py-3 space-y-2 bg-white">
-              <input
-                type="text"
-                placeholder="Reason (optional)..."
-                value={actionNote}
-                onChange={(e) => setActionNote(e.target.value)}
-                className="w-full border border-neutral-200 rounded-xl px-3 py-1.5 text-[13px] outline-none focus:border-neutral-400"
-              />
+              {/* Scoped to the one client + one service the clicked table row represents — not
+                  every service on the request. Non-editable identity facts on top, editable
+                  fields below with a single Save button, inside ServiceDetailCard. */}
+              {panelClient && panelService && (
+                <ServiceDetailCard
+                  key={`${selectedLead.agentId}-${selectedLead.id}-${selected.clientIndex}-${panelService.name}`}
+                  client={panelClient}
+                  service={panelService}
+                  contact={selectedLead.contact}
+                  onSaveInvoiceId={(v) => handleSetInvoiceId(selectedLead, selected.clientIndex, v)}
+                  onSaveVaultId={(v) => handleSetVaultId(selectedLead, selected.clientIndex, panelService.name, v)}
+                  onToggleDocsReceived={() => handleToggleDocumentsReceived(selectedLead, selected.clientIndex, panelService.name)}
+                  onToggleAdvanceReceived={() => handleToggleAdvanceReceived(selectedLead, selected.clientIndex, panelService.name)}
+                  onToggleLost={() => handleToggleLost(selectedLead, selected.clientIndex, panelService.name)}
+                />
+              )}
+
+              {/* Call Log — pixel-matched to the Leads/Qualify Log a Connect + Connect History:
+                  always-open form, Connected/RNR/Call Back outcome buttons, topic pills, "With
+                  notes only" filter, icon-badged history and a rollup summary. One shared
+                  timeline for the whole request, logged against the first client/POC on it. */}
               {(() => {
-                const targets = NEXT_STATUS_MAP[selectedLead.status] || [];
-                if (targets.length === 0) {
-                  return (
-                    <div className="flex items-center justify-center gap-1.5 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl font-medium text-[13px]">
-                      <Check size={13} /> {optionLabel(REQUEST_STATUS_OPTIONS, selectedLead.status)} — Completed
-                    </div>
-                  );
-                }
-                // One clear primary action at a time — "lost" (or anything else non-primary)
-                // stays available but as a quiet text link, not a competing button.
-                const primaryTarget = targets.find((t) => (ACTION_META[t] || defaultActionMeta(t)).primary);
-                const secondaryTargets = targets.filter((t) => t !== primaryTarget);
-                const primaryMeta = primaryTarget && (ACTION_META[primaryTarget] || defaultActionMeta(primaryTarget));
-                const PrimaryIcon = primaryMeta?.icon;
+                const allEntries = allConnectionsFor(selectedLead);
+                const visibleEntries = onlyWithNotes ? allEntries.filter((e) => e.notes) : allEntries;
+                const connectedCount = allEntries.filter((e) => e.status === 'connected').length;
+                const rnrCount = allEntries.filter((e) => e.status === 'rnr').length;
+                const callBackCount = allEntries.filter((e) => e.status === 'call_back').length;
+                const lastEntry = allEntries[0] || null;
+
                 return (
                   <>
-                    {primaryTarget && (
-                      <button
-                        onClick={() => handleStatusChange(selectedLead, primaryTarget, actionNote)}
-                        className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-neutral-900 text-white rounded-xl font-medium hover:bg-neutral-800 text-[13px] transition-colors"
-                      >
-                        {primaryMeta.label} <PrimaryIcon size={13} />
-                      </button>
-                    )}
-                    {secondaryTargets.length > 0 && (
-                      <div className="flex items-center justify-center gap-4 pt-0.5">
-                        {secondaryTargets.map((target) => {
-                          const meta = ACTION_META[target] || defaultActionMeta(target);
+                    <div className="border border-neutral-200 rounded-2xl p-5 space-y-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <SegmentedToggle
+                          value={callForm.connectMedium}
+                          onChange={(v) => setCallForm((f) => ({ ...f, connectMedium: v }))}
+                          ariaLabel="Connect Medium"
+                          options={[
+                            { value: 'on call', label: 'Call' },
+                            { value: 'on whatsapp', label: 'WhatsApp' },
+                          ]}
+                        />
+                        <SegmentedToggle
+                          value={callForm.direction}
+                          onChange={(v) => setCallForm((f) => ({ ...f, direction: v }))}
+                          ariaLabel="Call Direction"
+                          options={[
+                            { value: 'outbound', label: 'Outbound', icon: <ArrowUpRight size={13.5} />, activeIcon: <ArrowUpRight size={13.5} /> },
+                            { value: 'inbound', label: 'Inbound', icon: <ArrowDownLeft size={13.5} />, activeIcon: <ArrowDownLeft size={13.5} /> },
+                          ]}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCallForm((f) => ({ ...f, status: 'connected' }))}
+                          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-full border text-[13px] transition-colors ${
+                            callForm.status === 'connected'
+                              ? 'bg-white border-neutral-700 text-neutral-900 font-semibold'
+                              : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                          }`}
+                        >
+                          <CheckCircle2 size={14} className="text-emerald-600" />
+                          <span>Connected</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCallForm((f) => ({ ...f, status: 'rnr' }))}
+                          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-full border text-[13px] transition-colors ${
+                            callForm.status === 'rnr'
+                              ? 'bg-white border-neutral-700 text-neutral-900 font-semibold'
+                              : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                          }`}
+                        >
+                          <XCircle size={14} className="text-red-500" />
+                          <span>RNR</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCallForm((f) => ({ ...f, status: 'call_back' }))}
+                          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-full border text-[13px] transition-colors ${
+                            callForm.status === 'call_back'
+                              ? 'bg-white border-neutral-700 text-neutral-900 font-semibold'
+                              : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                          }`}
+                        >
+                          <Clock size={14} className="text-amber-500" />
+                          <span>Call Back</span>
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {CONNECT_TOPIC_OPTIONS.map((o) => {
+                          const isSelected = callForm.topics.includes(o.value);
+                          const c = topicColor(o.value);
                           return (
                             <button
-                              key={target}
-                              onClick={() => handleStatusChange(selectedLead, target, actionNote)}
-                              className="text-[12px] font-medium text-neutral-400 hover:text-red-500 transition-colors"
+                              key={o.value}
+                              type="button"
+                              onClick={() =>
+                                setCallForm((f) => ({
+                                  ...f,
+                                  topics: f.topics.includes(o.value) ? f.topics.filter((x) => x !== o.value) : [...f.topics, o.value],
+                                }))
+                              }
+                              className={`px-3 py-1.5 rounded-full text-[12px] border transition-colors ${
+                                isSelected ? `${c.bg} ${c.text} ${c.border} font-semibold` : 'bg-white text-neutral-500 border-neutral-200 font-medium hover:bg-neutral-100'
+                              }`}
                             >
-                              {meta.label}
+                              {topicLabel(o.value)}
                             </button>
                           );
                         })}
                       </div>
-                    )}
+
+                      <textarea
+                        placeholder="Need to remember something? Type it here..."
+                        value={callForm.notes}
+                        onChange={(e) => setCallForm((f) => ({ ...f, notes: e.target.value }))}
+                        rows={3}
+                        className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-neutral-400 resize-none"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => submitLogCall(selectedLead)}
+                        className="w-full py-2.5 bg-white hover:bg-neutral-50 border border-neutral-900 text-neutral-900 rounded-full font-semibold text-[13px] transition-colors"
+                      >
+                        Save Connect Log
+                      </button>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Connect History</span>
+                        <button
+                          type="button"
+                          onClick={() => setOnlyWithNotes((v) => !v)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-medium transition-colors ${
+                            onlyWithNotes
+                              ? 'bg-white border-neutral-900 text-neutral-900 font-semibold'
+                              : 'bg-neutral-100 border-transparent text-neutral-500 hover:bg-neutral-200'
+                          }`}
+                        >
+                          <StickyNote size={11} /> With notes only
+                        </button>
+                      </div>
+
+                      {visibleEntries.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center text-center py-10 text-neutral-400 border border-dashed border-neutral-200 rounded-2xl">
+                          <PhoneCall size={20} className="mb-2 text-neutral-300" />
+                          <p className="text-[13px]">{allEntries.length === 0 ? 'No connects logged yet.' : 'No connects with notes yet.'}</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {visibleEntries.map((entry, i) => {
+                            const meta = connectionStatusMeta(entry.status);
+                            const hasBelow = entry.topics?.length > 0 || entry.notes;
+                            return (
+                              <div key={i} className="border border-neutral-200 rounded-2xl p-5">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  <div className="flex items-center gap-2.5 flex-wrap">
+                                    <span className={`flex items-center justify-center w-8 h-8 rounded-full shrink-0 ${meta.badgeClass}`}>
+                                      <meta.Icon size={18} />
+                                    </span>
+                                    <span className="text-[13px] font-semibold text-neutral-800">
+                                      {optionLabel(CONNECTION_STATUS_OPTIONS, entry.status)}
+                                    </span>
+
+                                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-neutral-100 text-neutral-500 shrink-0">
+                                      {entry.connectMedium === 'on whatsapp' ? <WhatsAppLogo size={18} /> : <Phone size={15} />}
+                                    </span>
+
+                                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-neutral-100 text-neutral-500 shrink-0">
+                                      {entry.direction === 'inbound' ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
+                                    </span>
+                                  </div>
+                                  <span className="text-neutral-400 text-[12px] whitespace-nowrap">
+                                    {relativeTime(entry.time) || '—'} by {entry.user || '—'}
+                                  </span>
+                                </div>
+
+                                {hasBelow && (
+                                  <div className="mt-3 pt-3 border-t border-neutral-100 space-y-3">
+                                    {entry.topics?.length > 0 && (
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {entry.topics.map((t) => {
+                                          const c = topicColor(t);
+                                          return (
+                                            <span key={t} className={`px-2.5 py-1 rounded-full border text-[11px] font-medium ${c.bg} ${c.text} ${c.border}`}>
+                                              {topicLabel(t)}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                    {entry.notes && <p className="text-neutral-600 text-[13px] leading-relaxed">{entry.notes}</p>}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {allEntries.length > 0 && (
+                        <div className="border border-neutral-200 rounded-2xl p-5 mt-3">
+                          <ul className="space-y-1.5 text-[13px] text-neutral-700 list-disc list-inside marker:text-neutral-700 marker:text-base">
+                            <li>{allEntries.length} connect{allEntries.length !== 1 ? 's' : ''} logged</li>
+                            <li>
+                              {connectedCount} connected · {rnrCount} RNR · {callBackCount} call back
+                            </li>
+                            {lastEntry && (
+                              <li>
+                                Last connect {relativeTime(lastEntry.time)} by {lastEntry.user}
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </>
                 );
               })()}

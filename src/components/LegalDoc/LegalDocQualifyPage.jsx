@@ -7,10 +7,6 @@ import {
   ChevronLeft,
   Copy,
   Check,
-  ArrowRight,
-  Ban,
-  RotateCcw,
-  FileText,
   PlusCircle,
   CheckCircle2,
   XCircle,
@@ -27,9 +23,6 @@ import {
   getLegalDocRecords,
   updateRequestStatus,
   setAgentLegalStatus,
-  setQualifiedBy,
-  addServiceToClient,
-  removeServiceFromClient,
   addClientConnection,
   addLeadRequest,
   effectiveStage,
@@ -37,7 +30,6 @@ import {
   REQUEST_STATUS_OPTIONS,
   STATUS_STYLES,
   QUALIFY_STAGE_STATUSES,
-  NEXT_STATUS_MAP,
   CONNECTION_STATUS_OPTIONS,
   SERVICE_NAME_OPTIONS,
   SOURCE_OPTIONS,
@@ -45,7 +37,7 @@ import {
   optionLabel,
 } from '../../data/mockLegalDoc';
 import { CONNECT_TOPIC_OPTIONS } from '../../data/mockAgents';
-import LegalSearchSelect from '../shared/LegalSearchSelect';
+import LegalLeadSection from '../shared/LegalLeadSection';
 import AgentIdentityCard from '../shared/AgentIdentityCard';
 import AddLeadRecordModal from '../shared/AddLeadRecordModal';
 import SegmentedToggle from '../shared/SegmentedToggle';
@@ -73,12 +65,17 @@ function relativeTime(ts) {
   return `${diffDays}d ago`;
 }
 
-const serviceLabel = (name) => SERVICE_NAME_OPTIONS.find((s) => s.value === name)?.label || name;
-
-function clientLabel(client) {
-  if (client.pocType === 'agent') return 'Agent (self)';
-  return client.name || 'Unnamed client';
+function formatDate(ts) {
+  if (!ts) return null;
+  const d = new Date(ts);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
 }
+
+const SERVICE_NAME_OPTIONS_SORTED = [...SERVICE_NAME_OPTIONS].sort((a, b) => a.label.localeCompare(b.label));
+
+const serviceLabel = (name) => SERVICE_NAME_OPTIONS.find((s) => s.value === name)?.label || name;
 
 // Every client on a request carries its own connections — flatten across all of them (newest
 // first) for the Connect History timeline.
@@ -166,13 +163,11 @@ const LegalDocQualifyPage = () => {
   const [kamFilter, setKamFilter] = useState([]);
   const [serviceFilter, setServiceFilter] = useState([]);
   const [pocTypeFilter, setPocTypeFilter] = useState([]);
-  const [pocFilter, setPocFilter] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [copiedKey, setCopiedKey] = useState(null);
   const [selected, setSelected] = useState(null);
-  const [actionNote, setActionNote] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [newLead, setNewLead] = useState(emptyNewQualifiedLead);
   const [onlyWithNotes, setOnlyWithNotes] = useState(false);
@@ -216,7 +211,6 @@ const LegalDocQualifyPage = () => {
   const matchesKam = (l) => kamFilter.length === 0 || kamFilter.includes(l.kam);
   const matchesService = (l) => serviceFilter.length === 0 || servicesOf(l).some((s) => serviceFilter.includes(s.name));
   const matchesPocType = (l) => pocTypeFilter.length === 0 || pocTypeFilter.some((t) => hasPocType(l, t));
-  const matchesPoc = (l) => pocFilter.length === 0 || pocFilter.includes(l.qualifiedBy);
 
   function countOptions(dim, options, getValues) {
     return options.map((o) => ({
@@ -228,16 +222,15 @@ const LegalDocQualifyPage = () => {
           (dim === 'kam' || matchesKam(l)) &&
           (dim === 'service' || matchesService(l)) &&
           (dim === 'pocType' || matchesPocType(l)) &&
-          (dim === 'poc' || matchesPoc(l)) &&
           getValues(l).includes(o.value)
       ).length,
     }));
   }
 
   const rows = allQualified.filter(
-    (l) => matchesSearch(l) && matchesStatus(l) && matchesKam(l) && matchesService(l) && matchesPocType(l) && matchesPoc(l)
+    (l) => matchesSearch(l) && matchesStatus(l) && matchesKam(l) && matchesService(l) && matchesPocType(l)
   );
-  const activeFilterCount = statusFilter.length + kamFilter.length + serviceFilter.length + pocTypeFilter.length + pocFilter.length;
+  const activeFilterCount = statusFilter.length + kamFilter.length + serviceFilter.length + pocTypeFilter.length;
 
   const activeFilters = [
     statusFilter.length > 0 && {
@@ -260,11 +253,6 @@ const LegalDocQualifyPage = () => {
       label: `POC: ${summarize(pocTypeFilter, POC_TYPE_OPTIONS, '')}`,
       clear: () => setPocTypeFilter([]),
     },
-    pocFilter.length > 0 && {
-      key: 'poc',
-      label: `Qualify POC: ${summarize(pocFilter, KAM_OPTIONS, '')}`,
-      clear: () => setPocFilter([]),
-    },
   ].filter(Boolean);
 
   function clearAllFilters() {
@@ -272,10 +260,9 @@ const LegalDocQualifyPage = () => {
     setKamFilter([]);
     setServiceFilter([]);
     setPocTypeFilter([]);
-    setPocFilter([]);
   }
 
-  const filterKey = JSON.stringify([search, statusFilter, kamFilter, serviceFilter, pocTypeFilter, pocFilter, sortBy]);
+  const filterKey = JSON.stringify([search, statusFilter, kamFilter, serviceFilter, pocTypeFilter, sortBy]);
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (filterKey !== prevFilterKey) {
     setPrevFilterKey(filterKey);
@@ -302,12 +289,10 @@ const LegalDocQualifyPage = () => {
 
   function openPanel(lead) {
     setSelected({ agentId: lead.agentId, id: lead.id });
-    setActionNote('');
   }
 
   function closePanel() {
     setSelected(null);
-    setActionNote('');
   }
 
   // Legal Status (good/maybe/bad) is one value per agent, shared with the Agent Connect panel —
@@ -340,11 +325,6 @@ const LegalDocQualifyPage = () => {
     if (selected?.agentId === lead.agentId && selected?.id === lead.id) closePanel();
   }
 
-  function handleAssignPoc(lead, user) {
-    setQualifiedBy(lead.agentId, lead.id, user);
-    bump();
-  }
-
   // Lets a KAM register something as already-qualified directly — when a service need comes
   // in straight from an existing client, there's no reason to walk it through the Lead stage
   // first just to immediately qualify it there.
@@ -360,12 +340,6 @@ const LegalDocQualifyPage = () => {
     setAddOpen(false);
     bump();
   }
-
-  const ACTION_META = {
-    service: { label: 'Move to Service', icon: ArrowRight, primary: true },
-    lost: { label: 'Mark Lost', icon: Ban, primary: false },
-  };
-  const defaultActionMeta = (target) => ({ label: `Reopen (${optionLabel(REQUEST_STATUS_OPTIONS, target)})`, icon: RotateCcw, primary: true });
 
   return (
     <div className="flex flex-col bg-neutral-50 h-full text-[13px]">
@@ -439,7 +413,7 @@ const LegalDocQualifyPage = () => {
             <MultiFilterSelect
               label="Status"
               allLabel="All Status"
-              allCount={allQualified.filter((l) => matchesSearch(l) && matchesKam(l) && matchesService(l) && matchesPocType(l) && matchesPoc(l)).length}
+              allCount={allQualified.filter((l) => matchesSearch(l) && matchesKam(l) && matchesService(l) && matchesPocType(l)).length}
               value={statusFilter}
               onChange={setStatusFilter}
               options={countOptions(
@@ -451,7 +425,7 @@ const LegalDocQualifyPage = () => {
             <MultiFilterSelect
               label="KAM"
               allLabel="All KAMs"
-              allCount={allQualified.filter((l) => matchesSearch(l) && matchesStatus(l) && matchesService(l) && matchesPocType(l) && matchesPoc(l)).length}
+              allCount={allQualified.filter((l) => matchesSearch(l) && matchesStatus(l) && matchesService(l) && matchesPocType(l)).length}
               value={kamFilter}
               onChange={setKamFilter}
               options={countOptions('kam', KAM_OPTIONS, (l) => [l.kam])}
@@ -459,26 +433,19 @@ const LegalDocQualifyPage = () => {
             <MultiFilterSelect
               label="Service"
               allLabel="All Services"
-              allCount={allQualified.filter((l) => matchesSearch(l) && matchesStatus(l) && matchesKam(l) && matchesPocType(l) && matchesPoc(l)).length}
+              allCount={allQualified.filter((l) => matchesSearch(l) && matchesStatus(l) && matchesKam(l) && matchesPocType(l)).length}
               value={serviceFilter}
               onChange={setServiceFilter}
-              options={countOptions('service', SERVICE_NAME_OPTIONS, (l) => servicesOf(l).map((s) => s.name))}
+              options={countOptions('service', SERVICE_NAME_OPTIONS_SORTED, (l) => servicesOf(l).map((s) => s.name))}
+              maxHeightClass="max-h-[36rem]"
             />
             <MultiFilterSelect
               label="POC"
               allLabel="Agent & Client"
-              allCount={allQualified.filter((l) => matchesSearch(l) && matchesStatus(l) && matchesKam(l) && matchesService(l) && matchesPoc(l)).length}
+              allCount={allQualified.filter((l) => matchesSearch(l) && matchesStatus(l) && matchesKam(l) && matchesService(l)).length}
               value={pocTypeFilter}
               onChange={setPocTypeFilter}
               options={countOptions('pocType', POC_TYPE_OPTIONS, (l) => POC_TYPE_OPTIONS.map((o) => o.value).filter((t) => hasPocType(l, t)))}
-            />
-            <MultiFilterSelect
-              label="Qualify POC"
-              allLabel="All POCs"
-              allCount={allQualified.filter((l) => matchesSearch(l) && matchesStatus(l) && matchesKam(l) && matchesService(l) && matchesPocType(l)).length}
-              value={pocFilter}
-              onChange={setPocFilter}
-              options={countOptions('poc', KAM_OPTIONS, (l) => [l.qualifiedBy])}
             />
             <FilterSelect label="Sort" value={sortBy} onChange={setSortBy} options={SORT_OPTIONS} defaultValue="newest" />
           </div>
@@ -490,16 +457,15 @@ const LegalDocQualifyPage = () => {
         <table className="text-left text-[13px] text-neutral-600 whitespace-nowrap min-w-[1200px] w-full">
           <thead className="bg-white text-[11px] font-medium uppercase tracking-wider text-neutral-500 sticky top-0 z-10 shadow-[0_1px_0_0_#e7e5e4]">
             <tr>
-              <th className="pl-6 pr-4 py-4">CP ID</th>
+              <th className="pl-6 pr-4 py-4">Req ID</th>
+              <th className="px-4 py-4">CPID</th>
               <th className="px-4 py-4">Name</th>
               <th className="px-4 py-4">Number</th>
               <th className="px-4 py-4">KAM</th>
               <th className="px-4 py-4">Status</th>
-              <th className="px-4 py-4">Services</th>
-              <th className="px-4 py-4">Client</th>
-              <th className="px-4 py-4">Qualify POC</th>
-              <th className="px-4 py-4">Qualified</th>
-              <th className="pl-4 pr-6 py-4">Agent Services</th>
+              <th className="px-4 py-4">No. of Services</th>
+              <th className="px-4 py-4">POC</th>
+              <th className="pl-4 pr-6 py-4">Service Name</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
@@ -510,7 +476,13 @@ const LegalDocQualifyPage = () => {
               const agentServices = agentClient ? agentClient.services : [];
               return (
                 <tr key={key} onClick={() => openPanel(lead)} className="hover:bg-neutral-50/50 transition-colors group cursor-pointer">
-                  <td className="pl-6 pr-4 py-3 font-mono text-neutral-500">{lead.agentId}</td>
+                  <td className="pl-6 pr-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[11px] bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded">{lead.id}</span>
+                      <span className="text-neutral-400 text-[11px]">{formatDate(lead.createdAt) || '—'}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-neutral-500">{lead.agentId}</td>
                   <td className="px-4 py-3 font-semibold text-neutral-900">{lead.agentName}</td>
                   <td className="px-4 py-3 text-neutral-500">
                     {lead.contact ? (
@@ -536,6 +508,7 @@ const LegalDocQualifyPage = () => {
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_STYLES[lead.status] || 'bg-neutral-100 text-neutral-600'}`}>
                       {optionLabel(REQUEST_STATUS_OPTIONS, lead.status)}
                     </span>
+                    <span className="text-neutral-400 text-[11px] ml-1.5">{relativeTime(qualifiedAt(lead)) || '—'}</span>
                   </td>
                   <td className="px-4 py-3">
                     {services.length === 0 ? (
@@ -557,8 +530,6 @@ const LegalDocQualifyPage = () => {
                           ))}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-neutral-700">{lead.qualifiedBy || '—'}</td>
-                  <td className="px-4 py-3 text-neutral-400">{relativeTime(qualifiedAt(lead)) || '—'}</td>
                   <td className="pl-4 pr-6 py-3 text-neutral-600">
                     {agentServices.length === 0 ? <span className="text-neutral-400">—</span> : agentServices.map((s) => serviceLabel(s.name)).join(', ')}
                   </td>
@@ -567,7 +538,7 @@ const LegalDocQualifyPage = () => {
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-6 py-16 text-center text-neutral-400">
+                <td colSpan={9} className="px-6 py-16 text-center text-neutral-400">
                   No qualified requests match these filters.
                 </td>
               </tr>
@@ -601,22 +572,20 @@ const LegalDocQualifyPage = () => {
         </div>
       )}
 
-      {/* Side panel — same shell as the Agent page's connect panel (avatar header, single
-          scroll region, sticky action bar), with every service already broken out by
-          client so nothing's hidden behind another click. The CTA lives only here now. */}
+      {/* Side panel — same shell as the Leads page side panel, so a request looks and behaves
+          identically whichever stage it's opened from. The only difference is the CTA: Leads
+          offers Qualify/Drop, this offers Move to Service/Mark Lost (handled inside
+          LegalLeadSection based on the request's current stage). */}
       {selectedLead && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex justify-end" onClick={closePanel}>
-          <div
-            className="bg-white h-full w-2/5 min-w-[460px] shadow-2xl flex flex-col [&_button]:focus:outline-none [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-neutral-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <header className="shrink-0 flex items-center justify-end px-5 py-3 bg-white border-b border-neutral-100">
-              <button onClick={closePanel} className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors">
-                <X size={17} />
+        <div className="fixed inset-0 bg-black/30 z-40 flex justify-end" onClick={closePanel}>
+          <div className="bg-white h-full w-2/5 min-w-[420px] shadow-2xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <header className="h-16 flex items-center justify-end px-6 bg-white border-b border-neutral-100 sticky top-0 z-10">
+              <button onClick={closePanel} className="p-2 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-xl">
+                <X size={18} />
               </button>
             </header>
 
-            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+            <div className="p-6 space-y-4">
               {/* Agent Details — same identity card used across the Agent Connect panel and
                   every Legal Doc side panel */}
               <AgentIdentityCard
@@ -642,50 +611,41 @@ const LegalDocQualifyPage = () => {
                 })()}
               </AgentIdentityCard>
 
-              <div className="border border-neutral-200 rounded-2xl p-5">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Qualify POC</div>
-                <select
-                  value={selectedLead.qualifiedBy || ''}
-                  onChange={(e) => handleAssignPoc(selectedLead, e.target.value)}
-                  className="w-full border border-neutral-200 rounded-xl px-3 py-1.5 text-[13px] bg-white"
-                >
-                  <option value="" disabled>Assign a POC...</option>
-                  {KAM_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
+              <div className="border border-neutral-200 rounded-2xl p-4">
+                <div className="grid grid-cols-2 gap-y-1.5 text-[13px] items-center">
+                  <span className="text-neutral-400">Status</span>
+                  <span
+                    className={`inline-flex w-fit px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                      STATUS_STYLES[selectedLead.status] || 'bg-neutral-100 text-neutral-600'
+                    }`}
+                  >
+                    {optionLabel(REQUEST_STATUS_OPTIONS, selectedLead.status)}
+                  </span>
+                  <span className="text-neutral-400">Status Date</span>
+                  <span className="text-neutral-700">{formatDate(qualifiedAt(selectedLead)) || '—'}</span>
+                  <span className="text-neutral-400">Request ID</span>
+                  <span className="text-neutral-700 font-mono">{selectedLead.id}</span>
+                  <span className="text-neutral-400">Request Date</span>
+                  <span className="text-neutral-700">{formatDate(selectedLead.createdAt) || '—'}</span>
+                  <span className="text-neutral-400">Source</span>
+                  <span className="text-neutral-700 capitalize">{selectedLead.source}</span>
+                </div>
               </div>
 
-              {selectedLead.clients.map((client, ci) => (
-                <div key={ci} className="border border-neutral-200 rounded-2xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText size={14} className="text-neutral-400" />
-                    <span className="font-medium text-neutral-800 text-[13px]">{clientLabel(client)}</span>
-                    {client.phone && (
-                      <>
-                        <span className="text-neutral-300">·</span>
-                        <span className="text-neutral-400 text-[12px]">{formatPhone(client.phone)}</span>
-                      </>
-                    )}
-                  </div>
-                  <LegalSearchSelect
-                    items={client.services.map((s) => ({ name: s.name, qty: s.qty || 1 }))}
-                    onAdd={(serviceName) => {
-                      addServiceToClient(selectedLead.agentId, selectedLead.id, ci, serviceName);
-                      bump();
-                    }}
-                    onIncrement={(serviceName) => {
-                      addServiceToClient(selectedLead.agentId, selectedLead.id, ci, serviceName);
-                      bump();
-                    }}
-                    onDecrement={(serviceName) => {
-                      removeServiceFromClient(selectedLead.agentId, selectedLead.id, ci, serviceName);
-                      bump();
-                    }}
-                    placeholder={`+ Add legal for ${clientLabel(client)}...`}
-                  />
-                </div>
-              ))}
+              {/* Agent services + per-client boxes + stage-advance action — same shared
+                  component as the Leads page side panel, so a request's legal requirements
+                  look and behave identically whichever stage it's edited from. */}
+              <LegalLeadSection
+                agentId={selectedLead.agentId}
+                requestId={selectedLead.id}
+                kam={selectedLead.kam}
+                onQualified={() => {
+                  bump();
+                  closePanel();
+                }}
+                onDrop={() => handleStatusChange(selectedLead, 'lost')}
+                onReopen={() => handleStatusChange(selectedLead, 'lead')}
+              />
 
               {/* Call Log — pixel-matched to the Agent Connect panel's Log a Connect + Connect
                   History: always-open form, Connected/RNR/Call Back outcome buttons, topic
@@ -896,43 +856,6 @@ const LegalDocQualifyPage = () => {
                   </>
                 );
               })()}
-
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="Reason (optional)..."
-                  value={actionNote}
-                  onChange={(e) => setActionNote(e.target.value)}
-                  className="w-full border border-neutral-200 rounded-xl px-3 py-1.5 text-[13px] outline-none focus:border-neutral-400"
-                />
-                <div className="flex items-center gap-2">
-                  {(NEXT_STATUS_MAP[selectedLead.status] || []).map((target) => {
-                    const meta = ACTION_META[target] || defaultActionMeta(target);
-                    const Icon = meta.icon;
-                    return (
-                      <button
-                        key={target}
-                        onClick={() => handleStatusChange(selectedLead, target, actionNote)}
-                        className={
-                          meta.primary
-                            ? 'flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-neutral-900 text-white rounded-xl font-medium hover:bg-neutral-800 text-[13px] transition-colors'
-                            : 'flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 border border-neutral-200 text-neutral-700 rounded-xl font-medium hover:bg-neutral-50 text-[13px] transition-colors'
-                        }
-                      >
-                        {meta.primary ? (
-                          <>
-                            {meta.label} <Icon size={13} />
-                          </>
-                        ) : (
-                          <>
-                            <Icon size={13} /> {meta.label}
-                          </>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             </div>
           </div>
         </div>

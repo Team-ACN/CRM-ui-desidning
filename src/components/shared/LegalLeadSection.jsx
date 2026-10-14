@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, User, X, Check } from 'lucide-react';
+import { Plus, Users, User, X, Check, RotateCcw } from 'lucide-react';
 import LegalSearchSelect from './LegalSearchSelect';
 import {
   getLegalDocRecord,
@@ -19,11 +19,19 @@ function maskPhoneInput(raw) {
   return `${digits.slice(0, 5)} ${digits.slice(5)}`;
 }
 
+// The one primary advance this section offers, keyed by the request's current stage — 'lead'
+// moves it to 'qualify', 'qualify' moves it to 'service'. Any other stage (service/lost) has no
+// advance button here.
+const STAGE_ACTION = {
+  lead: { targetStatus: 'qualify', label: 'Qualify the Lead', savedLabel: 'Lead Qualified', secondaryLabel: 'Drop Lead' },
+  qualify: { targetStatus: 'service', label: 'Move to Service', savedLabel: 'Moved to Service', secondaryLabel: 'Mark Lost' },
+};
+
 // Agent-services box + per-client boxes (always editable, no edit-mode toggle) + add-client
 // flow + a "Qualify the Lead" CTA — all driven off an EXISTING request (agentId + requestId).
 // Shared by the Agent Connect panel and the Legal Doc Leads page side panel so a lead's legal
 // requirements look and behave identically no matter where they're opened from.
-const LegalLeadSection = ({ agentId, requestId, kam = '—', onQualified, onDrop, showQualifyButton = true }) => {
+const LegalLeadSection = ({ agentId, requestId, kam = '—', onQualified, onDrop, onReopen, showQualifyButton = true }) => {
   const [, setVersion] = useState(0);
   const bump = () => setVersion((v) => v + 1);
 
@@ -50,7 +58,8 @@ const LegalLeadSection = ({ agentId, requestId, kam = '—', onQualified, onDrop
     0
   );
   const totalRequirementsCount = agentServicesCount + clientServicesCount;
-  const isLeadStage = currentStatus(request) === 'lead';
+  const status = currentStatus(request);
+  const stageAction = STAGE_ACTION[status];
 
   const handleAddAgentService = (name) => {
     addServiceToClient(agentId, requestId, agentIdx !== -1 ? agentIdx : 0, name);
@@ -101,10 +110,10 @@ const LegalLeadSection = ({ agentId, requestId, kam = '—', onQualified, onDrop
     bump();
   };
 
-  const handleQualify = () => {
+  const handleAdvance = () => {
     // If a client was typed in without clicking '+ Add client', commit it first.
     if (newClientName.trim()) handleConfirmAddClient();
-    updateRequestStatus(agentId, requestId, 'qualify', { notes: 'Qualified', user: kam });
+    updateRequestStatus(agentId, requestId, stageAction.targetStatus, { notes: stageAction.label, user: kam });
     setIsAddingClient(false);
     bump();
     setQualified(true);
@@ -270,21 +279,21 @@ const LegalLeadSection = ({ agentId, requestId, kam = '—', onQualified, onDrop
         </button>
       </div>
 
-      {showQualifyButton && isLeadStage && (
+      {showQualifyButton && stageAction && (
         <div className="pt-3 border-t border-neutral-100 flex items-center gap-2">
           <button
             type="button"
-            onClick={handleQualify}
+            onClick={handleAdvance}
             disabled={totalRequirementsCount === 0}
             className="flex-1 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-medium text-[13px] disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5"
           >
             {qualified ? (
               <>
                 <Check size={14} className="text-emerald-400" />
-                <span>Lead Qualified</span>
+                <span>{stageAction.savedLabel}</span>
               </>
             ) : (
-              <span>Qualify the Lead</span>
+              <span>{stageAction.label}</span>
             )}
           </button>
           {onDrop && (
@@ -293,9 +302,21 @@ const LegalLeadSection = ({ agentId, requestId, kam = '—', onQualified, onDrop
               onClick={onDrop}
               className="flex-1 py-2.5 border border-neutral-200 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50 rounded-xl font-medium text-[13px] transition-colors"
             >
-              Drop Lead
+              {stageAction.secondaryLabel}
             </button>
           )}
+        </div>
+      )}
+
+      {showQualifyButton && status === 'lost' && onReopen && (
+        <div className="pt-3 border-t border-neutral-100">
+          <button
+            type="button"
+            onClick={onReopen}
+            className="w-full py-2.5 border border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl font-medium text-[13px] transition-colors flex items-center justify-center gap-1.5"
+          >
+            <RotateCcw size={14} /> Reopen Lead
+          </button>
         </div>
       )}
     </div>

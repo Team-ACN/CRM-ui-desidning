@@ -31,7 +31,7 @@ export function FilterSelect({ label, value, onChange, options, defaultValue }) 
         <ChevronDown size={14} className={`text-stone-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="absolute left-0 right-0 mt-1.5 bg-white border border-stone-200 rounded-lg shadow-lg z-20 py-1">
+        <div className="absolute left-0 right-0 mt-1.5 bg-white border border-stone-200 rounded-lg shadow-lg z-20 py-1 max-h-72 overflow-y-auto">
           {options.map(o => (
             <button
               key={o.value}
@@ -50,7 +50,7 @@ export function FilterSelect({ label, value, onChange, options, defaultValue }) 
 }
 
 // Multi-choice dropdown — tick as many options as you want, plus an "All" row that clears the selection
-export function MultiFilterSelect({ label, allLabel, allCount, value, onChange, options }) {
+export function MultiFilterSelect({ label, allLabel, allCount, value, onChange, options, maxHeightClass = 'max-h-72' }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -80,7 +80,7 @@ export function MultiFilterSelect({ label, allLabel, allCount, value, onChange, 
         <ChevronDown size={14} className={`shrink-0 transition-transform ${value.length > 0 ? 'text-white/70' : 'text-stone-400'} ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="absolute left-0 right-0 mt-1.5 bg-white border border-stone-200 rounded-lg shadow-lg z-20 py-1">
+        <div className={`absolute left-0 right-0 mt-1.5 bg-white border border-stone-200 rounded-lg shadow-lg z-20 py-1 overflow-y-auto ${maxHeightClass}`}>
           <button
             type="button"
             onClick={() => onChange([])}

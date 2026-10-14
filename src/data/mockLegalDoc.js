@@ -1803,6 +1803,57 @@ export function setServiceChargeableAmount(agentId, requestId, clientIndex, serv
   return request;
 }
 
+// The Service page's three raw tracking fields the table reads (documentsReceived/
+// advanceReceived/vaultServiceId) — these live alongside, not instead of, the granular
+// per-document checklist, so the Service panel can flip them directly.
+export function toggleServiceDocumentsReceived(agentId, requestId, clientIndex, serviceName) {
+  const request = getRequest(agentId, requestId);
+  const service = request?.clients[clientIndex]?.services.find((s) => s.name === serviceName);
+  if (!service) return null;
+  service.documentsReceived = !service.documentsReceived;
+  persist();
+  return request;
+}
+
+export function toggleServiceAdvanceReceived(agentId, requestId, clientIndex, serviceName) {
+  const request = getRequest(agentId, requestId);
+  const service = request?.clients[clientIndex]?.services.find((s) => s.name === serviceName);
+  if (!service) return null;
+  service.advanceReceived = !service.advanceReceived;
+  persist();
+  return request;
+}
+
+// Per-service lost, independent of the request's own status — a request can stay in 'service'
+// with one service lost and another still being delivered.
+export function toggleServiceLost(agentId, requestId, clientIndex, serviceName) {
+  const request = getRequest(agentId, requestId);
+  const service = request?.clients[clientIndex]?.services.find((s) => s.name === serviceName);
+  if (!service) return null;
+  service.lost = !service.lost;
+  persist();
+  return request;
+}
+
+export function setServiceVaultId(agentId, requestId, clientIndex, serviceName, vaultServiceId) {
+  const request = getRequest(agentId, requestId);
+  const service = request?.clients[clientIndex]?.services.find((s) => s.name === serviceName);
+  if (!service) return null;
+  service.vaultServiceId = vaultServiceId || null;
+  persist();
+  return request;
+}
+
+// invoiceId lives on the client (POC), not the service — one invoice per POC, not per service.
+export function setClientInvoiceId(agentId, requestId, clientIndex, invoiceId) {
+  const request = getRequest(agentId, requestId);
+  const client = request?.clients[clientIndex];
+  if (!client) return null;
+  client.invoiceId = invoiceId || null;
+  persist();
+  return request;
+}
+
 export function addClientConnection(
   agentId,
   requestId,

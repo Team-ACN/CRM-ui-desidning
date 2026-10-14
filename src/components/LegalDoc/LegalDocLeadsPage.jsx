@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Search, X, Filter, PlusCircle, Plus, RotateCcw, ChevronRight, ChevronLeft, Copy, Check, CheckCircle2, XCircle, Clock, StickyNote, PhoneCall, Phone, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Search, X, Filter, Plus, RotateCcw, ChevronRight, ChevronLeft, Copy, Check, CheckCircle2, XCircle, Clock, StickyNote, PhoneCall, Phone, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { MultiFilterSelect, FilterSelect } from '../Edge/FilterControls';
 import LegalLeadSection from '../shared/LegalLeadSection';
 import AgentIdentityCard from '../shared/AgentIdentityCard';
-import AddLeadRecordModal from '../shared/AddLeadRecordModal';
 import SegmentedToggle from '../shared/SegmentedToggle';
 import WhatsAppLogo from '../shared/WhatsAppLogo';
 import { CONNECT_TOPIC_OPTIONS } from '../../data/mockAgents';
@@ -14,14 +13,12 @@ import {
   updateRequestStatus,
   setAgentLegalStatus,
   addClientConnection,
-  addLeadRequest,
   resetLegalDocData,
   effectiveStage,
   currentStatus,
   REQUEST_STATUS_OPTIONS,
   STATUS_STYLES,
   CONNECTION_STATUS_OPTIONS,
-  SERVICE_NAME_OPTIONS,
   KAM_OPTIONS,
   AGENT_STATUS_OPTIONS,
   SOURCE_OPTIONS,
@@ -41,12 +38,16 @@ const PAGE_SIZE = 20;
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest first' },
   { value: 'oldest', label: 'Oldest first' },
-  { value: 'recent_contact', label: 'Recently contacted' },
-  { value: 'name', label: 'Name (A-Z)' },
 ];
 
-// "+919845011287" -> "+91 98450 11287" (3-5-5 grouping); falls back to the raw value if it
-// doesn't match the expected "+<2-digit code><10 digits>" shape.
+// Leads only ever sit in 'lead' or 'lost' (shown as "Loss") — the other request statuses
+// (qualify/service) belong to the later-stage pages, not this filter.
+const LEAD_STATUS_FILTER_OPTIONS = [
+  { value: 'lead', label: 'Lead' },
+  { value: 'lost', label: 'Loss' },
+];
+
+// "+919845011287" -> "+91 98450 11287" (3-5-5 grouping).
 function formatPhone(raw) {
   if (!raw) return raw;
   const match = raw.match(/^(\+\d{2})(\d{5})(\d{5})$/);
@@ -59,6 +60,14 @@ function relativeTime(ts) {
   if (diffDays <= 0) return 'today';
   if (diffDays === 1) return 'yesterday';
   return `${diffDays}d ago`;
+}
+
+function formatDate(ts) {
+  if (!ts) return null;
+  const d = new Date(ts);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
 function clientLabel(client) {
@@ -102,15 +111,6 @@ const TOPIC_COLORS = {
 };
 const topicColor = (value) => TOPIC_COLORS[value] || { bg: 'bg-neutral-100', text: 'text-neutral-500', border: 'border-neutral-200' };
 
-const emptyNewLead = {
-  agentId: '',
-  agentName: '',
-  contact: '',
-  kam: KAM_OPTIONS[0].value,
-  serviceName: SERVICE_NAME_OPTIONS[0].value,
-  source: 'app',
-};
-
 const LegalDocLeadsPage = () => {
   const [version, setVersion] = useState(0);
   const [search, setSearch] = useState('');
@@ -121,9 +121,7 @@ const LegalDocLeadsPage = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
-  const [addOpen, setAddOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState(null);
-  const [newLead, setNewLead] = useState(emptyNewLead);
   const [selected, setSelected] = useState(null); // { agentId, id } of the request open in the side panel
   const [onlyWithNotes, setOnlyWithNotes] = useState(false);
   const [callForm, setCallForm] = useState({
@@ -186,7 +184,7 @@ const LegalDocLeadsPage = () => {
   const activeFilters = [
     statusFilter.length > 0 && {
       key: 'status',
-      label: `Status: ${summarize(statusFilter, REQUEST_STATUS_OPTIONS, '')}`,
+      label: `Status: ${summarize(statusFilter, LEAD_STATUS_FILTER_OPTIONS, '')}`,
       clear: () => setStatusFilter([]),
     },
     agentStatusFilter.length > 0 && {
@@ -226,13 +224,6 @@ const LegalDocLeadsPage = () => {
     switch (sortBy) {
       case 'oldest':
         return a.createdAt - b.createdAt;
-      case 'recent_contact': {
-        const at = lastConnectionFor(a)?.time || 0;
-        const bt = lastConnectionFor(b)?.time || 0;
-        return bt - at;
-      }
-      case 'name':
-        return a.agentName.localeCompare(b.agentName);
       case 'newest':
       default:
         return b.createdAt - a.createdAt;
@@ -269,6 +260,11 @@ const LegalDocLeadsPage = () => {
     bump();
   }
 
+  function handleReopenLead(lead) {
+    updateRequestStatus(lead.agentId, lead.id, 'lead', { notes: 'Reopened from Leads', user: lead.kam });
+    bump();
+  }
+
   function submitLogCall(lead, clientIndex) {
     const { clientIndex: _ignored, ...entry } = callForm;
     addClientConnection(lead.agentId, lead.id, clientIndex, { ...entry, user: lead.kam });
@@ -280,15 +276,6 @@ const LegalDocLeadsPage = () => {
       notes: '',
       topics: ['services'],
     }));
-    bump();
-  }
-
-  function submitNewLead(e) {
-    e.preventDefault();
-    if (!newLead.agentId || !newLead.agentName) return;
-    addLeadRequest(newLead);
-    setNewLead(emptyNewLead);
-    setAddOpen(false);
     bump();
   }
 
@@ -322,12 +309,6 @@ const LegalDocLeadsPage = () => {
             className="p-2 text-neutral-300 hover:text-neutral-500 transition-colors"
           >
             <RotateCcw size={15} />
-          </button>
-          <button
-            onClick={() => setAddOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white rounded-2xl font-medium hover:bg-neutral-800 transition-colors shadow-sm whitespace-nowrap"
-          >
-            <PlusCircle size={16} /> Add Lead
           </button>
         </div>
       </header>
@@ -389,7 +370,7 @@ const LegalDocLeadsPage = () => {
               allCount={allLeads.filter((l) => matchesSearch(l) && matchesAgentStatus(l) && matchesSource(l) && matchesKam(l)).length}
               value={statusFilter}
               onChange={setStatusFilter}
-              options={countOptions('status', REQUEST_STATUS_OPTIONS, (l) => l.status)}
+              options={countOptions('status', LEAD_STATUS_FILTER_OPTIONS, (l) => l.status)}
             />
             <MultiFilterSelect
               label="Agent Status"
@@ -425,12 +406,12 @@ const LegalDocLeadsPage = () => {
         <table className="text-left text-[13px] text-neutral-600 whitespace-nowrap min-w-[1250px] w-full">
           <thead className="bg-white text-[11px] font-medium uppercase tracking-wider text-neutral-500 sticky top-0 z-10 shadow-[0_1px_0_0_#e7e5e4]">
             <tr>
-              <th className="pl-6 pr-4 py-4">CP ID</th>
-              <th className="px-4 py-4">Name</th>
-              <th className="px-4 py-4">Number</th>
-              <th className="px-4 py-4">KAM</th>
+              <th className="pl-6 pr-4 py-4">Req ID</th>
+              <th className="px-4 py-4">CPID</th>
+              <th className="px-4 py-4">Agent Name</th>
+              <th className="px-4 py-4">Agent No</th>
               <th className="px-4 py-4">Agent Status</th>
-              <th className="px-4 py-4">Created</th>
+              <th className="px-4 py-4">KAM</th>
               <th className="px-4 py-4">Status</th>
               <th className="px-6 py-4">Source</th>
             </tr>
@@ -445,7 +426,13 @@ const LegalDocLeadsPage = () => {
                   onClick={() => openPanel(lead)}
                   className="hover:bg-neutral-50/50 transition-colors group cursor-pointer"
                 >
-                  <td className="pl-6 pr-4 py-3 font-mono text-neutral-500">{lead.agentId}</td>
+                  <td className="pl-6 pr-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[11px] bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded">{lead.id}</span>
+                      <span className="text-neutral-400 text-[11px]">{formatDate(lead.createdAt) || '—'}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-neutral-500">{lead.agentId}</td>
                   <td className="px-4 py-3 font-semibold text-neutral-900">{lead.agentName}</td>
                   <td className="px-4 py-3 text-neutral-500">
                     {lead.contact ? (
@@ -454,7 +441,7 @@ const LegalDocLeadsPage = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleCopy(key, lead.contact);
+                            handleCopy(key, formatPhone(lead.contact));
                           }}
                           title="Copy number"
                           className="p-1 text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 rounded transition-colors"
@@ -466,7 +453,6 @@ const LegalDocLeadsPage = () => {
                       '—'
                     )}
                   </td>
-                  <td className="px-4 py-3 text-neutral-700">{lead.kam || '—'}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span
                       className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
@@ -477,7 +463,7 @@ const LegalDocLeadsPage = () => {
                     </span>
                     <span className="text-neutral-400 text-[11px] ml-1.5">{relativeTime(lead.agentStatusTime) || '—'}</span>
                   </td>
-                  <td className="px-4 py-3 text-neutral-400">{relativeTime(lead.createdAt) || '—'}</td>
+                  <td className="px-4 py-3 text-neutral-700">{lead.kam || '—'}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
@@ -528,17 +514,6 @@ const LegalDocLeadsPage = () => {
         </div>
       )}
 
-      {/* Add Lead modal */}
-      <AddLeadRecordModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        title="Add Lead"
-        submitLabel="Add Lead"
-        formState={newLead}
-        onChange={setNewLead}
-        onSubmit={submitNewLead}
-      />
-
       {/* Lead side panel */}
       {selectedLead && (
         <div className="fixed inset-0 bg-black/30 z-40 flex justify-end" onClick={closePanel}>
@@ -575,9 +550,7 @@ const LegalDocLeadsPage = () => {
                 })()}
               </AgentIdentityCard>
 
-              {/* Request */}
               <div className="border border-neutral-200 rounded-2xl p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">Request</div>
                 <div className="grid grid-cols-2 gap-y-1.5 text-[13px] items-center">
                   <span className="text-neutral-400">Status</span>
                   <span
@@ -587,16 +560,16 @@ const LegalDocLeadsPage = () => {
                   >
                     {optionLabel(REQUEST_STATUS_OPTIONS, selectedLead.status)}
                   </span>
+                  <span className="text-neutral-400">Status Date</span>
+                  <span className="text-neutral-700">
+                    {formatDate(lastConnectionFor(selectedLead)?.time || selectedLead.createdAt) || '—'}
+                  </span>
                   <span className="text-neutral-400">Request ID</span>
                   <span className="text-neutral-700 font-mono">{selectedLead.id}</span>
+                  <span className="text-neutral-400">Request Date</span>
+                  <span className="text-neutral-700">{formatDate(selectedLead.createdAt) || '—'}</span>
                   <span className="text-neutral-400">Source</span>
                   <span className="text-neutral-700 capitalize">{selectedLead.source}</span>
-                  <span className="text-neutral-400">Lead by</span>
-                  <span className="text-neutral-700">{selectedLead.leadBy || '—'}</span>
-                  <span className="text-neutral-400">Qualified by</span>
-                  <span className="text-neutral-700">{selectedLead.qualifiedBy || '—'}</span>
-                  <span className="text-neutral-400">Sales POC</span>
-                  <span className="text-neutral-700">{selectedLead.salesPoc || '—'}</span>
                 </div>
               </div>
 
@@ -612,6 +585,7 @@ const LegalDocLeadsPage = () => {
                   closePanel();
                 }}
                 onDrop={() => handleDropLead(selectedLead)}
+                onReopen={() => handleReopenLead(selectedLead)}
               />
 
               {/* Call Log — pixel-matched to the Agent Connect panel's Log a Connect + Connect
