@@ -85,7 +85,7 @@ const LegalDocHomePage = () => {
           <p>No callbacks scheduled.</p>
         </div>
       ) : (
-        <div className="flex flex-nowrap items-start gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex flex-nowrap items-stretch gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {callbacks.map((cb) => {
             const overdue = isOverdue(cb.at);
             const key = `${cb.agentId}-${cb.kamId}`;
@@ -96,35 +96,42 @@ const LegalDocHomePage = () => {
                 tabIndex={0}
                 onClick={() => openAgent(cb.agentId)}
                 onKeyDown={(e) => e.key === 'Enter' && openAgent(cb.agentId)}
-                className="w-[23rem] shrink-0 bg-white border border-neutral-200 rounded-2xl p-5 hover:border-neutral-300 transition-colors cursor-pointer flex flex-col"
+                className="w-[23rem] shrink-0 bg-white border border-neutral-200 rounded-2xl p-5 hover:border-neutral-300 transition-colors cursor-pointer flex flex-col justify-between"
               >
-                <div className="flex items-start justify-between gap-2 pb-3 border-b border-neutral-100">
-                  <p className="text-[13px] font-semibold text-neutral-800">{cb.agentName}</p>
-                  <span
-                    className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium ${
-                      overdue ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                    }`}
-                  >
-                    <Clock size={11} /> {formatCallbackAt(cb.at)}
-                  </span>
+                <div>
+                  <div className="flex items-center justify-between gap-2 pb-3 border-b border-neutral-100">
+                    <p className="text-[13px] font-semibold text-neutral-800 truncate">{cb.agentName}</p>
+                    <span
+                      className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium ${
+                        overdue ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                      }`}
+                    >
+                      <Clock size={11} /> {formatCallbackAt(cb.at)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 mt-3 min-h-[22px] items-center">
+                    {cb.topics?.length > 0 ? (
+                      cb.topics.map((t) => {
+                        const c = topicColor(t);
+                        return (
+                          <span key={t} className={`px-2 py-0.5 rounded-full border text-[10.5px] font-medium ${c.bg} ${c.text} ${c.border}`}>
+                            {topicLabel(t)}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="invisible text-[10.5px] py-0.5">&nbsp;</span>
+                    )}
+                  </div>
+
+                  <p className="text-[12.5px] text-neutral-500 leading-5 line-clamp-2 h-10 mt-2.5 mb-3">
+                    {cb.note || '\u00A0'}
+                  </p>
                 </div>
 
-                {cb.topics?.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {cb.topics.map((t) => {
-                      const c = topicColor(t);
-                      return (
-                        <span key={t} className={`px-2 py-0.5 rounded-full border text-[10.5px] font-medium ${c.bg} ${c.text} ${c.border}`}>
-                          {topicLabel(t)}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-                {cb.note && <p className="text-[12.5px] text-neutral-500 leading-relaxed line-clamp-2 min-h-[2.6em] mt-2.5 mb-3">{cb.note}</p>}
-
                 {cb.contact && (
-                  <div className="pt-3 border-t border-neutral-100 flex items-center gap-1.5 text-neutral-500">
+                  <div className="mt-auto pt-3 border-t border-neutral-100 flex items-center gap-1.5 text-neutral-500">
                     <Phone size={12} className="text-neutral-300" />
                     <span className="text-[12.5px]">{formatPhone(cb.contact)}</span>
                     <button
