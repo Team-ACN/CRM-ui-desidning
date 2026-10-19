@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   Copy,
   Check,
-  PlusCircle,
   CheckCircle2,
   XCircle,
   Clock,
@@ -24,7 +23,6 @@ import {
   updateRequestStatus,
   setAgentLegalStatus,
   addClientConnection,
-  addLeadRequest,
   effectiveStage,
   currentStatus,
   REQUEST_STATUS_OPTIONS,
@@ -32,16 +30,16 @@ import {
   QUALIFY_STAGE_STATUSES,
   CONNECTION_STATUS_OPTIONS,
   SERVICE_NAME_OPTIONS,
-  SOURCE_OPTIONS,
   KAM_OPTIONS,
   optionLabel,
 } from '../../data/mockLegalDoc';
 import { CONNECT_TOPIC_OPTIONS } from '../../data/mockAgents';
 import LegalLeadSection from '../shared/LegalLeadSection';
 import AgentIdentityCard from '../shared/AgentIdentityCard';
-import AddLeadRecordModal from '../shared/AddLeadRecordModal';
 import SegmentedToggle from '../shared/SegmentedToggle';
 import WhatsAppLogo from '../shared/WhatsAppLogo';
+import CallbackCalendarAndTimePicker from '../shared/CallbackCalendarAndTimePicker';
+import { toBusinessSlot } from '../shared/callbackSlots';
 
 const PAGE_SIZE = 20;
 
@@ -147,15 +145,6 @@ function qualifiedAt(request) {
   return entry ? entry.time : request.createdAt;
 }
 
-const emptyNewQualifiedLead = {
-  agentId: '',
-  agentName: '',
-  contact: '',
-  kam: KAM_OPTIONS[0].value,
-  serviceName: SERVICE_NAME_OPTIONS[0].value,
-  source: SOURCE_OPTIONS[0].value,
-};
-
 const LegalDocQualifyPage = () => {
   const [, setVersion] = useState(0);
   const [search, setSearch] = useState('');
@@ -168,9 +157,7 @@ const LegalDocQualifyPage = () => {
   const [page, setPage] = useState(1);
   const [copiedKey, setCopiedKey] = useState(null);
   const [selected, setSelected] = useState(null);
-  const [addOpen, setAddOpen] = useState(false);
-  const [newLead, setNewLead] = useState(emptyNewQualifiedLead);
-  const [onlyWithNotes, setOnlyWithNotes] = useState(false);
+  const [onlyWithNotes, setOnlyWithNotes] = useState(true);
   const [callForm, setCallForm] = useState({
     connectMedium: 'on call',
     direction: 'outbound',
@@ -178,6 +165,8 @@ const LegalDocQualifyPage = () => {
     notes: '',
     topics: ['services'],
   });
+  const [callbackDate, setCallbackDate] = useState('');
+  const [callbackTime, setCallbackTime] = useState('');
 
   const bump = () => setVersion((v) => v + 1);
 
@@ -297,16 +286,19 @@ const LegalDocQualifyPage = () => {
 
   // Legal Status (good/maybe/bad) is one value per agent, shared with the Agent Connect panel —
   // editing it here updates it everywhere, same as editing it there.
-  function handleUpdateAgentLegalStatus(lead, newStatus) {
-    setAgentLegalStatus(lead.agentId, { agentName: lead.agentName, contact: lead.contact, kam: lead.kam }, newStatus, lead.kam);
+  function handleUpdateAgentLegalStatus(lead, newStatus, noteText) {
+    setAgentLegalStatus(lead.agentId, { agentName: lead.agentName, contact: lead.contact, kam: lead.kam }, newStatus, lead.kam, noteText);
     bump();
   }
 
   // One shared connect timeline for the whole request, same as the Agent Connect panel and the
   // Leads page — logged against the first client/POC on the request, no picker shown.
   function submitLogCall(lead) {
-    addClientConnection(lead.agentId, lead.id, 0, { ...callForm, user: lead.qualifiedBy || lead.kam });
+    const callbackAt = callForm.status === 'call_back' && callbackDate && callbackTime ? new Date(`${callbackDate}T${callbackTime}`).getTime() : null;
+    addClientConnection(lead.agentId, lead.id, 0, { ...callForm, user: lead.qualifiedBy || lead.kam, callbackAt });
     setCallForm({ connectMedium: 'on call', direction: 'outbound', status: 'connected', notes: '', topics: ['services'] });
+    setCallbackDate('');
+    setCallbackTime('');
     bump();
   }
 
@@ -325,22 +317,6 @@ const LegalDocQualifyPage = () => {
     if (selected?.agentId === lead.agentId && selected?.id === lead.id) closePanel();
   }
 
-  // Lets a KAM register something as already-qualified directly — when a service need comes
-  // in straight from an existing client, there's no reason to walk it through the Lead stage
-  // first just to immediately qualify it there.
-  function submitNewQualifiedLead(e) {
-    e.preventDefault();
-    if (!newLead.agentId || !newLead.agentName) return;
-    const request = addLeadRequest(newLead);
-    updateRequestStatus(newLead.agentId, request.id, 'qualify', {
-      notes: 'Added directly as a qualified lead',
-      user: newLead.kam,
-    });
-    setNewLead(emptyNewQualifiedLead);
-    setAddOpen(false);
-    bump();
-  }
-
   return (
     <div className="flex flex-col bg-neutral-50 h-full text-[13px]">
       <header className="h-16 flex items-center px-6 bg-white justify-between shrink-0 border-b border-neutral-100">
@@ -351,12 +327,6 @@ const LegalDocQualifyPage = () => {
         </div>
         <div className="flex items-center gap-3">
           <span className="font-medium text-neutral-400 px-3 py-1 bg-neutral-100 rounded-full">{rows.length} Qualified</span>
-          <button
-            onClick={() => setAddOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white rounded-xl font-medium hover:bg-neutral-800 transition-colors shadow-sm whitespace-nowrap"
-          >
-            <PlusCircle size={16} /> Qualify Lead
-          </button>
         </div>
       </header>
 
@@ -594,7 +564,7 @@ const LegalDocQualifyPage = () => {
                 contact={selectedLead.contact ? formatPhone(selectedLead.contact) : '—'}
                 kam={selectedLead.kam}
                 status={selectedLead.agentStatus || 'maybe'}
-                onUpdateStatus={(newStatus) => handleUpdateAgentLegalStatus(selectedLead, newStatus)}
+                onUpdateStatus={(newStatus, noteText) => handleUpdateAgentLegalStatus(selectedLead, newStatus, noteText)}
               >
                 {(() => {
                   const notes = selectedLead.agentNotes || [];
@@ -660,6 +630,18 @@ const LegalDocQualifyPage = () => {
                 const callBackCount = allEntries.filter((e) => e.status === 'call_back').length;
                 const lastEntry = allEntries[0] || null;
 
+                // "RNR 1", "RNR 2", ... in the order they actually happened (oldest first), a
+                // streak that resets whenever a "Connected" lands in between — same as the
+                // Agent Connect panel's RNR counter. The running count left over after the
+                // loop is what the next RNR button should show.
+                const rnrOrdinals = new Map();
+                let rnrSeq = 0;
+                [...allEntries].reverse().forEach((e) => {
+                  if (e.status === 'connected') rnrSeq = 0;
+                  else if (e.status === 'rnr') rnrOrdinals.set(e, ++rnrSeq);
+                });
+                const nextRnrNumber = rnrSeq + 1;
+
                 return (
                   <>
                     <div className="border border-neutral-200 rounded-2xl p-5 space-y-4">
@@ -707,11 +689,18 @@ const LegalDocQualifyPage = () => {
                           }`}
                         >
                           <XCircle size={14} className="text-red-500" />
-                          <span>RNR</span>
+                          <span>RNR {nextRnrNumber}</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => setCallForm((f) => ({ ...f, status: 'call_back' }))}
+                          onClick={() => {
+                            setCallForm((f) => ({ ...f, status: 'call_back' }));
+                            if (!callbackDate) {
+                              const slot = toBusinessSlot(new Date());
+                              setCallbackDate(slot.dateValue);
+                              setCallbackTime(slot.timeValue);
+                            }
+                          }}
                           className={`flex items-center justify-center gap-1.5 py-2.5 rounded-full border text-[13px] transition-colors ${
                             callForm.status === 'call_back'
                               ? 'bg-white border-neutral-700 text-neutral-900 font-semibold'
@@ -722,6 +711,15 @@ const LegalDocQualifyPage = () => {
                           <span>Call Back</span>
                         </button>
                       </div>
+
+                      {callForm.status === 'call_back' && (
+                        <CallbackCalendarAndTimePicker
+                          callbackDate={callbackDate}
+                          callbackTime={callbackTime}
+                          onSelectDate={setCallbackDate}
+                          onSelectTime={setCallbackTime}
+                        />
+                      )}
 
                       <div className="flex flex-wrap gap-1.5">
                         {CONNECT_TOPIC_OPTIONS.map((o) => {
@@ -758,7 +756,8 @@ const LegalDocQualifyPage = () => {
                       <button
                         type="button"
                         onClick={() => submitLogCall(selectedLead)}
-                        className="w-full py-2.5 bg-white hover:bg-neutral-50 border border-neutral-900 text-neutral-900 rounded-full font-semibold text-[13px] transition-colors"
+                        disabled={callForm.status === 'call_back' && !(callbackDate && callbackTime)}
+                        className="w-full py-2.5 bg-white hover:bg-neutral-50 border border-neutral-900 text-neutral-900 rounded-full font-semibold text-[13px] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         Save Connect Log
                       </button>
@@ -798,7 +797,7 @@ const LegalDocQualifyPage = () => {
                                       <meta.Icon size={18} />
                                     </span>
                                     <span className="text-[13px] font-semibold text-neutral-800">
-                                      {optionLabel(CONNECTION_STATUS_OPTIONS, entry.status)}
+                                      {entry.status === 'rnr' ? `RNR ${rnrOrdinals.get(entry)}` : optionLabel(CONNECTION_STATUS_OPTIONS, entry.status)}
                                     </span>
 
                                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-neutral-100 text-neutral-500 shrink-0">
@@ -860,18 +859,6 @@ const LegalDocQualifyPage = () => {
           </div>
         </div>
       )}
-
-      {/* Add-directly-to-Qualify modal — skips the Lead stage entirely for a service need
-          that comes in already qualified. */}
-      <AddLeadRecordModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        title="Qualify Lead"
-        submitLabel="Qualify Lead"
-        formState={newLead}
-        onChange={setNewLead}
-        onSubmit={submitNewQualifiedLead}
-      />
     </div>
   );
 };

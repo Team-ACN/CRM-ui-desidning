@@ -310,9 +310,9 @@ const AgentConnectPanel = ({ agent, onClose }) => {
   // handleUpdateLegalStatus writes the mock data then bumps leadVersion to force a re-render.
   const legalStatus = existingLeadRecord?.legalAndLoan?.status || 'maybe';
 
-  const handleUpdateLegalStatus = (newStatus) => {
+  const handleUpdateLegalStatus = (newStatus, noteText) => {
     const kam = KAM_OPTIONS.some((k) => k.value === agent?.kam) ? agent.kam : KAM_OPTIONS[0].value;
-    setAgentLegalStatus(agent.agentId, { agentName: agent.name, contact: agent.contact || '', kam }, newStatus, kam);
+    setAgentLegalStatus(agent.agentId, { agentName: agent.name, contact: agent.contact || '', kam }, newStatus, kam, noteText);
     setLeadVersion((v) => v + 1);
   };
 

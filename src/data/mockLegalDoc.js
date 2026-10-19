@@ -1396,6 +1396,364 @@ function buildLegacySeedRecords() {
         ],
       },
     },
+    {
+      agentId: 'CPC715',
+      agentName: 'Devika Rao',
+      contact: '+919845011715',
+      kam: 'Samarth',
+      legalAndLoan: {
+        status: 'good',
+        notes: [
+          { text: 'Agent wants an e-Khata and tax name change for herself, plus two family members each need their own work.', status: 'maybe', time: now() - DAY * 13, user: 'Samarth' },
+          { text: 'Documents mostly collected across the board.', status: 'good', time: now() - DAY * 4, user: 'Samarth' },
+        ],
+        requests: [
+          {
+            id: 'R1',
+            source: 'app',
+            status: 'documents_collected',
+            statusLog: [
+              { status: 'new', notes: '', time: now() - DAY * 13, user: 'Samarth' },
+              { status: 'qualified', notes: 'All three confirmed', time: now() - DAY * 12, user: 'Samarth' },
+              { status: 'negotiation', notes: '', time: now() - DAY * 9, user: 'Samarth' },
+              { status: 'documents_collected', notes: 'Most documents in', time: now() - DAY * 4, user: 'Samarth' },
+            ],
+            leadBy: 'Samarth',
+            qualifiedBy: 'Samarth',
+            salesPoc: 'Samarth',
+            createdAt: now() - DAY * 13,
+            // Agent (2 services) + two clients (2 services, 1 service) — the richest
+            // combination: agent and multiple clients, each with multiple properties.
+            clients: [
+              {
+                pocType: 'agent',
+                connections: [{ status: 'connected', position: 'service', notes: 'Wants e-Khata and tax name change for herself', time: now() - DAY * 13, user: 'Samarth' }],
+                invoice: { piId: 'PI-2220', total: 7500 },
+                paymentReceived: false,
+                services: [
+                  {
+                    name: 'e_khata',
+                    qty: 1,
+                    chargeableAmount: 6000,
+                    status: 'documents_collected',
+                    documents: [
+                      { name: 'Sale deed', received: true },
+                      { name: 'Tax receipt', received: true },
+                    ],
+                  },
+                  {
+                    name: 'tax_name_change',
+                    qty: 1,
+                    chargeableAmount: 1500,
+                    status: 'negotiation',
+                    documents: [{ name: 'ID proof', received: false }],
+                  },
+                ],
+              },
+              {
+                pocType: 'client',
+                name: 'Arvind Rao',
+                phone: '9845098501',
+                connections: [{ status: 'connected', position: 'service', notes: 'Wants sale deed drafted and an MoU', time: now() - DAY * 10, user: 'Samarth' }],
+                invoice: { piId: 'PI-2221', total: 10000 },
+                paymentReceived: false,
+                services: [
+                  {
+                    name: 'sale_deed',
+                    qty: 1,
+                    chargeableAmount: 7500,
+                    status: 'documents_collected',
+                    documents: [
+                      { name: 'Sale agreement', received: true },
+                      { name: 'ID proof', received: true },
+                    ],
+                  },
+                  {
+                    name: 'mou',
+                    qty: 1,
+                    chargeableAmount: 2500,
+                    status: 'negotiation',
+                    documents: [],
+                  },
+                ],
+              },
+              {
+                pocType: 'client',
+                name: 'Lata Rao',
+                phone: '9845098502',
+                connections: [{ status: 'connected', position: 'service', notes: 'Just needs one EC copy', time: now() - DAY * 6, user: 'Samarth' }],
+                invoice: { piId: '', total: 0 },
+                paymentReceived: false,
+                services: [
+                  {
+                    name: 'ec',
+                    qty: 1,
+                    chargeableAmount: 2000,
+                    status: 'documents_collected',
+                    documents: [{ name: 'Property ID', received: true }],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      agentId: 'CPC722',
+      agentName: 'Mahesh Pai',
+      contact: '+919845011722',
+      kam: 'Sandeep',
+      legalAndLoan: {
+        status: 'good',
+        notes: [
+          { text: 'Nothing for himself — three separate clients each want a bundle of services.', status: 'maybe', time: now() - DAY * 16, user: 'Sandeep' },
+          { text: 'Invoices sent to all three.', status: 'good', time: now() - DAY * 5, user: 'Sandeep' },
+        ],
+        requests: [
+          {
+            id: 'R1',
+            source: 'marketing',
+            status: 'invoice_sent',
+            statusLog: [
+              { status: 'new', notes: '', time: now() - DAY * 16, user: 'Sandeep' },
+              { status: 'qualified', notes: 'All three on board', time: now() - DAY * 15, user: 'Sandeep' },
+              { status: 'negotiation', notes: '', time: now() - DAY * 11, user: 'Sandeep' },
+              { status: 'documents_collected', notes: '', time: now() - DAY * 8, user: 'Sandeep' },
+              { status: 'invoice_sent', notes: 'Invoices sent to all three', time: now() - DAY * 5, user: 'Sandeep' },
+            ],
+            leadBy: 'Sandeep',
+            qualifiedBy: 'Sandeep',
+            salesPoc: 'Sandeep',
+            createdAt: now() - DAY * 16,
+            // No agent POC at all — three real clients, two of them with multiple services.
+            clients: [
+              {
+                pocType: 'client',
+                name: 'Suresh Pai',
+                phone: '9845098510',
+                connections: [{ status: 'connected', position: 'service', notes: 'Registration plus due diligence on the same plot', time: now() - DAY * 8, user: 'Sandeep' }],
+                invoice: { piId: 'PI-2230', total: 39500 },
+                paymentReceived: false,
+                services: [
+                  {
+                    name: 'registration',
+                    qty: 1,
+                    chargeableAmount: 33500,
+                    status: 'invoice_sent',
+                    documents: [
+                      { name: 'Sale agreement', received: true },
+                      { name: 'ID proof', received: true },
+                    ],
+                  },
+                  {
+                    name: 'due_diligence',
+                    qty: 1,
+                    chargeableAmount: 6000,
+                    status: 'invoice_sent',
+                    documents: [{ name: 'EC copy', received: true }],
+                  },
+                ],
+              },
+              {
+                pocType: 'client',
+                name: 'Geeta Pai',
+                phone: '9845098511',
+                connections: [{ status: 'connected', position: 'service', notes: 'Just a gift deed for her daughter', time: now() - DAY * 7, user: 'Sandeep' }],
+                invoice: { piId: 'PI-2231', total: 7000 },
+                paymentReceived: false,
+                services: [
+                  {
+                    name: 'gift_deed',
+                    qty: 1,
+                    chargeableAmount: 7000,
+                    status: 'invoice_sent',
+                    documents: [{ name: 'ID proof', received: true }],
+                  },
+                ],
+              },
+              {
+                pocType: 'client',
+                name: 'Naveen Pai',
+                phone: '9845098512',
+                connections: [{ status: 'connected', position: 'service', notes: 'Family partition — needs the family tree too', time: now() - DAY * 6, user: 'Sandeep' }],
+                invoice: { piId: 'PI-2232', total: 30500 },
+                paymentReceived: false,
+                services: [
+                  {
+                    name: 'partition_deed',
+                    qty: 1,
+                    chargeableAmount: 15000,
+                    status: 'invoice_sent',
+                    documents: [{ name: 'Property papers', received: true }],
+                  },
+                  {
+                    name: 'family_tree',
+                    qty: 1,
+                    chargeableAmount: 15500,
+                    status: 'invoice_sent',
+                    documents: [
+                      { name: 'ID proof', received: true },
+                      { name: 'Relationship proof', received: false },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      agentId: 'CPC738',
+      agentName: 'Kavitha Rao',
+      contact: '+919845011738',
+      kam: 'Rasranjan',
+      legalAndLoan: {
+        status: 'maybe',
+        notes: [{ text: 'Agent wants four separate pieces of work done for herself, no clients involved.', status: 'maybe', time: now() - DAY * 5, user: 'Rasranjan' }],
+        requests: [
+          {
+            id: 'R1',
+            source: 'app',
+            status: 'negotiation',
+            statusLog: [
+              { status: 'new', notes: '', time: now() - DAY * 5, user: 'Rasranjan' },
+              { status: 'qualified', notes: 'Confirmed all four', time: now() - DAY * 4, user: 'Rasranjan' },
+              { status: 'negotiation', notes: 'Still agreeing on pricing for two of them', time: now() - DAY * 2, user: 'Rasranjan' },
+            ],
+            leadBy: 'Rasranjan',
+            qualifiedBy: 'Rasranjan',
+            salesPoc: 'Rasranjan',
+            createdAt: now() - DAY * 5,
+            // Agent-only, four services on one POC — stress-tests a single card holding a
+            // long service list.
+            clients: [
+              {
+                pocType: 'agent',
+                connections: [{ status: 'connected', position: 'service', notes: 'Confirmed all four pieces of work', time: now() - DAY * 4, user: 'Rasranjan' }],
+                invoice: { piId: '', total: 0 },
+                paymentReceived: false,
+                services: [
+                  { name: 'bescom', qty: 1, chargeableAmount: 7500, status: 'negotiation', documents: [] },
+                  { name: 'khata_correction', qty: 1, chargeableAmount: 4000, status: 'negotiation', documents: [{ name: 'Khata certificate', received: true }] },
+                  { name: 'certified_copy', qty: 2, chargeableAmount: null, status: 'negotiation', documents: [] },
+                  { name: 'rental_agreement', qty: 1, chargeableAmount: 1500, status: 'negotiation', documents: [] },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      agentId: 'CPC751',
+      agentName: 'Rohit Shetty',
+      contact: '+919845011751',
+      kam: 'Siddharth',
+      legalAndLoan: {
+        status: 'good',
+        notes: [
+          { text: 'Wants a home loan for himself, and two relatives each need two services.', status: 'maybe', time: now() - DAY * 19, user: 'Siddharth' },
+          { text: 'Payment received across the board.', status: 'good', time: now() - DAY * 2, user: 'Siddharth' },
+        ],
+        requests: [
+          {
+            id: 'R1',
+            source: 'app',
+            status: 'payment_received',
+            statusLog: [
+              { status: 'new', notes: '', time: now() - DAY * 19, user: 'Siddharth' },
+              { status: 'qualified', notes: '', time: now() - DAY * 18, user: 'Siddharth' },
+              { status: 'negotiation', notes: '', time: now() - DAY * 14, user: 'Siddharth' },
+              { status: 'documents_collected', notes: '', time: now() - DAY * 9, user: 'Siddharth' },
+              { status: 'invoice_sent', notes: '', time: now() - DAY * 5, user: 'Siddharth' },
+              { status: 'payment_received', notes: 'Full payment received from everyone', time: now() - DAY * 2, user: 'Siddharth' },
+            ],
+            leadBy: 'Siddharth',
+            qualifiedBy: 'Siddharth',
+            salesPoc: 'Siddharth',
+            createdAt: now() - DAY * 19,
+            // Agent (1 service) + two clients, each with 2 services — three POCs, mixed
+            // single/multi-service, all paid up.
+            clients: [
+              {
+                pocType: 'agent',
+                connections: [],
+                invoice: { piId: 'PI-2240', total: 8000 },
+                paymentReceived: true,
+                services: [
+                  {
+                    name: 'home_loan',
+                    qty: 1,
+                    chargeableAmount: 8000,
+                    status: 'payment_received',
+                    documents: [
+                      { name: 'Salary slips', received: true },
+                      { name: 'Bank statements', received: true },
+                    ],
+                  },
+                ],
+              },
+              {
+                pocType: 'client',
+                name: 'Anita Shetty',
+                phone: '9845098520',
+                connections: [{ status: 'connected', position: 'service', notes: 'Payment confirmed for both', time: now() - DAY * 2, user: 'Siddharth' }],
+                invoice: { piId: 'PI-2241', total: 39500 },
+                paymentReceived: true,
+                services: [
+                  {
+                    name: 'e_khata',
+                    qty: 1,
+                    chargeableAmount: 6000,
+                    status: 'payment_received',
+                    documents: [
+                      { name: 'Sale deed', received: true },
+                      { name: 'Tax receipt', received: true },
+                    ],
+                  },
+                  {
+                    name: 'registration',
+                    qty: 1,
+                    chargeableAmount: 33500,
+                    status: 'payment_received',
+                    documents: [
+                      { name: 'Sale agreement', received: true },
+                      { name: 'ID proof', received: true },
+                    ],
+                  },
+                ],
+              },
+              {
+                pocType: 'client',
+                name: 'Vikas Shetty',
+                phone: '9845098521',
+                connections: [{ status: 'connected', position: 'service', notes: 'Payment confirmed for both', time: now() - DAY * 2, user: 'Siddharth' }],
+                invoice: { piId: 'PI-2242', total: 16000 },
+                paymentReceived: true,
+                services: [
+                  {
+                    name: 'due_diligence',
+                    qty: 1,
+                    chargeableAmount: 13500,
+                    status: 'payment_received',
+                    documents: [{ name: 'EC copy', received: true }],
+                  },
+                  {
+                    name: 'mou',
+                    qty: 1,
+                    chargeableAmount: 2500,
+                    status: 'payment_received',
+                    documents: [],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    },
     ...EXTRA_LEAD_SEED.map(makeLeadAgent),
   ];
 }
@@ -1513,8 +1871,11 @@ function buildSeedRecords() {
 // (was the granular new/rnr1-5/qualified/negotiation/.../service_delivered ladder), client
 // invoice.piId is now invoiceId, connections/services carry id/medium/vaultServiceId/
 // documentsReceived/advanceReceived/lost alongside their existing fields, and request ids are
-// sequential two-digit numbers instead of "R1".
-const STORAGE_KEY = 'acn_legal_doc_records_v18';
+// sequential two-digit numbers instead of "R1". v19: added four more Service-stage seed records
+// (CPC715 agent+2 clients all multi-service, CPC722 three clients-only all multi-service except
+// one, CPC738 agent-only with 4 services, CPC751 agent+2 clients all multi-service) so the
+// Service page's request-grouping has real multi-POC/multi-service variety to show.
+const STORAGE_KEY = 'acn_legal_doc_records_v19';
 
 function loadRecords() {
   const seeds = buildSeedRecords();
@@ -1584,9 +1945,9 @@ export function updateLegalDocRecord(agentId, patch) {
 // record if one doesn't exist yet. This status is one value per agent (not scoped to any single
 // request), so the Agent Connect panel and every Legal Doc side panel read and write the exact
 // same field through this one function — editing it anywhere updates it everywhere.
-export function setAgentLegalStatus(agentId, { agentName = '', contact = '', kam = '' } = {}, newStatus, user) {
+export function setAgentLegalStatus(agentId, { agentName = '', contact = '', kam = '' } = {}, newStatus, user, noteText = '') {
   let record = getLegalDocRecord(agentId);
-  const note = { text: `Status set to ${newStatus}`, status: newStatus, time: now(), user };
+  const note = { text: noteText || `Status set to ${newStatus}`, status: newStatus, time: now(), user };
   if (!record) {
     record = {
       agentId,
@@ -1858,7 +2219,7 @@ export function addClientConnection(
   agentId,
   requestId,
   clientIndex,
-  { status, position = 'lead', notes = '', topics = [], connectMedium = 'on call', direction = 'outbound', user = 'Samarth' }
+  { status, position = 'lead', notes = '', topics = [], connectMedium = 'on call', direction = 'outbound', user = 'Samarth', callbackAt = null }
 ) {
   const request = getRequest(agentId, requestId);
   const client = request?.clients[clientIndex];
@@ -1876,7 +2237,7 @@ export function addClientConnection(
     direction,
     status,
     notes,
-    callbackAt: null,
+    callbackAt,
     position,
     topics,
   });

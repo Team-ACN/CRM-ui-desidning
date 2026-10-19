@@ -9,7 +9,6 @@ import {
   Check,
   Ban,
   RotateCcw,
-  PlusCircle,
   CheckCircle2,
   XCircle,
   Clock,
@@ -21,19 +20,18 @@ import {
 } from 'lucide-react';
 import { MultiFilterSelect, FilterSelect } from '../Edge/FilterControls';
 import AgentIdentityCard from '../shared/AgentIdentityCard';
-import AddLeadRecordModal from '../shared/AddLeadRecordModal';
+import LegalSearchSelect from '../shared/LegalSearchSelect';
 import SegmentedToggle from '../shared/SegmentedToggle';
 import WhatsAppLogo from '../shared/WhatsAppLogo';
+import CallbackCalendarAndTimePicker from '../shared/CallbackCalendarAndTimePicker';
+import { toBusinessSlot } from '../shared/callbackSlots';
 import { CONNECT_TOPIC_OPTIONS } from '../../data/mockAgents';
 import { summarize } from '../../utils/filters';
 import {
   getLegalDocRecords,
-  updateRequestStatus,
   setAgentLegalStatus,
-  setSalesPoc,
   addClientConnection,
-  addLeadRequest,
-  setServiceChargeableAmount,
+  addServiceToClient,
   toggleServiceDocumentsReceived,
   toggleServiceAdvanceReceived,
   toggleServiceLost,
@@ -45,7 +43,6 @@ import {
   STATUS_STYLES,
   SERVICE_STAGE_STATUSES,
   SERVICE_NAME_OPTIONS,
-  SOURCE_OPTIONS,
   KAM_OPTIONS,
   CONNECTION_STATUS_OPTIONS,
   optionLabel,
@@ -147,157 +144,194 @@ const POC_TYPE_OPTIONS = [
   { value: 'client', label: 'Client' },
 ];
 
-const emptyNewService = {
-  agentId: '',
-  agentName: '',
-  contact: '',
-  kam: KAM_OPTIONS[0].value,
-  serviceName: SERVICE_NAME_OPTIONS[0].value,
-  amount: '',
-  source: SOURCE_OPTIONS[0].value,
-};
+const LOST_FILTER_OPTIONS = [
+  { value: 'true', label: 'True' },
+  { value: 'false', label: 'False' },
+];
 
-// One card for the clicked (client, service) pair — non-editable identity facts on top,
-// editable fields below with a single Save button. Own local state (reset by the `key` the
-// caller puts on it, one per row) so edits can be buffered until Save instead of committing
-// per keystroke/blur.
-const ServiceDetailCard = ({
-  client,
-  service,
-  contact,
-  onSaveInvoiceId,
-  onSaveVaultId,
-  onToggleDocsReceived,
-  onToggleAdvanceReceived,
-  onToggleLost,
-}) => {
-  const [invoiceId, setInvoiceId] = useState(client.invoiceId || '');
-  const [vaultId, setVaultId] = useState(service.vaultServiceId || '');
-  const [docsReceived, setDocsReceived] = useState(!!service.documentsReceived);
-  const [advanceReceived, setAdvanceReceived] = useState(!!service.advanceReceived);
-  const [copied, setCopied] = useState(false);
+// Client-level Invoice ID — one per client, shared across every service listed below it, so it
+// gets its own small field + Save instead of being repeated inside each service's accordion.
+const InvoiceIdField = ({ client, onSave }) => {
+  const [value, setValue] = useState(client.invoiceId || '');
   const [saved, setSaved] = useState(false);
-
-  const pocPhone = client.pocType === 'agent' ? contact : client.phone;
-  const hasChanges =
-    invoiceId.trim() !== (client.invoiceId || '') ||
-    vaultId.trim() !== (service.vaultServiceId || '') ||
-    docsReceived !== !!service.documentsReceived ||
-    advanceReceived !== !!service.advanceReceived;
-
-  const handleCopyPhone = () => {
-    navigator.clipboard?.writeText(pocPhone).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  };
+  const hasChanges = value.trim() !== (client.invoiceId || '');
 
   const handleSave = () => {
     if (!hasChanges) return;
-    onSaveInvoiceId(invoiceId.trim() || null);
-    onSaveVaultId(vaultId.trim() || null);
-    if (docsReceived !== !!service.documentsReceived) onToggleDocsReceived();
-    if (advanceReceived !== !!service.advanceReceived) onToggleAdvanceReceived();
+    onSave(value.trim() || null);
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
 
-  const inputClass = 'w-full border border-neutral-200 rounded-xl px-3 py-1.5 text-[13px] outline-none focus:border-neutral-400';
+  return (
+    <div className="border border-neutral-200 rounded-2xl p-4">
+      <div className="text-[11px] text-neutral-400 mb-1">Invoice ID</div>
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="Add invoice ID..."
+          className="flex-1 border border-neutral-200 rounded-xl px-3 py-1.5 text-[13px] font-mono outline-none focus:border-neutral-400"
+        />
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={!hasChanges}
+          className="flex items-center gap-1.5 px-4 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-medium text-[13px] transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-neutral-900"
+        >
+          {saved ? <Check size={14} /> : 'Save'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Flat list — one row per service: name + Lost toggle on top, Service ID · Docs received
+// toggle · Advance received toggle underneath, no per-row expand/Save. Edits are buffered
+// locally and committed together by the single Save button at the bottom (Lost toggles
+// immediately — it's a status change, not a draft field). Own local state (reset by the `key`
+// the caller puts on it, one per client) so edits don't leak between clients.
+const ServicesEditor = ({ services, onSaveVaultId, onToggleDocsReceived, onToggleAdvanceReceived, onToggleLost, onAddServiceByName }) => {
+  const [draft, setDraft] = useState(() =>
+    Object.fromEntries(
+      services.map((s) => [s.name, { vaultId: s.vaultServiceId || '', documentsReceived: !!s.documentsReceived, advanceReceived: !!s.advanceReceived }])
+    )
+  );
+  const [saved, setSaved] = useState(false);
+
+  const hasChanges = services.some((s) => {
+    const d = draft[s.name];
+    return (
+      d &&
+      (d.vaultId.trim() !== (s.vaultServiceId || '') || d.documentsReceived !== !!s.documentsReceived || d.advanceReceived !== !!s.advanceReceived)
+    );
+  });
+
+  // A service added via the inline search bar below isn't in `draft` yet (it's seeded once on
+  // mount) — fall back to its own current values so toggling/typing on it doesn't drop the other
+  // fields of its draft entry.
+  const baseDraft = (name) => {
+    const s = services.find((x) => x.name === name);
+    return { vaultId: s?.vaultServiceId || '', documentsReceived: !!s?.documentsReceived, advanceReceived: !!s?.advanceReceived };
+  };
+
+  const toggleDraft = (name, field) => {
+    setDraft((prev) => {
+      const current = prev[name] || baseDraft(name);
+      return { ...prev, [name]: { ...current, [field]: !current[field] } };
+    });
+  };
+
+  const setVaultIdDraft = (name, value) => {
+    setDraft((prev) => ({ ...prev, [name]: { ...(prev[name] || baseDraft(name)), vaultId: value } }));
+  };
+
+  const flashSaved = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+
+  const handleSaveAll = () => {
+    if (!hasChanges) return;
+    services.forEach((s) => {
+      const d = draft[s.name];
+      if (!d) return;
+      if (d.vaultId.trim() !== (s.vaultServiceId || '')) onSaveVaultId(s.name, d.vaultId.trim() || null);
+      if (d.documentsReceived !== !!s.documentsReceived) onToggleDocsReceived(s.name);
+      if (d.advanceReceived !== !!s.advanceReceived) onToggleAdvanceReceived(s.name);
+    });
+    flashSaved();
+  };
+
+  // Lost and Add Service both commit immediately (unlike the Docs/Advance/Service ID fields
+  // above, which buffer into `draft`) — flash the Save button anyway so it's obvious the action
+  // actually went through.
+  const handleToggleLost = (name) => {
+    onToggleLost(name);
+    flashSaved();
+  };
+
+  const handleAddServiceByName = (name) => {
+    onAddServiceByName(name);
+    flashSaved();
+  };
+
+  const toggleClass = (active) =>
+    `flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-medium transition-colors whitespace-nowrap ${
+      active ? 'bg-white border-neutral-900 text-neutral-900 font-semibold' : 'bg-neutral-100 border-transparent text-neutral-500 hover:bg-neutral-200'
+    }`;
 
   return (
-    <div className="border border-neutral-200 rounded-2xl p-4 space-y-3">
-      <div className="grid grid-cols-2 gap-y-1.5 text-[13px] items-center">
-        <span className="text-neutral-400">Name</span>
-        <span className="text-neutral-700">{clientLabel(client)}</span>
-        <span className="text-neutral-400">Number</span>
-        {pocPhone ? (
-          <div className="flex items-center gap-1.5">
-            <span className="text-neutral-700">{formatPhone(pocPhone)}</span>
-            <button onClick={handleCopyPhone} title="Copy number" className="p-1 text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 rounded transition-colors">
-              {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-            </button>
-          </div>
-        ) : (
-          <span className="text-neutral-700">—</span>
-        )}
-        <span className="text-neutral-400">Service</span>
-        <span className="text-neutral-700 font-medium">
-          {serviceLabel(service.name)}
-          {(service.qty || 1) > 1 ? ` ×${service.qty}` : ''}
-        </span>
+    <div className="space-y-2">
+      <div className="border border-neutral-200 rounded-2xl divide-y divide-neutral-100">
+        {services.map((s) => {
+          const d = draft[s.name] || { vaultId: s.vaultServiceId || '', documentsReceived: !!s.documentsReceived, advanceReceived: !!s.advanceReceived };
+          return (
+            <div key={s.name} className={`px-4 py-3 space-y-2 ${s.lost ? 'bg-red-50/40' : ''}`}>
+              <div className="flex items-center gap-2">
+                <span className="flex-1 min-w-0 truncate font-medium text-neutral-800 text-[13px]">
+                  {serviceLabel(s.name)}
+                  {(s.qty || 1) > 1 ? ` ×${s.qty}` : ''}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleToggleLost(s.name)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-medium transition-colors shrink-0 ${
+                    s.lost
+                      ? 'bg-red-100 border-red-200 text-red-600 hover:bg-red-200'
+                      : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50'
+                  }`}
+                >
+                  {s.lost ? (
+                    <>
+                      <RotateCcw size={13} /> Reopen
+                    </>
+                  ) : (
+                    <>
+                      <Ban size={13} /> Lost
+                    </>
+                  )}
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={d.vaultId}
+                  onChange={(e) => setVaultIdDraft(s.name, e.target.value)}
+                  placeholder="Service ID"
+                  className="flex-1 min-w-0 border border-neutral-200 rounded-xl px-3 py-1.5 text-[12px] font-mono outline-none focus:border-neutral-400"
+                />
+                <button type="button" onClick={() => toggleDraft(s.name, 'documentsReceived')} className={toggleClass(d.documentsReceived)}>
+                  Docs received
+                </button>
+                <button type="button" onClick={() => toggleDraft(s.name, 'advanceReceived')} className={toggleClass(d.advanceReceived)}>
+                  Advance received
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="pt-3 border-t border-neutral-100 space-y-2.5">
-        <div>
-          <div className="text-[11px] text-neutral-400 mb-1">Invoice ID</div>
-          <input type="text" value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} placeholder="Add invoice ID..." className={`${inputClass} font-mono`} />
-        </div>
-        <div>
-          <div className="text-[11px] text-neutral-400 mb-1">Service ID</div>
-          <input type="text" value={vaultId} onChange={(e) => setVaultId(e.target.value)} placeholder="Service ID" className={inputClass} />
-        </div>
+      {/* Same inline search-to-add bar as the Leads/Qualify side panel — no modal, just type
+          and pick a service to add it straight to this client. */}
+      <LegalSearchSelect items={[]} onAdd={handleAddServiceByName} onIncrement={handleAddServiceByName} onDecrement={() => {}} placeholder="+ Add another service..." />
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setDocsReceived((v) => !v)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-medium transition-colors ${
-              docsReceived
-                ? 'bg-white border-neutral-900 text-neutral-900 font-semibold'
-                : 'bg-neutral-100 border-transparent text-neutral-500 hover:bg-neutral-200'
-            }`}
-          >
-            {docsReceived && <Check size={12} />} Docs received
-          </button>
-          <button
-            type="button"
-            onClick={() => setAdvanceReceived((v) => !v)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-medium transition-colors ${
-              advanceReceived
-                ? 'bg-white border-neutral-900 text-neutral-900 font-semibold'
-                : 'bg-neutral-100 border-transparent text-neutral-500 hover:bg-neutral-200'
-            }`}
-          >
-            {advanceReceived && <Check size={12} />} Advance received
-          </button>
-        </div>
-
-        {service.lost ? (
-          // Lost — editing this service no longer applies, so Save/toggles give way to
-          // the one action that makes sense: reopening it.
-          <button
-            type="button"
-            onClick={onToggleLost}
-            className="w-full flex items-center justify-center gap-1.5 py-2.5 border border-neutral-200 text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl font-medium text-[13px] transition-colors"
-          >
-            <RotateCcw size={13} /> Reopen
-          </button>
+      <button
+        type="button"
+        onClick={handleSaveAll}
+        disabled={!hasChanges && !saved}
+        className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-medium text-[13px] transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-neutral-900"
+      >
+        {saved ? (
+          <>
+            <Check size={14} /> Saved
+          </>
         ) : (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={!hasChanges}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-medium text-[13px] transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-neutral-900"
-            >
-              {saved ? (
-                <>
-                  <Check size={14} /> Saved
-                </>
-              ) : (
-                'Save'
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={onToggleLost}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-neutral-200 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50 rounded-xl font-medium text-[13px] transition-colors"
-            >
-              <Ban size={13} /> Mark Lost
-            </button>
-          </div>
+          'Save'
         )}
-      </div>
+      </button>
     </div>
   );
 };
@@ -305,19 +339,17 @@ const ServiceDetailCard = ({
 const LegalDocServicePage = () => {
   const [, setVersion] = useState(0);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState([]);
   const [kamFilter, setKamFilter] = useState([]);
   const [serviceFilter, setServiceFilter] = useState([]);
   const [pocTypeFilter, setPocTypeFilter] = useState([]);
   const [salesPocFilter, setSalesPocFilter] = useState([]);
+  const [lostFilter, setLostFilter] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [copiedKey, setCopiedKey] = useState(null);
   const [selected, setSelected] = useState(null);
-  const [addOpen, setAddOpen] = useState(false);
-  const [newService, setNewService] = useState(emptyNewService);
-  const [onlyWithNotes, setOnlyWithNotes] = useState(false);
+  const [onlyWithNotes, setOnlyWithNotes] = useState(true);
   const [callForm, setCallForm] = useState({
     connectMedium: 'on call',
     direction: 'outbound',
@@ -325,6 +357,8 @@ const LegalDocServicePage = () => {
     notes: '',
     topics: ['services'],
   });
+  const [callbackDate, setCallbackDate] = useState('');
+  const [callbackTime, setCallbackTime] = useState('');
 
   const bump = () => setVersion((v) => v + 1);
 
@@ -385,11 +419,11 @@ const LegalDocServicePage = () => {
 
   const matchesSearch = (row) =>
     `${row.agentId} ${row.agentName} ${serviceLabel(row.serviceName)}`.toLowerCase().includes(search.toLowerCase());
-  const matchesStatus = (row) => statusFilter.length === 0 || statusFilter.includes(row.status);
   const matchesKam = (row) => kamFilter.length === 0 || kamFilter.includes(row.kam);
   const matchesService = (row) => serviceFilter.length === 0 || serviceFilter.includes(row.serviceName);
   const matchesPocType = (row) => pocTypeFilter.length === 0 || pocTypeFilter.includes(row.pocType);
   const matchesSalesPoc = (row) => salesPocFilter.length === 0 || salesPocFilter.includes(row.salesPoc);
+  const matchesLost = (row) => lostFilter.length === 0 || lostFilter.includes(row.service.lost ? 'true' : 'false');
 
   function countOptions(dim, options, getValues) {
     return options.map((o) => ({
@@ -397,28 +431,23 @@ const LegalDocServicePage = () => {
       count: allServiceRows.filter(
         (row) =>
           matchesSearch(row) &&
-          (dim === 'status' || matchesStatus(row)) &&
           (dim === 'kam' || matchesKam(row)) &&
           (dim === 'service' || matchesService(row)) &&
           (dim === 'pocType' || matchesPocType(row)) &&
           (dim === 'salesPoc' || matchesSalesPoc(row)) &&
+          (dim === 'lost' || matchesLost(row)) &&
           getValues(row).includes(o.value)
       ).length,
     }));
   }
 
   const rows = allServiceRows.filter(
-    (row) => matchesSearch(row) && matchesStatus(row) && matchesKam(row) && matchesService(row) && matchesPocType(row) && matchesSalesPoc(row)
+    (row) => matchesSearch(row) && matchesKam(row) && matchesService(row) && matchesPocType(row) && matchesSalesPoc(row) && matchesLost(row)
   );
   const activeFilterCount =
-    statusFilter.length + kamFilter.length + serviceFilter.length + pocTypeFilter.length + salesPocFilter.length;
+    kamFilter.length + serviceFilter.length + pocTypeFilter.length + salesPocFilter.length + lostFilter.length;
 
   const activeFilters = [
-    statusFilter.length > 0 && {
-      key: 'status',
-      label: `Status: ${summarize(statusFilter, REQUEST_STATUS_OPTIONS, '')}`,
-      clear: () => setStatusFilter([]),
-    },
     kamFilter.length > 0 && {
       key: 'kam',
       label: `KAM: ${summarize(kamFilter, KAM_OPTIONS, '')}`,
@@ -439,17 +468,22 @@ const LegalDocServicePage = () => {
       label: `Sales POC: ${summarize(salesPocFilter, KAM_OPTIONS, '')}`,
       clear: () => setSalesPocFilter([]),
     },
+    lostFilter.length > 0 && {
+      key: 'lost',
+      label: `Lost: ${summarize(lostFilter, LOST_FILTER_OPTIONS, '')}`,
+      clear: () => setLostFilter([]),
+    },
   ].filter(Boolean);
 
   function clearAllFilters() {
-    setStatusFilter([]);
     setKamFilter([]);
     setServiceFilter([]);
     setPocTypeFilter([]);
     setSalesPocFilter([]);
+    setLostFilter([]);
   }
 
-  const filterKey = JSON.stringify([search, statusFilter, kamFilter, serviceFilter, pocTypeFilter, salesPocFilter, sortBy]);
+  const filterKey = JSON.stringify([search, kamFilter, serviceFilter, pocTypeFilter, salesPocFilter, lostFilter, sortBy]);
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (filterKey !== prevFilterKey) {
     setPrevFilterKey(filterKey);
@@ -480,12 +514,11 @@ const LegalDocServicePage = () => {
 
   const selectedLead = selected ? allInService.find((l) => l.agentId === selected.agentId && l.id === selected.id) : null;
   const panelClient = selectedLead?.clients[selected?.clientIndex];
-  const panelService = panelClient?.services.find((s) => s.name === selected?.serviceName);
 
-  // Opened from a table row, which is already scoped to one client + one service — the panel
-  // shows only that service, not every service on the request.
+  // Opened from a table row — scoped to that client, not just the one service the row
+  // represents, so the panel lists every service on that client.
   function openPanel(row) {
-    setSelected({ agentId: row.agentId, id: row.requestId, clientIndex: row.clientIndex, serviceName: row.serviceName });
+    setSelected({ agentId: row.agentId, id: row.requestId, clientIndex: row.clientIndex });
   }
 
   function closePanel() {
@@ -494,8 +527,8 @@ const LegalDocServicePage = () => {
 
   // Legal Status (good/maybe/bad) is one value per agent, shared with the Agent Connect panel —
   // editing it here updates it everywhere, same as editing it there.
-  function handleUpdateAgentLegalStatus(lead, newStatus) {
-    setAgentLegalStatus(lead.agentId, { agentName: lead.agentName, contact: lead.contact, kam: lead.kam }, newStatus, lead.kam);
+  function handleUpdateAgentLegalStatus(lead, newStatus, noteText) {
+    setAgentLegalStatus(lead.agentId, { agentName: lead.agentName, contact: lead.contact, kam: lead.kam }, newStatus, lead.kam, noteText);
     bump();
   }
 
@@ -506,11 +539,15 @@ const LegalDocServicePage = () => {
     });
   }
 
-  // One shared connect timeline for the whole request, same as the Leads/Qualify pages —
-  // logged against the first client/POC on the request, no picker shown.
-  function submitLogCall(lead) {
-    addClientConnection(lead.agentId, lead.id, 0, { ...callForm, user: lead.salesPoc || lead.kam });
+  // Logged against the client the panel is actually open on — not always the first client like
+  // the Leads/Qualify pages — so the table's per-row Connection Status column (which reads off
+  // that specific client) actually updates for the row that was clicked.
+  function submitLogCall(lead, clientIndex) {
+    const callbackAt = callForm.status === 'call_back' && callbackDate && callbackTime ? new Date(`${callbackDate}T${callbackTime}`).getTime() : null;
+    addClientConnection(lead.agentId, lead.id, clientIndex, { ...callForm, user: lead.salesPoc || lead.kam, callbackAt });
     setCallForm({ connectMedium: 'on call', direction: 'outbound', status: 'connected', notes: '', topics: ['services'] });
+    setCallbackDate('');
+    setCallbackTime('');
     bump();
   }
 
@@ -534,27 +571,13 @@ const LegalDocServicePage = () => {
     bump();
   }
 
-  function handleSetInvoiceId(lead, clientIndex, invoiceId) {
-    setClientInvoiceId(lead.agentId, lead.id, clientIndex, invoiceId);
+  function handleAddServiceToClient(lead, clientIndex, serviceName) {
+    addServiceToClient(lead.agentId, lead.id, clientIndex, serviceName);
     bump();
   }
 
-  // Lets a KAM add a service need straight into the Service stage — the price has to be set
-  // here at creation, since the panel no longer allows editing a service after the fact.
-  function submitNewService(e) {
-    e.preventDefault();
-    if (!newService.agentId || !newService.agentName) return;
-    const request = addLeadRequest(newService);
-    if (newService.amount) {
-      setServiceChargeableAmount(newService.agentId, request.id, 0, newService.serviceName, Number(newService.amount));
-    }
-    updateRequestStatus(newService.agentId, request.id, 'service', {
-      notes: 'Added directly to Service',
-      user: newService.kam,
-    });
-    setSalesPoc(newService.agentId, request.id, newService.kam);
-    setNewService(emptyNewService);
-    setAddOpen(false);
+  function handleSetInvoiceId(lead, clientIndex, invoiceId) {
+    setClientInvoiceId(lead.agentId, lead.id, clientIndex, invoiceId);
     bump();
   }
 
@@ -568,12 +591,6 @@ const LegalDocServicePage = () => {
         </div>
         <div className="flex items-center gap-3">
           <span className="font-medium text-neutral-400 px-3 py-1 bg-neutral-100 rounded-full">{rows.length} Services</span>
-          <button
-            onClick={() => setAddOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white rounded-xl font-medium hover:bg-neutral-800 transition-colors shadow-sm whitespace-nowrap"
-          >
-            <PlusCircle size={16} /> Add Service
-          </button>
         </div>
       </header>
 
@@ -628,21 +645,9 @@ const LegalDocServicePage = () => {
         {showFilters && (
           <div className="mt-3 pt-3 border-t border-neutral-100 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 max-w-5xl">
             <MultiFilterSelect
-              label="Status"
-              allLabel="All Status"
-              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesKam(row) && matchesService(row) && matchesPocType(row) && matchesSalesPoc(row)).length}
-              value={statusFilter}
-              onChange={setStatusFilter}
-              options={countOptions(
-                'status',
-                REQUEST_STATUS_OPTIONS.filter((o) => SERVICE_STAGE_STATUSES.includes(o.value) || o.value === 'lost'),
-                (row) => [row.status]
-              )}
-            />
-            <MultiFilterSelect
               label="KAM"
               allLabel="All KAMs"
-              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesStatus(row) && matchesService(row) && matchesPocType(row) && matchesSalesPoc(row)).length}
+              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesService(row) && matchesPocType(row) && matchesSalesPoc(row) && matchesLost(row)).length}
               value={kamFilter}
               onChange={setKamFilter}
               options={countOptions('kam', KAM_OPTIONS, (row) => [row.kam])}
@@ -650,7 +655,7 @@ const LegalDocServicePage = () => {
             <MultiFilterSelect
               label="Service"
               allLabel="All Services"
-              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesStatus(row) && matchesKam(row) && matchesPocType(row) && matchesSalesPoc(row)).length}
+              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesKam(row) && matchesPocType(row) && matchesSalesPoc(row) && matchesLost(row)).length}
               value={serviceFilter}
               onChange={setServiceFilter}
               options={countOptions('service', SERVICE_NAME_OPTIONS, (row) => [row.serviceName])}
@@ -658,7 +663,7 @@ const LegalDocServicePage = () => {
             <MultiFilterSelect
               label="POC"
               allLabel="Agent & Client"
-              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesStatus(row) && matchesKam(row) && matchesService(row) && matchesSalesPoc(row)).length}
+              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesKam(row) && matchesService(row) && matchesSalesPoc(row) && matchesLost(row)).length}
               value={pocTypeFilter}
               onChange={setPocTypeFilter}
               options={countOptions('pocType', POC_TYPE_OPTIONS, (row) => [row.pocType])}
@@ -666,19 +671,27 @@ const LegalDocServicePage = () => {
             <MultiFilterSelect
               label="Sales POC"
               allLabel="All POCs"
-              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesStatus(row) && matchesKam(row) && matchesService(row) && matchesPocType(row)).length}
+              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesKam(row) && matchesService(row) && matchesPocType(row) && matchesLost(row)).length}
               value={salesPocFilter}
               onChange={setSalesPocFilter}
               options={countOptions('salesPoc', KAM_OPTIONS, (row) => [row.salesPoc])}
             />
             <FilterSelect label="Sort" value={sortBy} onChange={setSortBy} options={SORT_OPTIONS} defaultValue="newest" />
+            <MultiFilterSelect
+              label="Lost"
+              allLabel="All"
+              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesKam(row) && matchesService(row) && matchesPocType(row) && matchesSalesPoc(row)).length}
+              value={lostFilter}
+              onChange={setLostFilter}
+              options={countOptions('lost', LOST_FILTER_OPTIONS, (row) => [row.service.lost ? 'true' : 'false'])}
+            />
           </div>
         )}
       </div>
 
       {/* Table */}
       <div className="flex-1 min-h-0 overflow-auto bg-white">
-        <table className="text-left text-[13px] text-neutral-600 whitespace-nowrap min-w-[1400px] w-full">
+        <table className="text-left text-[13px] text-neutral-600 whitespace-nowrap min-w-[1700px] w-full">
           <thead className="bg-white text-[11px] font-medium uppercase tracking-wider text-neutral-500 sticky top-0 z-10 shadow-[0_1px_0_0_#e7e5e4]">
             <tr>
               <th className="pl-6 pr-4 py-4">Req ID</th>
@@ -692,82 +705,155 @@ const LegalDocServicePage = () => {
               <th className="px-4 py-4">Service ID</th>
               <th className="px-4 py-4">Lost</th>
               <th className="px-4 py-4">Doc Received</th>
-              <th className="pl-4 pr-6 py-4">Adv Received</th>
+              <th className="px-4 py-4">Adv Received</th>
+              <th className="px-4 py-4">Agent Name</th>
+              <th className="px-4 py-4">Agent No</th>
+              <th className="pl-4 pr-6 py-4">KAM</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-100">
-            {paged.map((row) => {
+          <tbody>
+            {paged.map((row, i) => {
+              // Req ID/Status Time/Agent Name/Agent No/KAM only ever vary by request, and
+              // POC/Name/Number/Connection Status/Invoice ID only vary by client — rowSpan them
+              // over every service row they'd otherwise repeat on, so a multi-service request or
+              // client reads as one group instead of the same agent/client info printed on every
+              // row. Groups are computed within the current page only.
+              const prevRow = paged[i - 1];
+              const isFirstOfRequest = !prevRow || prevRow.agentId !== row.agentId || prevRow.requestId !== row.requestId;
+              const isFirstOfClient = isFirstOfRequest || prevRow.clientIndex !== row.clientIndex;
+
+              let requestRowSpan = 0;
+              if (isFirstOfRequest) {
+                for (let j = i; j < paged.length && paged[j].agentId === row.agentId && paged[j].requestId === row.requestId; j++) requestRowSpan++;
+              }
+              let clientRowSpan = 0;
+              if (isFirstOfClient) {
+                for (
+                  let j = i;
+                  j < paged.length && paged[j].agentId === row.agentId && paged[j].requestId === row.requestId && paged[j].clientIndex === row.clientIndex;
+                  j++
+                )
+                  clientRowSpan++;
+              }
+
               return (
-                <tr
-                  key={row.key}
-                  onClick={() => openPanel(row)}
-                  className="hover:bg-neutral-50/50 transition-colors group cursor-pointer"
-                >
-                  <td className="pl-6 pr-4 py-3">
-                    <span className="font-mono text-[11px] bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded">{row.requestId}</span>
-                  </td>
-                  <td className="px-4 py-3 text-neutral-400">{relativeTime(serviceAt(row)) || '—'}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                        row.pocType === 'agent' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'
-                      }`}
-                    >
-                      {row.pocType === 'agent' ? 'Agent' : 'Client'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-neutral-700">{row.pocName}</td>
-                  <td className="px-4 py-3 text-neutral-500">
-                    {row.pocPhone ? (
-                      <div className="flex items-center gap-1.5">
-                        <span>{formatPhone(row.pocPhone)}</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCopy(row.key, row.pocPhone);
-                          }}
-                          title="Copy number"
-                          className="p-1 text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 rounded transition-colors"
-                        >
-                          {copiedKey === row.key ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-                        </button>
-                      </div>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {row.lastConnection ? (
-                      <>
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                            CONNECTION_STATUS_STYLES[row.lastConnection.status] || 'bg-neutral-100 text-neutral-500'
-                          }`}
-                        >
-                          {optionLabel(CONNECTION_STATUS_OPTIONS, row.lastConnection.status)}
-                        </span>
-                        <span className="text-neutral-400 text-[11px] ml-1.5">{relativeTime(row.lastConnection.time) || '—'}</span>
-                      </>
-                    ) : (
-                      <span className="text-neutral-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-neutral-500">{row.invoiceId || '—'}</td>
-                  <td className="px-4 py-3 text-neutral-700 font-medium">{serviceLabel(row.serviceName)}</td>
-                  <td className="px-4 py-3 font-mono text-neutral-500">{row.service.vaultServiceId || '—'}</td>
-                  <td className="px-4 py-3">
+                <tr key={row.key} onClick={() => openPanel(row)} className="hover:bg-neutral-50/50 transition-colors group cursor-pointer align-top">
+                  {isFirstOfRequest && (
+                    <td rowSpan={requestRowSpan} className="pl-6 pr-4 py-3 border-b border-neutral-100">
+                      <span className="font-mono text-[11px] bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded">{row.requestId}</span>
+                    </td>
+                  )}
+                  {isFirstOfRequest && (
+                    <td rowSpan={requestRowSpan} className="px-4 py-3 text-neutral-400 border-b border-neutral-100">
+                      {relativeTime(serviceAt(row)) || '—'}
+                    </td>
+                  )}
+                  {isFirstOfClient && (
+                    <td rowSpan={clientRowSpan} className="px-4 py-3 border-b border-neutral-100">
+                      <span
+                        className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                          row.pocType === 'agent' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'
+                        }`}
+                      >
+                        {row.pocType === 'agent' ? 'Agent' : 'Client'}
+                      </span>
+                    </td>
+                  )}
+                  {isFirstOfClient && (
+                    <td rowSpan={clientRowSpan} className="px-4 py-3 font-semibold text-neutral-900 border-b border-neutral-100">
+                      {row.pocName}
+                    </td>
+                  )}
+                  {isFirstOfClient && (
+                    <td rowSpan={clientRowSpan} className="px-4 py-3 text-neutral-500 border-b border-neutral-100">
+                      {row.pocPhone ? (
+                        <div className="flex items-center gap-1.5">
+                          <span>{formatPhone(row.pocPhone)}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopy(row.key, row.pocPhone);
+                            }}
+                            title="Copy number"
+                            className="p-1 text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 rounded transition-colors"
+                          >
+                            {copiedKey === row.key ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                          </button>
+                        </div>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  )}
+                  {isFirstOfClient && (
+                    <td rowSpan={clientRowSpan} className="px-4 py-3 whitespace-nowrap border-b border-neutral-100">
+                      {row.lastConnection ? (
+                        <>
+                          <span
+                            className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                              CONNECTION_STATUS_STYLES[row.lastConnection.status] || 'bg-neutral-100 text-neutral-500'
+                            }`}
+                          >
+                            {optionLabel(CONNECTION_STATUS_OPTIONS, row.lastConnection.status)}
+                          </span>
+                          <span className="text-neutral-400 text-[11px] ml-1.5">{relativeTime(row.lastConnection.time) || '—'}</span>
+                        </>
+                      ) : (
+                        <span className="text-neutral-400">—</span>
+                      )}
+                    </td>
+                  )}
+                  {isFirstOfClient && (
+                    <td rowSpan={clientRowSpan} className="px-4 py-3 font-mono text-neutral-500 border-b border-neutral-100">
+                      {row.invoiceId || '—'}
+                    </td>
+                  )}
+                  <td className="px-4 py-3 text-neutral-700 font-medium border-b border-neutral-100">{serviceLabel(row.serviceName)}</td>
+                  <td className="px-4 py-3 font-mono text-neutral-500 border-b border-neutral-100">{row.service.vaultServiceId || '—'}</td>
+                  <td className="px-4 py-3 border-b border-neutral-100">
                     {row.service.lost && (
                       <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 text-red-700">Lost</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">{boolBadge(row.service.documentsReceived)}</td>
-                  <td className="pl-4 pr-6 py-3">{boolBadge(row.service.advanceReceived)}</td>
+                  <td className="px-4 py-3 border-b border-neutral-100">{boolBadge(row.service.documentsReceived)}</td>
+                  <td className="px-4 py-3 border-b border-neutral-100">{boolBadge(row.service.advanceReceived)}</td>
+                  {isFirstOfRequest && (
+                    <td rowSpan={requestRowSpan} className="px-4 py-3 text-neutral-700 border-b border-neutral-100">
+                      {row.agentName}
+                    </td>
+                  )}
+                  {isFirstOfRequest && (
+                    <td rowSpan={requestRowSpan} className="px-4 py-3 text-neutral-500 border-b border-neutral-100">
+                      {row.contact ? (
+                        <div className="flex items-center gap-1.5">
+                          <span>{formatPhone(row.contact)}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopy(`${row.key}-agent`, row.contact);
+                            }}
+                            title="Copy number"
+                            className="p-1 text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 rounded transition-colors"
+                          >
+                            {copiedKey === `${row.key}-agent` ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                          </button>
+                        </div>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  )}
+                  {isFirstOfRequest && (
+                    <td rowSpan={requestRowSpan} className="pl-4 pr-6 py-3 text-neutral-700 border-b border-neutral-100">
+                      {row.kam}
+                    </td>
+                  )}
                 </tr>
               );
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-6 py-16 text-center text-neutral-400">
+                <td colSpan={15} className="px-6 py-16 text-center text-neutral-400">
                   No services in progress match these filters.
                 </td>
               </tr>
@@ -801,22 +887,18 @@ const LegalDocServicePage = () => {
         </div>
       )}
 
-      {/* Side panel — same shell as Qualify/Agent Connect (avatar header, single scroll
-          region, sticky action bar). Document tracking lives under each client's services,
-          since that's what actually drives the status progression here. */}
+      {/* Side panel — same shell as the Qualify page side panel, so a request looks and
+          behaves identically whichever stage it's opened from. */}
       {selectedLead && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex justify-end" onClick={closePanel}>
-          <div
-            className="bg-white h-full w-2/5 min-w-[460px] shadow-2xl flex flex-col [&_button]:focus:outline-none [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-neutral-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <header className="shrink-0 flex items-center justify-end px-5 py-3 bg-white border-b border-neutral-100">
-              <button onClick={closePanel} className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors">
-                <X size={17} />
+        <div className="fixed inset-0 bg-black/30 z-40 flex justify-end" onClick={closePanel}>
+          <div className="bg-white h-full w-2/5 min-w-[420px] shadow-2xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <header className="h-16 flex items-center justify-end px-6 bg-white border-b border-neutral-100 sticky top-0 z-10">
+              <button onClick={closePanel} className="p-2 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-xl">
+                <X size={18} />
               </button>
             </header>
 
-            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+            <div className="p-6 space-y-4">
               {/* Agent Details — same identity card used across the Agent Connect panel and
                   every Legal Doc side panel */}
               <AgentIdentityCard
@@ -825,7 +907,7 @@ const LegalDocServicePage = () => {
                 contact={selectedLead.contact ? formatPhone(selectedLead.contact) : '—'}
                 kam={selectedLead.kam}
                 status={selectedLead.agentStatus || 'maybe'}
-                onUpdateStatus={(newStatus) => handleUpdateAgentLegalStatus(selectedLead, newStatus)}
+                onUpdateStatus={(newStatus, noteText) => handleUpdateAgentLegalStatus(selectedLead, newStatus, noteText)}
               >
                 {(() => {
                   const notes = selectedLead.agentNotes || [];
@@ -863,21 +945,62 @@ const LegalDocServicePage = () => {
                 </div>
               </div>
 
-              {/* Scoped to the one client + one service the clicked table row represents — not
-                  every service on the request. Non-editable identity facts on top, editable
-                  fields below with a single Save button, inside ServiceDetailCard. */}
-              {panelClient && panelService && (
-                <ServiceDetailCard
-                  key={`${selectedLead.agentId}-${selectedLead.id}-${selected.clientIndex}-${panelService.name}`}
-                  client={panelClient}
-                  service={panelService}
-                  contact={selectedLead.contact}
-                  onSaveInvoiceId={(v) => handleSetInvoiceId(selectedLead, selected.clientIndex, v)}
-                  onSaveVaultId={(v) => handleSetVaultId(selectedLead, selected.clientIndex, panelService.name, v)}
-                  onToggleDocsReceived={() => handleToggleDocumentsReceived(selectedLead, selected.clientIndex, panelService.name)}
-                  onToggleAdvanceReceived={() => handleToggleAdvanceReceived(selectedLead, selected.clientIndex, panelService.name)}
-                  onToggleLost={() => handleToggleLost(selectedLead, selected.clientIndex, panelService.name)}
-                />
+              {panelClient && (
+                <>
+                  <div className="border border-neutral-200 rounded-2xl p-4">
+                    <div className="grid grid-cols-2 gap-y-1.5 text-[13px] items-center">
+                      <span className="text-neutral-400">POC</span>
+                      <span>
+                        <span
+                          className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                            panelClient.pocType === 'agent' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'
+                          }`}
+                        >
+                          {panelClient.pocType === 'agent' ? 'Agent' : 'Client'}
+                        </span>
+                      </span>
+                      <span className="text-neutral-400">Name</span>
+                      <span className="text-neutral-700 font-medium">{clientLabel(panelClient)}</span>
+                      <span className="text-neutral-400">Number</span>
+                      {(() => {
+                        const pocPhone = panelClient.pocType === 'agent' ? selectedLead.contact : panelClient.phone;
+                        const phoneKey = `panel-${selected.clientIndex}`;
+                        return pocPhone ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-neutral-700">{formatPhone(pocPhone)}</span>
+                            <button
+                              onClick={() => handleCopy(phoneKey, pocPhone)}
+                              title="Copy number"
+                              className="p-1 text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 rounded transition-colors"
+                            >
+                              {copiedKey === phoneKey ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-neutral-700">—</span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  <InvoiceIdField
+                    key={`${selectedLead.agentId}-${selectedLead.id}-${selected.clientIndex}-invoice`}
+                    client={panelClient}
+                    onSave={(v) => handleSetInvoiceId(selectedLead, selected.clientIndex, v)}
+                  />
+
+                  {/* Every service on this client — Service ID, Docs/Advance toggles and a
+                      Lost toggle per row, Add Service and a single Save for everything above it. */}
+                  <ServicesEditor
+                    key={`${selectedLead.agentId}-${selectedLead.id}-${selected.clientIndex}-services`}
+                    services={panelClient.services}
+                    onSaveVaultId={(name, v) => handleSetVaultId(selectedLead, selected.clientIndex, name, v)}
+                    onToggleDocsReceived={(name) => handleToggleDocumentsReceived(selectedLead, selected.clientIndex, name)}
+                    onToggleAdvanceReceived={(name) => handleToggleAdvanceReceived(selectedLead, selected.clientIndex, name)}
+                    onToggleLost={(name) => handleToggleLost(selectedLead, selected.clientIndex, name)}
+                    onAddServiceByName={(name) => handleAddServiceToClient(selectedLead, selected.clientIndex, name)}
+                  />
+                </>
               )}
 
               {/* Call Log — pixel-matched to the Leads/Qualify Log a Connect + Connect History:
@@ -891,6 +1014,18 @@ const LegalDocServicePage = () => {
                 const rnrCount = allEntries.filter((e) => e.status === 'rnr').length;
                 const callBackCount = allEntries.filter((e) => e.status === 'call_back').length;
                 const lastEntry = allEntries[0] || null;
+
+                // "RNR 1", "RNR 2", ... in the order they actually happened (oldest first), a
+                // streak that resets whenever a "Connected" lands in between — same as the
+                // Agent Connect panel's RNR counter. The running count left over after the
+                // loop is what the next RNR button should show.
+                const rnrOrdinals = new Map();
+                let rnrSeq = 0;
+                [...allEntries].reverse().forEach((e) => {
+                  if (e.status === 'connected') rnrSeq = 0;
+                  else if (e.status === 'rnr') rnrOrdinals.set(e, ++rnrSeq);
+                });
+                const nextRnrNumber = rnrSeq + 1;
 
                 return (
                   <>
@@ -939,11 +1074,18 @@ const LegalDocServicePage = () => {
                           }`}
                         >
                           <XCircle size={14} className="text-red-500" />
-                          <span>RNR</span>
+                          <span>RNR {nextRnrNumber}</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => setCallForm((f) => ({ ...f, status: 'call_back' }))}
+                          onClick={() => {
+                            setCallForm((f) => ({ ...f, status: 'call_back' }));
+                            if (!callbackDate) {
+                              const slot = toBusinessSlot(new Date());
+                              setCallbackDate(slot.dateValue);
+                              setCallbackTime(slot.timeValue);
+                            }
+                          }}
                           className={`flex items-center justify-center gap-1.5 py-2.5 rounded-full border text-[13px] transition-colors ${
                             callForm.status === 'call_back'
                               ? 'bg-white border-neutral-700 text-neutral-900 font-semibold'
@@ -954,6 +1096,15 @@ const LegalDocServicePage = () => {
                           <span>Call Back</span>
                         </button>
                       </div>
+
+                      {callForm.status === 'call_back' && (
+                        <CallbackCalendarAndTimePicker
+                          callbackDate={callbackDate}
+                          callbackTime={callbackTime}
+                          onSelectDate={setCallbackDate}
+                          onSelectTime={setCallbackTime}
+                        />
+                      )}
 
                       <div className="flex flex-wrap gap-1.5">
                         {CONNECT_TOPIC_OPTIONS.map((o) => {
@@ -989,8 +1140,9 @@ const LegalDocServicePage = () => {
 
                       <button
                         type="button"
-                        onClick={() => submitLogCall(selectedLead)}
-                        className="w-full py-2.5 bg-white hover:bg-neutral-50 border border-neutral-900 text-neutral-900 rounded-full font-semibold text-[13px] transition-colors"
+                        onClick={() => submitLogCall(selectedLead, selected.clientIndex)}
+                        disabled={callForm.status === 'call_back' && !(callbackDate && callbackTime)}
+                        className="w-full py-2.5 bg-white hover:bg-neutral-50 border border-neutral-900 text-neutral-900 rounded-full font-semibold text-[13px] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         Save Connect Log
                       </button>
@@ -1030,7 +1182,7 @@ const LegalDocServicePage = () => {
                                       <meta.Icon size={18} />
                                     </span>
                                     <span className="text-[13px] font-semibold text-neutral-800">
-                                      {optionLabel(CONNECTION_STATUS_OPTIONS, entry.status)}
+                                      {entry.status === 'rnr' ? `RNR ${rnrOrdinals.get(entry)}` : optionLabel(CONNECTION_STATUS_OPTIONS, entry.status)}
                                     </span>
 
                                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-neutral-100 text-neutral-500 shrink-0">
@@ -1092,19 +1244,6 @@ const LegalDocServicePage = () => {
           </div>
         </div>
       )}
-
-      {/* Add-directly-to-Service modal — the price must be set here, since it can't be
-          edited later from the panel. */}
-      <AddLeadRecordModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        title="Add Service"
-        submitLabel="Add Service"
-        formState={newService}
-        onChange={setNewService}
-        onSubmit={submitNewService}
-        withPrice
-      />
     </div>
   );
 };

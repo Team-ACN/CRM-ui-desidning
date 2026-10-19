@@ -29,11 +29,11 @@ const Sidebar = () => {
         <NavItem to="/bulk-upload" icon={<Upload size={20} />} label="Bulk Upload" />
         <NavItem to="/requirements" icon={<FileText size={20} />} label="Requirements" />
         <NavItem to="/enquiries" icon={<MessageSquare size={20} />} label="Enquiries" />
+        <LegalDocNavGroup />
         <NavItem to="/qc-dashboard" icon={<LayoutDashboard size={20} />} label="QC Dashboard" />
         <NavItem to="/finance" icon={<IndianRupee size={20} />} label="Finance" />
         <NavItem to="/cms" icon={<Layers size={20} />} label="CMS" />
         <NavItem to="/edge" icon={<Zap size={20} />} label="Edge" />
-        <LegalDocNavGroup />
       </nav>
     </div>
   );

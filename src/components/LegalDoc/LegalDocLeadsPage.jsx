@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Search, X, Filter, Plus, RotateCcw, ChevronRight, ChevronLeft, Copy, Check, CheckCircle2, XCircle, Clock, StickyNote, PhoneCall, Phone, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Search, X, Filter, Plus, ChevronRight, ChevronLeft, Copy, Check, CheckCircle2, XCircle, Clock, StickyNote, PhoneCall, Phone, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { MultiFilterSelect, FilterSelect } from '../Edge/FilterControls';
 import LegalLeadSection from '../shared/LegalLeadSection';
 import AgentIdentityCard from '../shared/AgentIdentityCard';
 import SegmentedToggle from '../shared/SegmentedToggle';
 import WhatsAppLogo from '../shared/WhatsAppLogo';
+import CallbackCalendarAndTimePicker from '../shared/CallbackCalendarAndTimePicker';
+import { toBusinessSlot } from '../shared/callbackSlots';
 import { CONNECT_TOPIC_OPTIONS } from '../../data/mockAgents';
 import { summarize } from '../../utils/filters';
 import {
@@ -13,7 +15,6 @@ import {
   updateRequestStatus,
   setAgentLegalStatus,
   addClientConnection,
-  resetLegalDocData,
   effectiveStage,
   currentStatus,
   REQUEST_STATUS_OPTIONS,
@@ -123,7 +124,7 @@ const LegalDocLeadsPage = () => {
   const [page, setPage] = useState(1);
   const [copiedKey, setCopiedKey] = useState(null);
   const [selected, setSelected] = useState(null); // { agentId, id } of the request open in the side panel
-  const [onlyWithNotes, setOnlyWithNotes] = useState(false);
+  const [onlyWithNotes, setOnlyWithNotes] = useState(true);
   const [callForm, setCallForm] = useState({
     clientIndex: 0,
     connectMedium: 'on call',
@@ -132,6 +133,8 @@ const LegalDocLeadsPage = () => {
     notes: '',
     topics: ['services'],
   });
+  const [callbackDate, setCallbackDate] = useState('');
+  const [callbackTime, setCallbackTime] = useState('');
 
   const bump = () => setVersion((v) => v + 1);
 
@@ -248,8 +251,8 @@ const LegalDocLeadsPage = () => {
 
   // Legal Status (good/maybe/bad) is one value per agent, shared with the Agent Connect panel —
   // editing it here updates it everywhere, same as editing it there.
-  function handleUpdateAgentLegalStatus(lead, newStatus) {
-    setAgentLegalStatus(lead.agentId, { agentName: lead.agentName, contact: lead.contact, kam: lead.kam }, newStatus, lead.kam);
+  function handleUpdateAgentLegalStatus(lead, newStatus, noteText) {
+    setAgentLegalStatus(lead.agentId, { agentName: lead.agentName, contact: lead.contact, kam: lead.kam }, newStatus, lead.kam, noteText);
     bump();
   }
 
@@ -267,7 +270,8 @@ const LegalDocLeadsPage = () => {
 
   function submitLogCall(lead, clientIndex) {
     const { clientIndex: _ignored, ...entry } = callForm;
-    addClientConnection(lead.agentId, lead.id, clientIndex, { ...entry, user: lead.kam });
+    const callbackAt = callForm.status === 'call_back' && callbackDate && callbackTime ? new Date(`${callbackDate}T${callbackTime}`).getTime() : null;
+    addClientConnection(lead.agentId, lead.id, clientIndex, { ...entry, user: lead.kam, callbackAt });
     setCallForm((f) => ({
       clientIndex: f.clientIndex,
       connectMedium: 'on call',
@@ -276,13 +280,8 @@ const LegalDocLeadsPage = () => {
       notes: '',
       topics: ['services'],
     }));
-    bump();
-  }
-
-  function handleReset() {
-    if (!window.confirm('Reset all Legal & Doc data back to the sample seed? This clears anything you added.')) return;
-    resetLegalDocData();
-    closePanel();
+    setCallbackDate('');
+    setCallbackTime('');
     bump();
   }
 
@@ -303,13 +302,6 @@ const LegalDocLeadsPage = () => {
         </div>
         <div className="flex items-center gap-3">
           <span className="font-medium text-neutral-400 px-3 py-1 bg-neutral-100 rounded-full">{rows.length} Leads</span>
-          <button
-            onClick={handleReset}
-            title="Reset to sample data"
-            className="p-2 text-neutral-300 hover:text-neutral-500 transition-colors"
-          >
-            <RotateCcw size={15} />
-          </button>
         </div>
       </header>
 
@@ -533,7 +525,7 @@ const LegalDocLeadsPage = () => {
                 contact={selectedLead.contact ? formatPhone(selectedLead.contact) : '—'}
                 kam={selectedLead.kam}
                 status={selectedLead.agentStatus || 'maybe'}
-                onUpdateStatus={(newStatus) => handleUpdateAgentLegalStatus(selectedLead, newStatus)}
+                onUpdateStatus={(newStatus, noteText) => handleUpdateAgentLegalStatus(selectedLead, newStatus, noteText)}
               >
                 {(() => {
                   const notes = selectedLead.agentNotes;
@@ -603,6 +595,18 @@ const LegalDocLeadsPage = () => {
                 const callBackCount = allEntries.filter((e) => e.status === 'call_back').length;
                 const lastEntry = allEntries[0] || null;
 
+                // "RNR 1", "RNR 2", ... in the order they actually happened (oldest first), a
+                // streak that resets whenever a "Connected" lands in between — same as the
+                // Agent Connect panel's RNR counter. The running count left over after the
+                // loop is what the next RNR button should show.
+                const rnrOrdinals = new Map();
+                let rnrSeq = 0;
+                [...allEntries].reverse().forEach((e) => {
+                  if (e.status === 'connected') rnrSeq = 0;
+                  else if (e.status === 'rnr') rnrOrdinals.set(e, ++rnrSeq);
+                });
+                const nextRnrNumber = rnrSeq + 1;
+
                 return (
                   <>
                     <div className="border border-neutral-200 rounded-2xl p-5 space-y-4">
@@ -650,11 +654,18 @@ const LegalDocLeadsPage = () => {
                           }`}
                         >
                           <XCircle size={14} className="text-red-500" />
-                          <span>RNR</span>
+                          <span>RNR {nextRnrNumber}</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => setCallForm((f) => ({ ...f, status: 'call_back' }))}
+                          onClick={() => {
+                            setCallForm((f) => ({ ...f, status: 'call_back' }));
+                            if (!callbackDate) {
+                              const slot = toBusinessSlot(new Date());
+                              setCallbackDate(slot.dateValue);
+                              setCallbackTime(slot.timeValue);
+                            }
+                          }}
                           className={`flex items-center justify-center gap-1.5 py-2.5 rounded-full border text-[13px] transition-colors ${
                             callForm.status === 'call_back'
                               ? 'bg-white border-neutral-700 text-neutral-900 font-semibold'
@@ -665,6 +676,15 @@ const LegalDocLeadsPage = () => {
                           <span>Call Back</span>
                         </button>
                       </div>
+
+                      {callForm.status === 'call_back' && (
+                        <CallbackCalendarAndTimePicker
+                          callbackDate={callbackDate}
+                          callbackTime={callbackTime}
+                          onSelectDate={setCallbackDate}
+                          onSelectTime={setCallbackTime}
+                        />
+                      )}
 
                       <div className="flex flex-wrap gap-1.5">
                         {CONNECT_TOPIC_OPTIONS.map((o) => {
@@ -701,7 +721,8 @@ const LegalDocLeadsPage = () => {
                       <button
                         type="button"
                         onClick={() => submitLogCall(selectedLead, logClientIndex)}
-                        className="w-full py-2.5 bg-white hover:bg-neutral-50 border border-neutral-900 text-neutral-900 rounded-full font-semibold text-[13px] transition-colors"
+                        disabled={callForm.status === 'call_back' && !(callbackDate && callbackTime)}
+                        className="w-full py-2.5 bg-white hover:bg-neutral-50 border border-neutral-900 text-neutral-900 rounded-full font-semibold text-[13px] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         Save Connect Log
                       </button>
@@ -741,7 +762,7 @@ const LegalDocLeadsPage = () => {
                                       <meta.Icon size={18} />
                                     </span>
                                     <span className="text-[13px] font-semibold text-neutral-800">
-                                      {optionLabel(CONNECTION_STATUS_OPTIONS, entry.status)}
+                                      {entry.status === 'rnr' ? `RNR ${rnrOrdinals.get(entry)}` : optionLabel(CONNECTION_STATUS_OPTIONS, entry.status)}
                                     </span>
 
                                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-neutral-100 text-neutral-500 shrink-0">
