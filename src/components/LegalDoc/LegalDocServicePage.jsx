@@ -343,7 +343,6 @@ const LegalDocServicePage = () => {
   const [kamFilter, setKamFilter] = useState([]);
   const [serviceFilter, setServiceFilter] = useState([]);
   const [pocTypeFilter, setPocTypeFilter] = useState([]);
-  const [salesPocFilter, setSalesPocFilter] = useState([]);
   const [lostFilter, setLostFilter] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
@@ -423,7 +422,6 @@ const LegalDocServicePage = () => {
   const matchesKam = (row) => kamFilter.length === 0 || kamFilter.includes(row.kam);
   const matchesService = (row) => serviceFilter.length === 0 || serviceFilter.includes(row.serviceName);
   const matchesPocType = (row) => pocTypeFilter.length === 0 || pocTypeFilter.includes(row.pocType);
-  const matchesSalesPoc = (row) => salesPocFilter.length === 0 || salesPocFilter.includes(row.salesPoc);
   const matchesLost = (row) => lostFilter.length === 0 || lostFilter.includes(row.service.lost ? 'true' : 'false');
 
   function countOptions(dim, options, getValues) {
@@ -435,7 +433,6 @@ const LegalDocServicePage = () => {
           (dim === 'kam' || matchesKam(row)) &&
           (dim === 'service' || matchesService(row)) &&
           (dim === 'pocType' || matchesPocType(row)) &&
-          (dim === 'salesPoc' || matchesSalesPoc(row)) &&
           (dim === 'lost' || matchesLost(row)) &&
           getValues(row).includes(o.value)
       ).length,
@@ -443,10 +440,9 @@ const LegalDocServicePage = () => {
   }
 
   const rows = allServiceRows.filter(
-    (row) => matchesSearch(row) && matchesKam(row) && matchesService(row) && matchesPocType(row) && matchesSalesPoc(row) && matchesLost(row)
+    (row) => matchesSearch(row) && matchesKam(row) && matchesService(row) && matchesPocType(row) && matchesLost(row)
   );
-  const activeFilterCount =
-    kamFilter.length + serviceFilter.length + pocTypeFilter.length + salesPocFilter.length + lostFilter.length;
+  const activeFilterCount = kamFilter.length + serviceFilter.length + pocTypeFilter.length + lostFilter.length;
 
   const activeFilters = [
     kamFilter.length > 0 && {
@@ -464,11 +460,6 @@ const LegalDocServicePage = () => {
       label: `POC: ${summarize(pocTypeFilter, POC_TYPE_OPTIONS, '')}`,
       clear: () => setPocTypeFilter([]),
     },
-    salesPocFilter.length > 0 && {
-      key: 'salesPoc',
-      label: `Sales POC: ${summarize(salesPocFilter, KAM_OPTIONS, '')}`,
-      clear: () => setSalesPocFilter([]),
-    },
     lostFilter.length > 0 && {
       key: 'lost',
       label: `Lost: ${summarize(lostFilter, LOST_FILTER_OPTIONS, '')}`,
@@ -480,11 +471,10 @@ const LegalDocServicePage = () => {
     setKamFilter([]);
     setServiceFilter([]);
     setPocTypeFilter([]);
-    setSalesPocFilter([]);
     setLostFilter([]);
   }
 
-  const filterKey = JSON.stringify([search, kamFilter, serviceFilter, pocTypeFilter, salesPocFilter, lostFilter, sortBy]);
+  const filterKey = JSON.stringify([search, kamFilter, serviceFilter, pocTypeFilter, lostFilter, sortBy]);
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (filterKey !== prevFilterKey) {
     setPrevFilterKey(filterKey);
@@ -648,7 +638,7 @@ const LegalDocServicePage = () => {
             <MultiFilterSelect
               label="KAM"
               allLabel="All KAMs"
-              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesService(row) && matchesPocType(row) && matchesSalesPoc(row) && matchesLost(row)).length}
+              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesService(row) && matchesPocType(row) && matchesLost(row)).length}
               value={kamFilter}
               onChange={setKamFilter}
               options={countOptions('kam', KAM_OPTIONS, (row) => [row.kam])}
@@ -656,7 +646,7 @@ const LegalDocServicePage = () => {
             <MultiFilterSelect
               label="Service"
               allLabel="All Services"
-              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesKam(row) && matchesPocType(row) && matchesSalesPoc(row) && matchesLost(row)).length}
+              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesKam(row) && matchesPocType(row) && matchesLost(row)).length}
               value={serviceFilter}
               onChange={setServiceFilter}
               options={countOptions('service', SERVICE_NAME_OPTIONS, (row) => [row.serviceName])}
@@ -664,24 +654,16 @@ const LegalDocServicePage = () => {
             <MultiFilterSelect
               label="POC"
               allLabel="Agent & Client"
-              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesKam(row) && matchesService(row) && matchesSalesPoc(row) && matchesLost(row)).length}
+              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesKam(row) && matchesService(row) && matchesLost(row)).length}
               value={pocTypeFilter}
               onChange={setPocTypeFilter}
               options={countOptions('pocType', POC_TYPE_OPTIONS, (row) => [row.pocType])}
-            />
-            <MultiFilterSelect
-              label="Sales POC"
-              allLabel="All POCs"
-              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesKam(row) && matchesService(row) && matchesPocType(row) && matchesLost(row)).length}
-              value={salesPocFilter}
-              onChange={setSalesPocFilter}
-              options={countOptions('salesPoc', KAM_OPTIONS, (row) => [row.salesPoc])}
             />
             <FilterSelect label="Sort" value={sortBy} onChange={setSortBy} options={SORT_OPTIONS} defaultValue="newest" />
             <MultiFilterSelect
               label="Lost"
               allLabel="All"
-              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesKam(row) && matchesService(row) && matchesPocType(row) && matchesSalesPoc(row)).length}
+              allCount={allServiceRows.filter((row) => matchesSearch(row) && matchesKam(row) && matchesService(row) && matchesPocType(row)).length}
               value={lostFilter}
               onChange={setLostFilter}
               options={countOptions('lost', LOST_FILTER_OPTIONS, (row) => [row.service.lost ? 'true' : 'false'])}
