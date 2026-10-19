@@ -1008,6 +1008,10 @@ const LegalDocServicePage = () => {
                   notes only" filter, icon-badged history and a rollup summary. One shared
                   timeline for the whole request, logged against the first client/POC on it. */}
               {(() => {
+                // Calling a client, not the agent — only Legal is a meaningful topic for them;
+                // Inventory/Enquiry/Masal AI/Primary/Loan only make sense on a call with the agent.
+                const visibleTopics = panelClient?.pocType === 'client' ? CONNECT_TOPIC_OPTIONS.filter((o) => o.value === 'services') : CONNECT_TOPIC_OPTIONS;
+
                 const allEntries = allConnectionsFor(selectedLead);
                 const visibleEntries = onlyWithNotes ? allEntries.filter((e) => e.notes) : allEntries;
                 const connectedCount = allEntries.filter((e) => e.status === 'connected').length;
@@ -1107,7 +1111,7 @@ const LegalDocServicePage = () => {
                       )}
 
                       <div className="flex flex-wrap gap-1.5">
-                        {CONNECT_TOPIC_OPTIONS.map((o) => {
+                        {visibleTopics.map((o) => {
                           const isSelected = callForm.topics.includes(o.value);
                           const c = topicColor(o.value);
                           return (
