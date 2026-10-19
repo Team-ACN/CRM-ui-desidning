@@ -576,13 +576,6 @@ const AgentConnectPanel = ({ agent, onClose }) => {
 
   const visibleHistory = onlyWithNotes ? history.filter((h) => h.note && h.note.trim()) : history;
 
-  // A quick scannable rollup at the bottom of the history — not another connect card, just
-  // the handful of facts a KAM would otherwise have to count by scrolling for.
-  const connectedCount = history.filter((h) => h.connection === 'connected').length;
-  const rnrCount = history.filter((h) => typeof h.connection === 'string' && h.connection.startsWith('rnr')).length;
-  const callBackCount = history.filter((h) => h.connection === 'call back').length;
-  const lastEntry = history.length > 0 ? history[history.length - 1] : null;
-
   return (
     <div className="fixed inset-0 bg-black/30 z-50 flex justify-end" onClick={onClose}>
       <div
@@ -644,13 +637,13 @@ const AgentConnectPanel = ({ agent, onClose }) => {
             onUpdateStatus={handleUpdateLegalStatus}
           >
             {(() => {
-              const notes = existingLeadRecord?.legalAndLoan?.notes || [];
+              const notes = (existingLeadRecord?.legalAndLoan?.notes || []).filter((n) => n.text);
               const entry = notes.length ? notes[notes.length - 1] : null;
-              if (!entry || !entry.text) return null;
+              if (!entry) return null;
               return (
-                <div className="pt-3 border-t border-neutral-100 flex items-center justify-between gap-2">
+                <div className="pt-3 border-t border-neutral-100">
                   <p className="text-neutral-500 text-[13px]">{entry.text}</p>
-                  <span className="text-neutral-400 text-[11px] whitespace-nowrap">
+                  <span className="text-neutral-400 text-[11px]">
                     {relativeTime(entry.time) || '—'} by {entry.user || '—'}
                   </span>
                 </div>
@@ -1027,7 +1020,7 @@ const AgentConnectPanel = ({ agent, onClose }) => {
                     : 'bg-neutral-100 border-transparent text-neutral-500 hover:bg-neutral-200'
                 }`}
               >
-                <StickyNote size={11} /> With notes only
+                <StickyNote size={11} /> {onlyWithNotes ? 'Calls with notes' : 'All calls'}
               </button>
             </div>
 
@@ -1094,26 +1087,21 @@ const AgentConnectPanel = ({ agent, onClose }) => {
               </div>
             )}
 
-            {/* Rollup — just the facts, not another connect-outcome card, so everything's
-                visible at a glance without scrolling back through each entry. */}
-            {history.length > 0 && (
-              <div className="border border-neutral-200 rounded-2xl p-5 mt-3">
-                <ul className="space-y-1.5 text-[13px] text-neutral-700 list-disc list-inside marker:text-neutral-700 marker:text-base">
-                  <li>{history.length} connect{history.length !== 1 ? 's' : ''} logged</li>
-                  <li>
-                    {connectedCount} connected · {rnrCount} RNR · {callBackCount} call back
-                  </li>
-                  {lastEntry && (
-                    <li>
-                      Last connect {relativeTime(lastEntry.timestamp)} by {lastEntry.kamName}
-                    </li>
-                  )}
-                  {pendingCallbacks.length > 0 && (
-                    <li>
-                      {pendingCallbacks.length} callback{pendingCallbacks.length !== 1 ? 's' : ''} pending
-                    </li>
-                  )}
-                </ul>
+            {/* Notes digest — every past connect's note text, each with its own time + KAM name,
+                so they're all visible at a glance without scrolling back through each card. */}
+            {history.filter((e) => e.note).length > 0 && (
+              <div className="border border-neutral-200 rounded-2xl divide-y divide-neutral-100 mt-3">
+                {[...history]
+                  .filter((e) => e.note)
+                  .reverse()
+                  .map((entry, i) => (
+                    <div key={i} className="p-5">
+                      <p className="text-neutral-600 text-[13px] leading-relaxed">{entry.note}</p>
+                      <span className="text-neutral-400 text-[11px]">
+                        {relativeTime(entry.timestamp) || '—'} by {entry.kamName || '—'}
+                      </span>
+                    </div>
+                  ))}
               </div>
             )}
           </div>

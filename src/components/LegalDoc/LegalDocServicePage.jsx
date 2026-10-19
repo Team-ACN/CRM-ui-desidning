@@ -17,6 +17,7 @@ import {
   Phone,
   ArrowUpRight,
   ArrowDownLeft,
+  MessageSquare,
 } from 'lucide-react';
 import { MultiFilterSelect, FilterSelect } from '../Edge/FilterControls';
 import AgentIdentityCard from '../shared/AgentIdentityCard';
@@ -709,6 +710,9 @@ const LegalDocServicePage = () => {
               <th className="px-4 py-4">Agent Name</th>
               <th className="px-4 py-4">Agent No</th>
               <th className="pl-4 pr-6 py-4">KAM</th>
+              <th className="sticky right-0 z-10 bg-white px-4 py-4 text-center border-l border-neutral-300 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
+                <MessageSquare size={13} className="inline text-neutral-300" />
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -737,7 +741,7 @@ const LegalDocServicePage = () => {
               }
 
               return (
-                <tr key={row.key} onClick={() => openPanel(row)} className="hover:bg-neutral-50/50 transition-colors group cursor-pointer align-top">
+                <tr key={row.key} className="hover:bg-neutral-50/50 transition-colors group align-top">
                   {isFirstOfRequest && (
                     <td rowSpan={requestRowSpan} className="pl-6 pr-4 py-3 border-b border-neutral-100">
                       <span className="font-mono text-[11px] bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded">{row.requestId}</span>
@@ -848,12 +852,27 @@ const LegalDocServicePage = () => {
                       {row.kam}
                     </td>
                   )}
+                  {isFirstOfClient && (
+                    <td
+                      rowSpan={clientRowSpan}
+                      className="sticky right-0 bg-white group-hover:bg-neutral-50 border-b border-neutral-100 border-l border-l-neutral-300 text-center px-4 py-3 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => openPanel(row)}
+                        title="Open details"
+                        className="p-2 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors"
+                      >
+                        <MessageSquare size={16} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               );
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={15} className="px-6 py-16 text-center text-neutral-400">
+                <td colSpan={16} className="px-6 py-16 text-center text-neutral-400">
                   No services in progress match these filters.
                 </td>
               </tr>
@@ -910,13 +929,13 @@ const LegalDocServicePage = () => {
                 onUpdateStatus={(newStatus, noteText) => handleUpdateAgentLegalStatus(selectedLead, newStatus, noteText)}
               >
                 {(() => {
-                  const notes = selectedLead.agentNotes || [];
+                  const notes = (selectedLead.agentNotes || []).filter((n) => n.text);
                   const entry = notes.length ? notes[notes.length - 1] : null;
-                  if (!entry || !entry.text) return null;
+                  if (!entry) return null;
                   return (
-                    <div className="pt-3 border-t border-neutral-100 flex items-center justify-between gap-2">
+                    <div className="pt-3 border-t border-neutral-100">
                       <p className="text-neutral-500 text-[13px]">{entry.text}</p>
-                      <span className="text-neutral-400 text-[11px] whitespace-nowrap">
+                      <span className="text-neutral-400 text-[11px]">
                         {relativeTime(entry.time) || '—'} by {entry.user || '—'}
                       </span>
                     </div>
@@ -1014,10 +1033,6 @@ const LegalDocServicePage = () => {
 
                 const allEntries = allConnectionsFor(selectedLead);
                 const visibleEntries = onlyWithNotes ? allEntries.filter((e) => e.notes) : allEntries;
-                const connectedCount = allEntries.filter((e) => e.status === 'connected').length;
-                const rnrCount = allEntries.filter((e) => e.status === 'rnr').length;
-                const callBackCount = allEntries.filter((e) => e.status === 'call_back').length;
-                const lastEntry = allEntries[0] || null;
 
                 // "RNR 1", "RNR 2", ... in the order they actually happened (oldest first), a
                 // streak that resets whenever a "Connected" lands in between — same as the
@@ -1164,7 +1179,7 @@ const LegalDocServicePage = () => {
                               : 'bg-neutral-100 border-transparent text-neutral-500 hover:bg-neutral-200'
                           }`}
                         >
-                          <StickyNote size={11} /> With notes only
+                          <StickyNote size={11} /> {onlyWithNotes ? 'Calls with notes' : 'All calls'}
                         </button>
                       </div>
 
@@ -1225,19 +1240,18 @@ const LegalDocServicePage = () => {
                         </div>
                       )}
 
-                      {allEntries.length > 0 && (
-                        <div className="border border-neutral-200 rounded-2xl p-5 mt-3">
-                          <ul className="space-y-1.5 text-[13px] text-neutral-700 list-disc list-inside marker:text-neutral-700 marker:text-base">
-                            <li>{allEntries.length} connect{allEntries.length !== 1 ? 's' : ''} logged</li>
-                            <li>
-                              {connectedCount} connected · {rnrCount} RNR · {callBackCount} call back
-                            </li>
-                            {lastEntry && (
-                              <li>
-                                Last connect {relativeTime(lastEntry.time)} by {lastEntry.user}
-                              </li>
-                            )}
-                          </ul>
+                      {allEntries.filter((e) => e.notes).length > 0 && (
+                        <div className="border border-neutral-200 rounded-2xl divide-y divide-neutral-100 mt-3">
+                          {allEntries
+                            .filter((e) => e.notes)
+                            .map((entry, i) => (
+                              <div key={i} className="p-5">
+                                <p className="text-neutral-600 text-[13px] leading-relaxed">{entry.notes}</p>
+                                <span className="text-neutral-400 text-[11px]">
+                                  {relativeTime(entry.time) || '—'} by {entry.user || '—'}
+                                </span>
+                              </div>
+                            ))}
                         </div>
                       )}
                     </div>
