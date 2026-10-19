@@ -20,7 +20,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { CONNECT_TOPIC_OPTIONS, addConnectHistoryEntry } from '../../data/mockAgents';
+import { CONNECT_TOPIC_OPTIONS, addConnectHistoryEntry, resolveCallback } from '../../data/mockAgents';
 import LegalSearchSelect from '../shared/LegalSearchSelect';
 import LegalLeadSection from '../shared/LegalLeadSection';
 import AgentIdentityCard from '../shared/AgentIdentityCard';
@@ -114,9 +114,23 @@ function relativeTime(ts) {
   return `${Math.round(diffHours / 24)}d ago`;
 }
 
+// Callback times are always on the hour — 4:00, 5:00, never 4:40 — so round to the nearest
+// LOCAL hour before formatting (rounding the raw UTC ms instead would land on :30 for IST,
+// since its offset isn't a whole number of hours).
+function roundToHour(ts) {
+  const d = new Date(ts);
+  if (d.getMinutes() >= 30) d.setHours(d.getHours() + 1);
+  d.setMinutes(0, 0, 0);
+  return d.getTime();
+}
+
 function formatCallbackAt(ts) {
   if (!ts) return '—';
-  return new Date(ts).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return new Date(roundToHour(ts)).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+function isOverdue(ts) {
+  return ts <= Date.now();
 }
 
 // Live-masks a phone input as it's typed: digits only, capped at 10, 5-5 grouped.
@@ -574,6 +588,17 @@ const AgentConnectPanel = ({ agent, onClose }) => {
     return { kamId, kamName: sourceEntry?.kamName || kamId, at: cb.at };
   });
 
+  // Marks a KAM's callback as made — clears it from the underlying data and this panel's own
+  // view of it, same action the Home page's callback list offers.
+  const handleResolveCallback = (kamId) => {
+    resolveCallback(agent.agentId, kamId);
+    setNextCallbacksMap((m) => {
+      const next = { ...m };
+      delete next[kamId];
+      return next;
+    });
+  };
+
   const visibleHistory = onlyWithNotes ? history.filter((h) => h.note && h.note.trim()) : history;
 
   return (
@@ -596,32 +621,40 @@ const AgentConnectPanel = ({ agent, onClose }) => {
         </header>
 
         {/* Pending callback banner — pinned above the scroll region (not just first-in-list) so
-            it stays visible no matter where the KAM has scrolled to. Reads cleanly whether
-            there's one callback or several. */}
+            it stays visible no matter where the KAM has scrolled to. Each callback is one line
+            — yellow while still upcoming, red once its time has passed — with a Done button to
+            clear it once the call's actually been made. */}
         {pendingCallbacks.length > 0 && (
           <div className="shrink-0 px-5 py-3 bg-amber-50 space-y-1.5">
-            {pendingCallbacks.length === 1 ? (
-              <div className="flex items-center gap-2 text-[13px] font-medium text-amber-900">
+            {pendingCallbacks.length > 1 && (
+              <div className="flex items-center gap-2 text-[13px] font-semibold text-amber-900">
                 <Clock size={ICON_SIZE} className="text-amber-500 shrink-0" />
-                <span>
-                  Callback scheduled for {formatCallbackAt(pendingCallbacks[0].at)} — {pendingCallbacks[0].kamName}
-                </span>
+                <span>{pendingCallbacks.length} callbacks scheduled</span>
               </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-2 text-[13px] font-semibold text-amber-900">
-                  <Clock size={ICON_SIZE} className="text-amber-500 shrink-0" />
-                  <span>{pendingCallbacks.length} callbacks scheduled</span>
-                </div>
-                <div className="pl-[22px] space-y-1">
-                  {pendingCallbacks.map((cb) => (
-                    <div key={cb.kamId} className="text-[12.5px] text-amber-800">
-                      {formatCallbackAt(cb.at)} — {cb.kamName}
-                    </div>
-                  ))}
-                </div>
-              </>
             )}
+            {pendingCallbacks.map((cb) => {
+              const overdue = isOverdue(cb.at);
+              return (
+                <div key={cb.kamId} className="flex items-center justify-between gap-2">
+                  <div className={`flex items-center gap-2 text-[13px] font-medium ${overdue ? 'text-red-700' : 'text-amber-900'}`}>
+                    <Clock size={ICON_SIZE} className={`shrink-0 ${overdue ? 'text-red-500' : 'text-amber-500'}`} />
+                    <span>
+                      {pendingCallbacks.length === 1 && 'Callback scheduled '}
+                      {formatCallbackAt(cb.at)} — {cb.kamName}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleResolveCallback(cb.kamId)}
+                    className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium border bg-white transition-colors ${
+                      overdue ? 'border-red-200 text-red-700 hover:bg-red-100' : 'border-amber-200 text-amber-800 hover:bg-amber-100'
+                    }`}
+                  >
+                    Done
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
 

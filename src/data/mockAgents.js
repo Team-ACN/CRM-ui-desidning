@@ -322,7 +322,22 @@ export const mockAgents = [
         topics: ['mashal_ai', 'primary'],
         callbackAt: null,
       },
+      {
+        id: 'ch_2204',
+        timestamp: Date.now() - 1000 * 60 * 60 * 26,
+        kamId: 'sandeep',
+        kamName: 'Sandeep',
+        direction: 'outbound',
+        connectMedium: 'on call',
+        connection: 'call back',
+        note: 'Asked to call back the next morning.',
+        topics: ['primary'],
+        callbackAt: Date.now() - 1000 * 60 * 60 * 2,
+      },
     ],
+    nextCallbacks: {
+      sandeep: { at: Date.now() - 1000 * 60 * 60 * 2, entryId: 'ch_2204' },
+    },
   },
   {
     id: 7,
@@ -371,6 +386,211 @@ export const mockAgents = [
         callbackAt: null,
       },
     ],
+  },
+  {
+    id: 9,
+    name: 'Karthik Rajan',
+    contact: '+919845098712',
+    agentId: 'CPC975',
+    plan: 'Premium',
+    credits: 320,
+    renewal: 'In 60 days',
+    inventories: 14,
+    enquiriesDid: 22,
+    enquiriesRec: 9,
+    lastConnected: '1 day ago',
+    lastTried: '1 day ago',
+    lastStatus: 'Call Back',
+    kam: 'Samarth',
+    agentStatus: 'Interested',
+    connectHistory: [
+      {
+        id: 'ch_2401',
+        timestamp: Date.now() - 1000 * 60 * 60 * 20,
+        kamId: 'samarth',
+        kamName: 'Samarth',
+        direction: 'outbound',
+        connectMedium: 'on call',
+        connection: 'call back',
+        note: 'Wants to discuss renewal pricing before he decides, asked to call tomorrow afternoon.',
+        topics: ['primary'],
+        callbackAt: Date.now() + 1000 * 60 * 60 * 6,
+      },
+    ],
+    nextCallbacks: {
+      samarth: { at: Date.now() + 1000 * 60 * 60 * 6, entryId: 'ch_2401' },
+    },
+  },
+  {
+    id: 10,
+    name: 'Meenal Joshi',
+    contact: '+919845098713',
+    agentId: 'CPC976',
+    plan: 'Trial',
+    credits: 100,
+    renewal: 'In 20 days',
+    inventories: 2,
+    enquiriesDid: 4,
+    enquiriesRec: 1,
+    lastConnected: '2 days ago',
+    lastTried: '2 days ago',
+    lastStatus: 'Call Back',
+    kam: 'Samarth',
+    agentStatus: 'Interested',
+    connectHistory: [
+      {
+        id: 'ch_2402',
+        timestamp: Date.now() - 1000 * 60 * 60 * 30,
+        kamId: 'samarth',
+        kamName: 'Samarth',
+        direction: 'outbound',
+        connectMedium: 'on whatsapp',
+        connection: 'call back',
+        note: 'Travelling, asked to call back once she lands this evening.',
+        topics: ['enquiry'],
+        callbackAt: Date.now() - 1000 * 60 * 60 * 4,
+      },
+    ],
+    nextCallbacks: {
+      samarth: { at: Date.now() - 1000 * 60 * 60 * 4, entryId: 'ch_2402' },
+    },
+  },
+  {
+    id: 11,
+    name: 'Rohit Bhatia',
+    contact: '+919845098714',
+    agentId: 'CPC977',
+    plan: 'Basic',
+    credits: 60,
+    renewal: 'In 10 days',
+    inventories: 1,
+    enquiriesDid: 2,
+    enquiriesRec: 0,
+    lastConnected: '3 days ago',
+    lastTried: '3 days ago',
+    lastStatus: 'Call Back',
+    kam: 'Samarth',
+    agentStatus: 'Interested',
+    connectHistory: [
+      {
+        id: 'ch_2403',
+        timestamp: Date.now() - 1000 * 60 * 60 * 50,
+        kamId: 'samarth',
+        kamName: 'Samarth',
+        direction: 'outbound',
+        connectMedium: 'on call',
+        connection: 'call back',
+        note: 'Was in a meeting, asked to try again same time next day.',
+        topics: ['inventory'],
+        callbackAt: Date.now() - 1000 * 60 * 60 * 26,
+      },
+    ],
+    nextCallbacks: {
+      samarth: { at: Date.now() - 1000 * 60 * 60 * 26, entryId: 'ch_2403' },
+    },
+  },
+  {
+    id: 12,
+    name: 'Divya Kulkarni',
+    contact: '+919845098715',
+    agentId: 'CPC978',
+    plan: 'Premium',
+    credits: 280,
+    renewal: 'In 40 days',
+    inventories: 9,
+    enquiriesDid: 15,
+    enquiriesRec: 6,
+    lastConnected: '4 hours ago',
+    lastTried: '4 hours ago',
+    lastStatus: 'Call Back',
+    kam: 'Samarth',
+    agentStatus: 'Interested',
+    connectHistory: [
+      {
+        id: 'ch_2404',
+        timestamp: Date.now() - 1000 * 60 * 60 * 4,
+        kamId: 'samarth',
+        kamName: 'Samarth',
+        direction: 'inbound',
+        connectMedium: 'on call',
+        connection: 'call back',
+        note: 'Wants a detailed walkthrough of the Masal AI credit system before renewing her plan, also asked whether the referral payout structure has changed this quarter and if older inventories need to be re-verified.',
+        topics: ['mashal_ai', 'primary'],
+        callbackAt: Date.now() + 1000 * 60 * 60 * 24,
+      },
+    ],
+    nextCallbacks: {
+      samarth: { at: Date.now() + 1000 * 60 * 60 * 24, entryId: 'ch_2404' },
+    },
+  },
+  {
+    id: 13,
+    name: 'Arvind Nambiar',
+    contact: '+919845098716',
+    agentId: 'CPC979',
+    plan: 'Trial',
+    credits: 100,
+    renewal: 'In 25 days',
+    inventories: 0,
+    enquiriesDid: 1,
+    enquiriesRec: 0,
+    lastConnected: '1 day ago',
+    lastTried: '1 day ago',
+    lastStatus: 'Call Back',
+    kam: 'Samarth',
+    agentStatus: 'Interested',
+    connectHistory: [
+      {
+        id: 'ch_2405',
+        timestamp: Date.now() - 1000 * 60 * 60 * 10,
+        kamId: 'samarth',
+        kamName: 'Samarth',
+        direction: 'outbound',
+        connectMedium: 'on whatsapp',
+        connection: 'call back',
+        note: 'Asked to call back after his client meeting ends.',
+        topics: ['enquiry'],
+        callbackAt: Date.now() + 1000 * 60 * 60 * 3,
+      },
+    ],
+    nextCallbacks: {
+      samarth: { at: Date.now() + 1000 * 60 * 60 * 3, entryId: 'ch_2405' },
+    },
   }
 ];
+
+// Every pending callback across every agent, flattened — one entry per (agent, KAM) pair, since
+// nextCallbacks is keyed by kamId. Used by the Home page's callback list, same data the Agent
+// Connect panel's banner reads per-agent. Pass a kamId to see only that KAM's own callbacks —
+// the Home page's "mine" view, not everyone's.
+export function getAllPendingCallbacks(kamId) {
+  const out = [];
+  mockAgents.forEach((agent) => {
+    Object.entries(agent.nextCallbacks || {}).forEach(([entryKamId, cb]) => {
+      if (kamId && entryKamId !== kamId) return;
+      const sourceEntry = (agent.connectHistory || []).find((h) => h.id === cb.entryId);
+      out.push({
+        agentId: agent.agentId,
+        agentName: agent.name,
+        contact: agent.contact,
+        kamId: entryKamId,
+        kamName: sourceEntry?.kamName || entryKamId,
+        note: sourceEntry?.note || '',
+        topics: sourceEntry?.topics || [],
+        at: cb.at,
+      });
+    });
+  });
+  return out.sort((a, b) => a.at - b.at);
+}
+
+// Clears one KAM's pending callback for an agent — called once the KAM has actually made that
+// call, from either the Agent Connect panel's banner or the Home page's callback list.
+export function resolveCallback(agentId, kamId) {
+  const agent = mockAgents.find((a) => a.agentId === agentId);
+  if (!agent || !agent.nextCallbacks) return;
+  const next = { ...agent.nextCallbacks };
+  delete next[kamId];
+  agent.nextCallbacks = next;
+}
 
