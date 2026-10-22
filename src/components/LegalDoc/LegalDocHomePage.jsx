@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, Phone, Copy, Check } from 'lucide-react';
+import { Clock, Copy, Check } from 'lucide-react';
 import { mockAgents, getAllPendingCallbacks, CONNECT_TOPIC_OPTIONS } from '../../data/mockAgents';
 import AgentConnectPanel from '../Agents/AgentConnectPanel';
 
@@ -96,18 +96,27 @@ const LegalDocHomePage = () => {
                 tabIndex={0}
                 onClick={() => openAgent(cb.agentId)}
                 onKeyDown={(e) => e.key === 'Enter' && openAgent(cb.agentId)}
-                className="w-[23rem] shrink-0 bg-white border border-neutral-200 rounded-2xl p-5 hover:border-neutral-300 transition-colors cursor-pointer flex flex-col justify-between"
+                className="w-72 shrink-0 bg-white border border-neutral-200 rounded-2xl p-5 hover:border-neutral-300 transition-colors cursor-pointer flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 pb-3 border-b border-neutral-100">
                     <p className="text-[13px] font-semibold text-neutral-800 truncate">{cb.agentName}</p>
-                    <span
-                      className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium ${
-                        overdue ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                      }`}
-                    >
-                      <Clock size={11} /> {formatCallbackAt(cb.at)}
-                    </span>
+                    {cb.contact && (
+                      <div className="shrink-0 flex items-center gap-1 text-neutral-500">
+                        <span className="text-[11.5px]">{formatPhone(cb.contact)}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopy(key, formatPhone(cb.contact));
+                          }}
+                          title="Copy number"
+                          className="p-1 text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 rounded transition-colors"
+                        >
+                          {copiedKey === key ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-1.5 mt-3 min-h-[22px] items-center">
@@ -130,23 +139,16 @@ const LegalDocHomePage = () => {
                   </p>
                 </div>
 
-                {cb.contact && (
-                  <div className="mt-auto pt-3 border-t border-neutral-100 flex items-center gap-1.5 text-neutral-500">
-                    <Phone size={12} className="text-neutral-300" />
-                    <span className="text-[12.5px]">{formatPhone(cb.contact)}</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopy(key, formatPhone(cb.contact));
-                      }}
-                      title="Copy number"
-                      className="p-1 text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 rounded transition-colors"
-                    >
-                      {copiedKey === key ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-                    </button>
-                  </div>
-                )}
+                <div className="mt-auto pt-3 border-t border-neutral-100 flex items-center justify-between gap-2">
+                  <span
+                    className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium ${
+                      overdue ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                    }`}
+                  >
+                    <Clock size={11} /> {formatCallbackAt(cb.at)}
+                  </span>
+                  <span className="text-[11px] text-neutral-400 truncate">{cb.kamName}</span>
+                </div>
               </div>
             );
           })}

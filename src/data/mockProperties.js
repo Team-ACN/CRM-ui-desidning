@@ -4,6 +4,8 @@ export const mockPropertiesStats = [
   { label: 'Sold', value: '3986' },
   { label: 'Hold', value: '2444' },
   { label: 'De-Listed', value: '719' },
+  { label: '5+ Media', value: '142', subLabel: '38 with video' },
+  { label: '1-5 Media', value: '563', subLabel: '210 with video' },
 ];
 
 export const mockProperties = [
