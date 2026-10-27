@@ -3,8 +3,11 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { kml as kmlToGeoJson } from '@tmcw/togeojson';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import {
   ArrowLeft, RefreshCw, UploadCloud, Building2, Check, ChevronDown, Map as MapIcon, Satellite, Copy,
+  ZoomIn, ZoomOut, RotateCw, Save,
 } from 'lucide-react';
 import {
   getEcScrape, updateEcScrape, pushEcScrapeToProjects,
@@ -16,6 +19,56 @@ import { getProject, getProjects, updateProject } from '../../data/mockEdge';
 import SitePlanPageStrip from './SitePlanPagePicker';
 import { sitePlanPlaceholderImageUrl } from './sitePlanPlaceholder';
 
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
+
+// The site plan iframe used to show Chrome's native PDF viewer, which can only fit-to-width or
+// fit-to-height (never crop) and otherwise falls back to whatever zoom the PDF was saved with —
+// so there was no way to make it fill the box the way object-cover fills the other two site plan
+// views. Rendering the first page to a canvas and swapping it for a plain <img> sidesteps that
+// entirely and makes all three site plan views behave identically.
+//
+// These are full architectural sheets (the sample is an A1 page, 2384x1684pt) that only ever get
+// displayed at well under 1000px wide inside the box, so rendering at a flat high scale wastes
+// most of the pixels it produces while being slow/heavy enough on a real machine to look stuck —
+// cap the longest side instead, scaled relative to this specific page's own size.
+const SITE_PLAN_PDF_PREVIEW_MAX_DIM = 1600;
+const sitePlanPdfPreviewCache = new Map();
+function useSitePlanPdfPreview(url) {
+  // { url, status: 'loaded' | 'error', dataUrl? } — scoped to a url so a result left over from
+  // before the url prop changed never gets rendered for the new one while it's still loading.
+  const [result, setResult] = useState(null);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!url || sitePlanPdfPreviewCache.has(url)) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const pdf = await pdfjsLib.getDocument(url).promise;
+        const page = await pdf.getPage(1);
+        const nativeViewport = page.getViewport({ scale: 1 });
+        const scale = Math.min(2, SITE_PLAN_PDF_PREVIEW_MAX_DIM / Math.max(nativeViewport.width, nativeViewport.height));
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        const dataUrl = canvas.toDataURL('image/png');
+        sitePlanPdfPreviewCache.set(url, dataUrl);
+        if (!cancelled) setResult({ url, status: 'loaded', dataUrl });
+      } catch (err) {
+        console.error('Failed to render site plan PDF preview:', err);
+        if (!cancelled) setResult({ url, status: 'error' });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [url, attempt]);
+  const retry = () => setAttempt(a => a + 1);
+  if (!url) return { src: null, failed: false, retry };
+  if (sitePlanPdfPreviewCache.has(url)) return { src: sitePlanPdfPreviewCache.get(url), failed: false, retry };
+  if (result && result.url === url) return { src: result.status === 'loaded' ? result.dataUrl : null, failed: result.status === 'error', retry };
+  return { src: null, failed: false, retry };
+}
+
 // Purely cosmetic — there's no real PDF parsing here, so a freshly-attached site plan is just
 // assumed to look like this many pages until "Save" on the picker resolves it down to one.
 const FAKE_SITE_PLAN_PAGE_COUNT = 4;
@@ -24,6 +77,148 @@ const inp = 'w-full bg-white border border-stone-200 rounded-xl px-4 py-3.5 text
 
 function FieldLabel({ children }) {
   return <label className="text-sm font-medium text-stone-600 mb-1.5 flex items-center gap-1.5">{children}</label>;
+}
+
+// Floating controls for the site plan image box — two small independent pills that sit
+// directly on top of the image (nothing stretches edge-to-edge, so there's no solid bar
+// painted over the artwork). Zoom/rotate are free to play with; Save only lights up once the
+// rotation actually differs from what's persisted (same dirty-state convention as the
+// "Save Specs" button below).
+function SitePlanViewToolbar({ zoom, onZoomIn, onZoomOut, onRotate, dirty, saved, onSave }) {
+  return (
+    <>
+      <div className="absolute bottom-3 left-3 z-10 flex items-center gap-0.5 bg-white/90 backdrop-blur-md rounded-full shadow-lg border border-stone-200/70 p-0.5">
+        <button onClick={onZoomOut} title="Zoom out" className="p-1.5 rounded-full text-stone-500 hover:text-stone-900 hover:bg-stone-100 outline-none focus-visible:ring-2 focus-visible:ring-stone-300 transition-colors">
+          <ZoomOut size={14} />
+        </button>
+        <span className="w-10 text-center text-[11px] font-medium text-stone-500 tabular-nums select-none">
+          {Math.round(zoom * 100)}%
+        </span>
+        <button onClick={onZoomIn} title="Zoom in" className="p-1.5 rounded-full text-stone-500 hover:text-stone-900 hover:bg-stone-100 outline-none focus-visible:ring-2 focus-visible:ring-stone-300 transition-colors">
+          <ZoomIn size={14} />
+        </button>
+        <span className="w-px h-4 bg-stone-200 mx-0.5" />
+        <button onClick={onRotate} title="Rotate" className="p-1.5 rounded-full text-stone-500 hover:text-stone-900 hover:bg-stone-100 outline-none focus-visible:ring-2 focus-visible:ring-stone-300 transition-colors">
+          <RotateCw size={14} />
+        </button>
+      </div>
+      {/* Only ever shown once there's actually something to save — a muted, permanently-disabled
+          Save button sitting there with nothing to do is just clutter on top of the drawing. */}
+      {(dirty || saved) && (
+        <button
+          onClick={onSave}
+          title="Save"
+          className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-stone-300 transition-colors text-white bg-neutral-900 hover:bg-neutral-950"
+        >
+          {saved ? <><Check size={13} /> Saved</> : <><Save size={13} /> Save</>}
+        </button>
+      )}
+    </>
+  );
+}
+
+// Resolves whichever of the three site plan sources this filing currently has — the placeholder
+// multi-page picker, a picked single page, or a real uploaded PDF — down to one thing: a src the
+// box can hand straight to <img>, plus a status, so the box itself never has to know or care
+// where the image came from.
+function useSitePlanImageSrc(e, sitePlanSelectedPage) {
+  const pdfUrl = e && !e.site_plan_multi_page && !e.site_plan_picked_page ? e.site_plan : null;
+  const pdfPreview = useSitePlanPdfPreview(pdfUrl);
+  if (e && e.site_plan_multi_page) {
+    return { src: sitePlanPlaceholderImageUrl(sitePlanSelectedPage, 900, 1273), status: 'ready', retry: pdfPreview.retry };
+  }
+  if (e && e.site_plan_picked_page) {
+    return { src: sitePlanPlaceholderImageUrl(e.site_plan_picked_page, 900, 1273), status: 'ready', retry: pdfPreview.retry };
+  }
+  if (e && e.site_plan) {
+    if (pdfPreview.src) return { src: pdfPreview.src, status: 'ready', retry: pdfPreview.retry };
+    if (pdfPreview.failed) return { src: null, status: 'error', retry: pdfPreview.retry };
+    return { src: null, status: 'loading', retry: pdfPreview.retry };
+  }
+  return { src: null, status: 'empty', retry: pdfPreview.retry };
+}
+
+// The one place that actually puts a site plan image on screen. Whatever produced the src (a
+// placeholder photo or a PDF rendered to a data URL), this is the only code path that does —
+// one way for the box to end up full-bleed, not three slightly different ones that can each
+// drift and leave a gap. A broken image (network image that 404s, blocked domain, etc.) is
+// caught here too, so a failed load always shows a visible retry instead of silently leaving
+// the box's bg-stone-50 showing through, which is what "white space" turns out to look like.
+function SitePlanImageBox({ src, status, zoom, rotation, onZoomIn, onZoomOut, onRotate, dirty, saved, onSave, onRetry }) {
+  // The src that failed, rather than a bare boolean — so a new src (a different filing, or a
+  // retry that changes nothing) is never mistaken for still-broken without needing an effect
+  // just to reset a flag.
+  const [brokenSrc, setBrokenSrc] = useState(null);
+  const [retryTick, setRetryTick] = useState(0);
+  const broken = brokenSrc !== null && brokenSrc === src;
+  const showImage = status === 'ready' && src && !broken;
+  const showError = status === 'error' || (status === 'ready' && broken);
+  function handleRetry() {
+    setBrokenSrc(null);
+    setRetryTick(t => t + 1);
+    onRetry();
+  }
+
+  // object-cover sizes the image to exactly match the box's own W x H — which is only still
+  // "full coverage" for a 0°/180° rotation. At 90°/270° the image's rendered footprint swaps to
+  // H x W, so in a box that isn't square it comes up short on whichever side was the long one,
+  // leaving a visible gap (this is what was actually happening, not a loading/fit bug). Measure
+  // the box and scale the image up by its own aspect ratio to compensate whenever it's turned
+  // sideways, so the rotated image still fully covers it.
+  const boxRef = useRef(null);
+  const [boxSize, setBoxSize] = useState(null);
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (width > 0 && height > 0) setBoxSize({ width, height });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const isSideways = rotation % 180 !== 0;
+  const aspectCompensation = isSideways && boxSize ? Math.max(boxSize.width, boxSize.height) / Math.min(boxSize.width, boxSize.height) : 1;
+
+  return (
+    <div className="relative isolate">
+      <div ref={boxRef} className="w-full h-[460px] overflow-hidden bg-stone-50">
+        {showImage ? (
+          <img
+            key={retryTick}
+            src={src}
+            alt="Site plan"
+            onError={() => setBrokenSrc(src)}
+            className="w-full h-full object-cover transition-transform duration-200"
+            style={{ transform: `scale(${zoom * aspectCompensation}) rotate(${rotation}deg)` }}
+          />
+        ) : showError ? (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-sm text-stone-400">
+            <span>Couldn't load the site plan preview.</span>
+            <button onClick={handleRetry} className="text-stone-600 font-medium underline hover:text-stone-900">
+              Retry
+            </button>
+          </div>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center gap-2 text-sm text-stone-400">
+            <RefreshCw size={14} className="animate-spin" />
+            Loading site plan…
+          </div>
+        )}
+      </div>
+      {showImage && (
+        <SitePlanViewToolbar
+          zoom={zoom}
+          onZoomIn={onZoomIn}
+          onZoomOut={onZoomOut}
+          onRotate={onRotate}
+          dirty={dirty}
+          saved={saved}
+          onSave={onSave}
+        />
+      )}
+    </div>
+  );
 }
 
 function formatDate(d) {
@@ -427,6 +622,9 @@ export default function EcFilingEditorPage() {
   const [addedProjectId, setAddedProjectId] = useState(null);
   const [pendingOverall, setPendingOverall] = useState(null);
   const [sitePlanSelectedPage, setSitePlanSelectedPage] = useState(1);
+  const [sitePlanZoom, setSitePlanZoom] = useState(1);
+  const [sitePlanRotation, setSitePlanRotation] = useState(0);
+  const [sitePlanViewSaved, setSitePlanViewSaved] = useState(false);
   const sitePlanInputRef = useRef(null);
   const refresh = () => setRefreshTick(t => t + 1);
 
@@ -435,9 +633,16 @@ export default function EcFilingEditorPage() {
   // Same deal for the header status toggle — picking a value stages it, Save commits it.
   useEffect(() => setPendingOverall(null), [id]);
   useEffect(() => setSitePlanSelectedPage(1), [id]);
+  // Zoom is a throwaway viewing aid, so it always resets; rotation is the one bit of this view
+  // actually worth persisting (see handleSaveSitePlanView), so it reloads from the record.
+  useEffect(() => {
+    setSitePlanZoom(1);
+    setSitePlanRotation(getEcScrape(id)?.site_plan_rotation || 0);
+  }, [id]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const e = useMemo(() => getEcScrape(id), [id, refreshTick]);
+  const sitePlanImage = useSitePlanImageSrc(e, sitePlanSelectedPage);
 
   if (!e) {
     return (
@@ -594,6 +799,21 @@ export default function EcFilingEditorPage() {
     updateEcScrape(e.id, { site_plan_multi_page: false, site_plan_picked_page: sitePlanSelectedPage });
     refresh();
   }
+  function zoomSitePlanIn() {
+    setSitePlanZoom(z => Math.min(3, +(z + 0.25).toFixed(2)));
+  }
+  function zoomSitePlanOut() {
+    setSitePlanZoom(z => Math.max(0.5, +(z - 0.25).toFixed(2)));
+  }
+  function rotateSitePlan() {
+    setSitePlanRotation(r => (r + 90) % 360);
+  }
+  function handleSaveSitePlanView() {
+    updateEcScrape(e.id, { site_plan_rotation: sitePlanRotation });
+    refresh();
+    setSitePlanViewSaved(true);
+    setTimeout(() => setSitePlanViewSaved(false), 1500);
+  }
   function setManualCheck(value) {
     updateEcScrape(e.id, { status: { overall: value } });
     refresh();
@@ -681,24 +901,20 @@ export default function EcFilingEditorPage() {
             )}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 bg-white border border-stone-200 rounded-2xl overflow-hidden">
-                {e.site_plan_multi_page ? (
-                  <div className="w-full h-[460px]">
-                    <img
-                      src={sitePlanPlaceholderImageUrl(sitePlanSelectedPage, 900, 1273)}
-                      alt={`Page ${sitePlanSelectedPage}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : e.site_plan_picked_page ? (
-                  <div className="w-full h-[460px]">
-                    <img
-                      src={sitePlanPlaceholderImageUrl(e.site_plan_picked_page, 900, 1273)}
-                      alt={`Page ${e.site_plan_picked_page}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : e.site_plan ? (
-                  <iframe src={`${e.site_plan}#toolbar=0&navpanes=0`} title="Site plan" className="w-full h-full min-h-[460px] block" />
+                {sitePlanImage.status !== 'empty' ? (
+                  <SitePlanImageBox
+                    src={sitePlanImage.src}
+                    status={sitePlanImage.status}
+                    zoom={sitePlanZoom}
+                    rotation={sitePlanRotation}
+                    onZoomIn={zoomSitePlanIn}
+                    onZoomOut={zoomSitePlanOut}
+                    onRotate={rotateSitePlan}
+                    dirty={sitePlanRotation !== (e.site_plan_rotation || 0)}
+                    saved={sitePlanViewSaved}
+                    onSave={handleSaveSitePlanView}
+                    onRetry={sitePlanImage.retry}
+                  />
                 ) : (
                   <button
                     onClick={openSitePlanFileChooser}
