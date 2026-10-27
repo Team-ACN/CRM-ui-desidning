@@ -30,6 +30,7 @@ export const AGENT_STATUS_OPTIONS = [
 export const SOURCE_OPTIONS = [
   { value: 'app', label: 'App' },
   { value: 'marketing', label: 'Marketing' },
+  { value: 'legal lead', label: 'Legal Lead' },
 ];
 
 // The request's lifecycle is now just these 4 broad stages (collapsed from the old granular

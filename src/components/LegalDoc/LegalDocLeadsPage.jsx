@@ -5,6 +5,7 @@ import LegalLeadSection from '../shared/LegalLeadSection';
 import AgentIdentityCard from '../shared/AgentIdentityCard';
 import SegmentedToggle from '../shared/SegmentedToggle';
 import WhatsAppLogo from '../shared/WhatsAppLogo';
+import AddLegalLeadPanel from './AddLegalLeadPanel';
 import CallbackCalendarAndTimePicker from '../shared/CallbackCalendarAndTimePicker';
 import { toBusinessSlot } from '../shared/callbackSlots';
 import { CONNECT_TOPIC_OPTIONS } from '../../data/mockAgents';
@@ -124,6 +125,7 @@ const LegalDocLeadsPage = () => {
   const [page, setPage] = useState(1);
   const [copiedKey, setCopiedKey] = useState(null);
   const [selected, setSelected] = useState(null); // { agentId, id } of the request open in the side panel
+  const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [onlyWithNotes, setOnlyWithNotes] = useState(true);
   const [callForm, setCallForm] = useState({
     clientIndex: 0,
@@ -302,6 +304,13 @@ const LegalDocLeadsPage = () => {
         </div>
         <div className="flex items-center gap-3">
           <span className="font-medium text-neutral-400 px-3 py-1 bg-neutral-100 rounded-full">{rows.length} Leads</span>
+          <button
+            type="button"
+            onClick={() => setAddLeadOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-medium text-[13px] transition-colors"
+          >
+            <Plus size={14} /> Add Lead
+          </button>
         </div>
       </header>
 
@@ -827,6 +836,13 @@ const LegalDocLeadsPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {addLeadOpen && (
+        <AddLegalLeadPanel
+          onClose={() => setAddLeadOpen(false)}
+          onCreated={bump}
+        />
       )}
     </div>
   );

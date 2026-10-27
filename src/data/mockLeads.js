@@ -1,3 +1,5 @@
+import { digitsOf } from '../utils/phone';
+
 export const mockLeadsStats = [
   { label: 'Total Leads', value: '16267' },
   { label: 'Not Contacted', value: '1' },
@@ -231,4 +233,42 @@ export function resolveLeadCallback(leadId, kamId) {
   const next = { ...lead.nextCallbacks };
   delete next[kamId];
   lead.nextCallbacks = next;
+}
+
+// Looks up a lead by phone number regardless of formatting — same matching rule as
+// mockAgents.js's findAgentByPhone, so a number can be checked against both lists the same way.
+export function findLeadByPhone(phone) {
+  const digits = digitsOf(phone);
+  return digits.length === 10 ? mockLeads.find((l) => digitsOf(l.contact) === digits) || null : null;
+}
+
+function nextLeadId() {
+  let id;
+  do {
+    id = `LDX${Math.floor(1000 + Math.random() * 9000)}`;
+  } while (mockLeads.some((l) => l.leadId === id));
+  return id;
+}
+
+// Creates a brand-new lead from scratch — used by the Legal Doc "Add Lead" flow when a typed
+// phone number matches no existing agent or lead, so it still lands in the main Leads list
+// (not just the Legal Doc pipeline) with its originating source recorded.
+export function addLead(data) {
+  const lead = {
+    id: Math.max(0, ...mockLeads.map((l) => l.id)) + 1,
+    leadId: nextLeadId(),
+    name: data.name?.trim() || '-',
+    contact: data.contact || '',
+    verificationStatus: 'Not Started',
+    lastTried: 'Never',
+    lastConnect: 'Never',
+    leadStatus: 'No Contact Yet',
+    connectStatus: 'Not Contacted Yet',
+    kam: data.kam || 'Sandeep',
+    source: data.source || 'direct',
+    joinedCommunity: false,
+    onBroadcast: false,
+  };
+  mockLeads.push(lead);
+  return lead;
 }

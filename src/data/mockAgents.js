@@ -1,3 +1,5 @@
+import { digitsOf } from '../utils/phone';
+
 export const mockStats = [
   { label: 'Total Agents', value: '2615' },
   { label: 'Interested', value: '1274' },
@@ -641,5 +643,13 @@ export function addAgent(data) {
   };
   mockAgents.push(agent);
   return agent;
+}
+
+// Looks up an agent by phone number regardless of formatting (+91 98450 11287 vs 9845011287) —
+// used by the Legal Doc "Add Lead" flow to detect whether a typed number already belongs to an
+// agent before creating a fresh lead for it.
+export function findAgentByPhone(phone) {
+  const digits = digitsOf(phone);
+  return digits.length === 10 ? mockAgents.find((a) => digitsOf(a.contact) === digits) || null : null;
 }
 

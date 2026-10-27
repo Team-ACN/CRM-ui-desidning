@@ -3,6 +3,7 @@ import {
   Search,
   X,
   Filter,
+  Plus,
   ChevronRight,
   ChevronLeft,
   Copy,
@@ -18,6 +19,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { MultiFilterSelect, FilterSelect } from '../Edge/FilterControls';
+import AddLegalLeadPanel from './AddLegalLeadPanel';
 import { summarize } from '../../utils/filters';
 import {
   getLegalDocRecords,
@@ -158,6 +160,7 @@ const LegalDocQualifyPage = () => {
   const [page, setPage] = useState(1);
   const [copiedKey, setCopiedKey] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [onlyWithNotes, setOnlyWithNotes] = useState(true);
   const [callForm, setCallForm] = useState({
     connectMedium: 'on call',
@@ -328,6 +331,13 @@ const LegalDocQualifyPage = () => {
         </div>
         <div className="flex items-center gap-3">
           <span className="font-medium text-neutral-400 px-3 py-1 bg-neutral-100 rounded-full">{rows.length} Qualified</span>
+          <button
+            type="button"
+            onClick={() => setAddLeadOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-medium text-[13px] transition-colors"
+          >
+            <Plus size={14} /> Add Qualified Lead
+          </button>
         </div>
       </header>
 
@@ -867,6 +877,14 @@ const LegalDocQualifyPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {addLeadOpen && (
+        <AddLegalLeadPanel
+          stage="qualify"
+          onClose={() => setAddLeadOpen(false)}
+          onCreated={bump}
+        />
       )}
     </div>
   );
