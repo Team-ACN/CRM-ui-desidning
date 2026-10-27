@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, UserPlus, X } from 'lucide-react';
 import LeadsStatsCards from './LeadsStatsCards';
@@ -8,27 +8,33 @@ import { mockLeadsStats, mockLeads } from '../../data/mockLeads';
 
 const LeadsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  
+  // Bumped after a connect is logged from the row panel — updateLead mutates mockLeads in
+  // place, so this is what actually gets the table to re-read it and re-render.
+  const [refreshTick, setRefreshTick] = useState(0);
+
   // Get filter from URL
   const statusFilter = searchParams.get('status');
-  
-  // Filter leads based on URL params
+
+  // Filter leads based on URL params. refreshTick isn't read in the body — it's only here to
+  // force a recompute after updateLead mutates mockLeads in place (plain mutation isn't
+  // otherwise reactive), same trick the EC Filing editor uses for the same reason.
   const filteredLeads = useMemo(() => {
     let result = [...mockLeads];
-    
+
     if (statusFilter) {
       const statusMap = {
         'form_filled': (l) => l.verificationStatus !== 'Not Started',
         'form_skipped': (l) => l.verificationStatus === 'Not Started' && l.leadStatus === 'Not Interested',
       };
-      
+
       if (statusMap[statusFilter]) {
         result = result.filter(statusMap[statusFilter]);
       }
     }
-    
+
     return result;
-  }, [statusFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, refreshTick]);
 
   // Clear filters
   const clearFilters = () => {
@@ -102,7 +108,7 @@ const LeadsPage = () => {
         )}
         
         <LeadsFilters />
-        <LeadsTable leads={filteredLeads} />
+        <LeadsTable leads={filteredLeads} onLeadChanged={() => setRefreshTick((t) => t + 1)} />
       </div>
     </div>
   );

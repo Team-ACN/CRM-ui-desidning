@@ -594,3 +594,52 @@ export function resolveCallback(agentId, kamId) {
   agent.nextCallbacks = next;
 }
 
+function nextAgentId() {
+  const max = mockAgents.reduce((m, a) => {
+    const n = parseInt(String(a.agentId || '').replace('CPC', ''), 10);
+    return Number.isFinite(n) && n > m ? n : m;
+  }, 980);
+  return `CPC${max + 1}`;
+}
+
+// Promotes a verified lead into a real agent record — used by the Leads panel's "Verify & Create
+// Agent" action. Takes whatever the verification form collected and fills in the rest of the
+// fields AgentsTable/AgentDetailsPage expect so the new row renders the same as any other agent.
+export function addAgent(data) {
+  const agent = {
+    id: Math.max(0, ...mockAgents.map((a) => a.id)) + 1,
+    agentId: nextAgentId(),
+    name: data.name,
+    contact: data.phone,
+    email: data.email || '',
+    address: data.address || '',
+    rera: data.rera || '',
+    workingAs: data.workingAs || 'individual',
+    firm: data.workingAs === 'firm' ? data.firm || '' : '',
+    firmSize: data.workingAs === 'firm' ? data.firmSize || '' : '',
+    kam: data.kam || '',
+    areaOfOperation: data.areaOfOperation || [],
+    businessCategory: data.businessCategory || [],
+    yearsOfExperience: data.yearsOfExperience || '',
+    alternateNumber: data.alternateNumber || '',
+    gst: data.gst || '',
+    heardFrom: data.heardFrom || '',
+    bio: data.bio || '',
+    profileImageUrl: data.profileImageUrl || '',
+    languages: data.languages || [],
+    leadSource: data.leadSource || 'direct',
+    plan: 'Trial',
+    credits: 100,
+    renewal: 'In 29 days',
+    inventories: 0,
+    enquiriesDid: 0,
+    enquiriesRec: 0,
+    lastConnected: 'Never',
+    lastTried: 'Never',
+    lastStatus: 'No Contact',
+    agentStatus: 'Interested',
+  };
+  mockAgents.push(agent);
+  return agent;
+}
+

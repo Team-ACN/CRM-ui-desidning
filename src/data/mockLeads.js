@@ -23,7 +23,31 @@ export const mockLeads = [
     kam: 'Sandeep',
     source: 'direct',
     joinedCommunity: false,
-    onBroadcast: false
+    onBroadcast: false,
+    connectHistory: [
+      {
+        id: 'ch_lead_1001',
+        timestamp: Date.now() - 1000 * 60 * 60 * 24 * 2,
+        kamId: 'sandeep',
+        kamName: 'Sandeep',
+        direction: 'outbound',
+        connectMedium: 'on call',
+        connection: 'call back',
+        note: 'Asked to call back after work hours.',
+        callbackAt: Date.now() - 1000 * 60 * 60 * 20,
+      },
+      {
+        id: 'ch_lead_1002',
+        timestamp: Date.now() - 1000 * 60 * 32,
+        kamId: 'sandeep',
+        kamName: 'Sandeep',
+        direction: 'outbound',
+        connectMedium: 'on call',
+        connection: 'rnr1',
+        note: '',
+        callbackAt: null,
+      },
+    ],
   },
   {
     id: 2,
@@ -161,3 +185,50 @@ export const mockLeads = [
     onBroadcast: false
   }
 ];
+
+// Mutates the in-memory list in place (same pattern as updateEcScrape) so LeadsTable's row
+// panel can log a connect outcome and have it show up immediately in the table/stats.
+export function updateLead(id, patch) {
+  const lead = mockLeads.find((l) => l.id === id);
+  if (!lead) return null;
+  Object.assign(lead, patch);
+  return lead;
+}
+
+// Same shape and behavior as mockAgents.js's addConnectHistoryEntry — appends a history entry
+// and, for a "call back" outcome, records that KAM's pending callback.
+export function addLeadConnectHistoryEntry(leadId, entry) {
+  const lead = mockLeads.find((l) => l.id === leadId);
+  if (!lead) return null;
+
+  const newEntry = {
+    id: `ch_${Date.now()}`,
+    timestamp: Date.now(),
+    direction: '',
+    connectMedium: '',
+    connection: '',
+    note: '',
+    callbackAt: null,
+    ...entry,
+  };
+
+  lead.connectHistory = [...(lead.connectHistory || []), newEntry];
+
+  if (newEntry.connection === 'call back' && newEntry.callbackAt && newEntry.kamId) {
+    lead.nextCallbacks = {
+      ...(lead.nextCallbacks || {}),
+      [newEntry.kamId]: { at: newEntry.callbackAt, entryId: newEntry.id },
+    };
+  }
+
+  return newEntry;
+}
+
+// Clears one KAM's pending callback for a lead — mirrors mockAgents.js's resolveCallback.
+export function resolveLeadCallback(leadId, kamId) {
+  const lead = mockLeads.find((l) => l.id === leadId);
+  if (!lead || !lead.nextCallbacks) return;
+  const next = { ...lead.nextCallbacks };
+  delete next[kamId];
+  lead.nextCallbacks = next;
+}

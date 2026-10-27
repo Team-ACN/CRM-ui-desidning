@@ -23,7 +23,12 @@ const PropertiesFilters = () => {
          <input type="checkbox" id="delist" className="rounded border-gray-300" />
          <label htmlFor="delist" className="text-sm font-medium text-gray-700">To Be De-Listed</label>
       </div>
-      
+
+      <div className="flex items-center gap-2">
+         <input type="checkbox" id="without-media" className="rounded border-gray-300" />
+         <label htmlFor="without-media" className="text-sm font-medium text-gray-700">Without Media</label>
+      </div>
+
       <button className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700">
         <Filter size={16} />
         Filter

@@ -1,7 +1,18 @@
-import React from 'react';
-import { Phone, MessageSquare, User, ChevronDown, CheckSquare, Square } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronDown, Square, MessageSquare } from 'lucide-react';
+import { updateLead } from '../../data/mockLeads';
+import LeadConnectPanel from './LeadConnectPanel';
 
-const LeadsTable = ({ leads }) => {
+const LeadsTable = ({ leads, onLeadChanged }) => {
+  // Which lead's connect panel is open — one icon per row instead of three, opening straight
+  // into logging the outcome (Connected/RNR/Call Back) rather than a menu of inert links.
+  const [connectLead, setConnectLead] = useState(null);
+
+  const handleLeadUpdated = (patch) => {
+    updateLead(connectLead.id, patch);
+    onLeadChanged?.();
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
@@ -21,12 +32,12 @@ const LeadsTable = ({ leads }) => {
               <th className="px-4 py-3 min-w-[120px]">Lead Source</th>
               <th className="px-4 py-3 min-w-[100px]">Joined Community</th>
               <th className="px-4 py-3 min-w-[100px]">On Broadcast</th>
-              <th className="px-4 py-3 min-w-[120px]">Actions</th>
+              <th className="px-4 py-3 min-w-[80px] text-center sticky right-0 z-20 bg-gray-50 shadow-[inset_1px_0_0_0_rgb(229,231,235)]">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {leads.map((lead) => (
-              <tr key={lead.id} className="hover:bg-gray-50">
+              <tr key={lead.id} className="group hover:bg-gray-50">
                 <td className="px-4 py-3"><input type="checkbox" className="rounded border-gray-300" /></td>
                 <td className="px-4 py-3 text-gray-600">{lead.leadId}</td>
                 <td className="px-4 py-3 text-gray-900">{lead.name}</td>
@@ -79,18 +90,15 @@ const LeadsTable = ({ leads }) => {
                  <td className="px-4 py-3 text-center">
                   <Square size={16} className="text-gray-300 inline-block" />
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <button className="p-1.5 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors">
-                      <Phone size={14} />
-                    </button>
-                    <button className="p-1.5 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors">
-                      <MessageSquare size={14} />
-                    </button>
-                     <button className="p-1.5 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors">
-                      <User size={14} />
-                    </button>
-                  </div>
+                <td className="px-4 py-3 text-center sticky right-0 z-10 bg-white group-hover:bg-gray-50 shadow-[inset_1px_0_0_0_rgb(229,231,235)]">
+                  <button
+                    onClick={() => setConnectLead(lead)}
+                    aria-label="Log a connect"
+                    title="Log a connect"
+                    className="p-1.5 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors"
+                  >
+                    <MessageSquare size={14} />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -110,6 +118,10 @@ const LeadsTable = ({ leads }) => {
           ))}
         </div>
       </div>
+
+      {connectLead && (
+        <LeadConnectPanel lead={connectLead} onClose={() => setConnectLead(null)} onLeadUpdated={handleLeadUpdated} />
+      )}
     </div>
   );
 };
