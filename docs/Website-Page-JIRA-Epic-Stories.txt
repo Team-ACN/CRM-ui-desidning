@@ -1,0 +1,218 @@
+================================================================
+JIRA PLAN — WEBSITE PAGE IN CMS (TOP BANNER)
+Source: docs/website-page-cms-prd.md
+Written: 2026-10-05
+================================================================
+
+EPIC
+Name: Website page templates with Top Banner hero
+Key (suggested): WEB
+
+Summary
+The CMS team builds Website page templates for cohorts. Every Website
+template has one Top Banner: a full-width hero image behind the header
+and search box. The team uploads it per template. No template can be
+saved without it. No code change, no release.
+
+What the Top Banner is
+- One image per template. All messaging sits in the image.
+- Size 1440x378. Safe area 600x378 on the right, 120px from the right
+  edge on desktop, 32px on smaller screens.
+- The image stays right-anchored; the left side crops on smaller
+  screens.
+- Optional click-through link. Alt text for accessibility.
+
+Three rules (hold for every Website template)
+1. Every Website template has exactly one Top Banner, always first.
+2. The Top Banner cannot be removed, moved or duplicated.
+3. A Website template cannot be saved (draft or review) until the Top
+   Banner has an image.
+
+Epic done when
+- A new website hero goes from brief to approved template in under 1
+  working day, with no release.
+- No Website template can exist without a hero image.
+- The CMS website preview matches the real website header and hero.
+
+Out of scope (v1)
+Rotating / multiple hero images · separate desktop and mobile images ·
+editing hero text or buttons in the CMS · search box redesign · phone
+preview.
+
+Dependency (separate epic)
+Live website reads the cohort's Website template and renders its Top
+Banner. Not part of this CMS epic.
+
+Stories
+1. CMS — Website Page in template list
+2. CMS — Top Banner auto-added and locked
+3. CMS — Top Banner required to save
+4. CMS — Top Banner settings panel UI
+5. CMS — Website preview matches the real site
+6. CMS — Template list: remove live switch
+7. CMS — Top Banner image upload backend
+8. CMS — Website template save backend
+
+
+================================================================
+1. CMS — Website Page in template list
+================================================================
+As a CMS manager, I want a Website Page option in the templates screen
+so that I can build templates for the website the same way I do for
+the app.
+
+Done
+- Page switcher shows Home Page, Properties Page, Website Page.
+- Website Page lists only Website templates, in priority order.
+- Create Template on Website Page opens the builder in Website mode
+  (browser-style preview, not the phone frame).
+- Name, description, target cohorts, save as draft and submit for
+  review work as on the other pages.
+- Website templates appear in Manage Priority, ranked with each other
+  only.
+- Search filters Website templates by name.
+- Empty state when there are no Website templates, with Create
+  Template.
+
+
+================================================================
+2. CMS — Top Banner auto-added and locked
+================================================================
+As a CMS manager, I want every Website template to start with the hero
+in place so that I never forget it or break the page layout.
+
+Done
+- A new Website template opens with the Top Banner in the first slot.
+- An existing Website template without one gets it added on open.
+- The Top Banner has no remove action. Removing it is blocked in the
+  builder and rejected by the backend (story 8).
+- It is always first. Other widgets cannot be placed above it and it
+  cannot be dragged.
+- Only one per template. A second one can never be added.
+- It is not listed in the widget library.
+- It does not appear for Home or Properties templates.
+- Other widgets are added below it as usual.
+- Layout summary in template settings lists "Top Banner (Hero)" first.
+
+
+================================================================
+3. CMS — Top Banner required to save
+================================================================
+As a reviewer, I want every Website template to arrive with a hero
+image so that nothing goes live with an empty top of page.
+
+Done
+- Builder header shows a checklist: Name, Cohorts, Widgets, Top Banner.
+- Top Banner is ticked only when an image is uploaded.
+- Widgets is ticked only when at least one widget other than the Top
+  Banner is added.
+- Save draft and Submit for review are disabled until all items are
+  ticked.
+- Before upload, the hero shows a placeholder asking for the image.
+- Removing the image un-ticks Top Banner and disables saving again.
+- The same check runs on the backend (story 8); the UI is not the only
+  guard.
+
+
+================================================================
+4. CMS — Top Banner settings panel UI
+================================================================
+As a CMS manager, I want clear guidance and a true preview when I
+upload the hero so that the image works on every screen first time.
+
+Done
+- Clicking the hero on the canvas opens its settings in the right
+  panel.
+- Guidance box: size 1440x378, JPG / PNG / WebP, max 2 MB, keep text
+  and logos inside the 600x378 safe area on the right (120px from the
+  edge on desktop, 32px on smaller screens), left side crops.
+- Preview of the uploaded image with the safe area outlined.
+- Desktop / Tablet switch. Tablet shows the right-anchored crop at
+  803px wide.
+- Upload, Replace and Remove.
+- Warnings (upload still allowed):
+  - file type not JPG / PNG / WebP,
+  - file over 2 MB,
+  - aspect ratio more than 2% off 1440:378 ("it will be cropped"),
+  - ratio fine but narrower than 1440px ("may look blurry").
+- A matching image shows "1440x378 · matches spec".
+- A file that is not an image shows an error and nothing is saved.
+- Click-through URL (optional). Must be http(s) when filled.
+- Alt text field.
+- Section heading field is not shown for the Top Banner.
+
+
+================================================================
+5. CMS — Website preview matches the real site
+================================================================
+As a CMS manager, I want the website preview to look like the real
+site so that what I approve is what agents see.
+
+Done
+- Header matches the website: ACN logo; My Business, Properties,
+  Services (dropdown), Edge (dropdown); "+ Add Property" button; coins
+  balance; notifications; profile avatar.
+- A dark fade at the top keeps header text readable on any image.
+- The Top Banner image fills the hero behind the header, right-anchored.
+- The search box sits over the bottom edge of the hero. Widgets start
+  below it.
+- Removed from the preview: the ticker strip, the blue gradient hero
+  and the "Search best inventories..." headline.
+- Selected hero shows a clear selection outline and a "Top banner"
+  label.
+- Footer unchanged.
+
+
+================================================================
+6. CMS — Template list: remove live switch
+================================================================
+As a reviewer, I want templates to go live only through Manage
+Priority so that nothing goes live by an accidental click in the list.
+
+Done
+- Template rows no longer have an on/off switch.
+- Each row shows priority, name, cohort, widget count, agent count,
+  status (Live / Not Live), View and Edit.
+- Going live happens in Manage Priority via "Preview to Activate".
+- Applies to Home, Properties and Website templates.
+
+
+================================================================
+7. CMS — Top Banner image upload backend
+================================================================
+As a CMS manager, I want hero images stored safely so that the website
+can load them quickly and reliably.
+
+Done
+- Upload endpoint accepts JPG / PNG / WebP up to 2 MB. Anything else
+  is rejected with a clear message.
+- Server reads the real file type and pixel size; it does not trust the
+  browser.
+- Image is stored on the CDN and the endpoint returns its URL plus
+  width, height, type and size.
+- Replacing an image does not delete the old one while a live template
+  still uses it.
+- Upload is restricted to CMS users with edit rights.
+- Upload failure shows a retry in the panel; the template is not
+  changed.
+
+
+================================================================
+8. CMS — Website template save backend
+================================================================
+As a reviewer, I want the backend to enforce the hero rules so that a
+broken Website template can never be saved, even outside the UI.
+
+Done
+- Website template stores the Top Banner as its first widget with:
+  image URL, image metadata, click-through URL, alt text.
+- Save (draft or review) is rejected when:
+  - the Top Banner is missing, or there is more than one,
+  - it is not the first widget,
+  - it has no image URL.
+- Click-through URL, when present, must be http(s).
+- Older Website templates without a Top Banner load with an empty one
+  added, and cannot be saved until an image is set.
+- Approve and go-live keep the same checks.
+- Open: does the Top Banner count toward the 5-widget limit? (Today it
+  does, leaving 4 widgets.)

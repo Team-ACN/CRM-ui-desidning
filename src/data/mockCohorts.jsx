@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, BarChart3, Mail, MessageSquare, Image, Search, Building2, Key, Megaphone, Sparkles, PanelTop } from 'lucide-react';
+import { Trash2, BarChart3, Mail, MessageSquare, Image, Search, Building2, Key, Megaphone, Sparkles, PanelTop, Rows3 } from 'lucide-react';
 
 export const mockCohorts = [
   {
@@ -138,6 +138,17 @@ export const availableWidgets = [
     description: 'Asset Type, Configuration, Zone filters',
     icon: <Search size={16} />,
     hasConfig: true,
+    // Home property sections are engine-generated now; manual sections only feed the city fallback.
+    legacyOn: ['HOME'],
+  },
+  {
+    type: 'auto_property_feed',
+    label: 'Property Feed (auto)',
+    description: 'Engine-generated sections, 10–12 per agent',
+    icon: <Rows3 size={16} />,
+    hasConfig: false,
+    pageTypes: ['HOME'],
+    singleton: true,
   },
   {
     type: 'new_resale',
@@ -288,6 +299,7 @@ export const mockComponents = [
     createdAt: '2023-11-01T10:00:00Z',
     config: {
       heading: 'Festive Offers',
+      slot: { mode: 'after', n: 2, cohortIds: [], city: 'Bengaluru', assetGroup: '', startDate: '2026-10-20', endDate: '2026-11-05', capPerDay: 2 },
       items: [
         { id: 'b1', imageUrl: 'https://placehold.co/600x200/png?text=Diwali+Offer+1', linkUrl: '' },
         { id: 'b2', imageUrl: 'https://placehold.co/600x200/png?text=Diwali+Offer+2', linkUrl: '' },
@@ -320,6 +332,7 @@ export const mockComponents = [
     createdAt: '2023-11-10T14:20:00Z',
     config: {
       heading: 'Limited Time Offer',
+      slot: { mode: 'every', n: 4, cohortIds: [], city: 'Bengaluru', assetGroup: '', startDate: '', endDate: '', capPerDay: 3 },
       items: [
         { id: 'a1', imageUrl: 'https://placehold.co/600x300/png?text=Flash+Sale+20%OFF', linkUrl: 'https://acn.com/sale' },
         { id: 'a2', imageUrl: 'https://placehold.co/600x300/png?text=Zero+Brokerage', linkUrl: 'https://acn.com/zerobrokerage' },

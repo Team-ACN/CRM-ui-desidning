@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Box } from 'lucide-react';
 import { availableWidgets } from '../../data/mockCohorts';
 import WidgetSettingsPanel from './WidgetSettingsPanel';
+import { slotErrors, DEFAULT_SLOT } from './bannerSlot';
 import { Button, fieldClass, labelClass, hintClass, cardClass, pressable } from '../cms-ui';
 
-const ComponentBuilderModal = ({ isOpen, onClose, onSave, pageType, existingComponents = [], initialSelectedType }) => {
+const ComponentBuilderModal = ({ isOpen, onClose, onSave, pageType, existingComponents = [], initialSelectedType, cohorts = [] }) => {
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [widgetData, setWidgetData] = useState(null);
@@ -50,8 +51,11 @@ const ComponentBuilderModal = ({ isOpen, onClose, onSave, pageType, existingComp
     setWidgetData(updatedWidget);
   };
 
+  const hasSlotRules = pageType === 'HOME' && ['banner_carousel', 'advertisement'].includes(selectedType);
+  const slotInvalid = hasSlotRules && Object.keys(slotErrors({ ...DEFAULT_SLOT, ...widgetData?.config?.slot })).length > 0;
+
   const handleSave = () => {
-    if (!name.trim() || !selectedType || !widgetData) return;
+    if (!name.trim() || !selectedType || !widgetData || slotInvalid) return;
 
     let nextNum = 1;
     if (existingComponents && existingComponents.length > 0) {
@@ -105,7 +109,7 @@ const ComponentBuilderModal = ({ isOpen, onClose, onSave, pageType, existingComp
               variant="primary"
               icon={Save}
               onClick={handleSave}
-              disabled={!name.trim() || !selectedType}
+              disabled={!name.trim() || !selectedType || slotInvalid}
             >
               Save component
             </Button>
@@ -191,6 +195,8 @@ const ComponentBuilderModal = ({ isOpen, onClose, onSave, pageType, existingComp
                       onUpdate={handleSettingsUpdate}
                       hideHeader={true}
                       isComponentBuilder={true}
+                      pageType={pageType}
+                      cohorts={cohorts}
                     />
                   </div>
                 </div>

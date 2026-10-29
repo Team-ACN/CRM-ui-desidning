@@ -3,7 +3,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { Puzzle, Zap, SlidersHorizontal } from 'lucide-react';
 import { availableWidgets } from '../../data/mockCohorts';
 
-const DraggableWidget = ({ widget, title, subtitle, icon, isComponent, config }) => {
+const DraggableWidget = ({ widget, title, subtitle, icon, isComponent, config, legacy }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `library-${isComponent ? widget.id : widget.type}`,
     data: { 
@@ -34,7 +34,10 @@ const DraggableWidget = ({ widget, title, subtitle, icon, isComponent, config })
         {icon || widget.icon || <Puzzle size={16} strokeWidth={1.75} />}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="text-[14px] font-medium text-label truncate">{title}</p>
+        <p className="flex items-center gap-1.5 text-[14px] font-medium text-label">
+          <span className="truncate">{title}</span>
+          {legacy && <span className="shrink-0 h-4 px-1.5 rounded-full bg-fill text-[10px] font-medium text-warning">Legacy</span>}
+        </p>
         <p className="text-[12px] text-secondary truncate">{subtitle}</p>
       </div>
     </div>
@@ -61,7 +64,7 @@ const WIDGET_GROUPS = [
   },
 ];
 
-const WidgetGroup = ({ group, widgets }) => (
+const WidgetGroup = ({ group, widgets, pageType }) => (
   <section>
     <div className="px-3 mb-2">
       <h4 className="flex items-center gap-1.5 text-[13px] font-medium text-secondary">
@@ -78,6 +81,7 @@ const WidgetGroup = ({ group, widgets }) => (
           title={widget.label}
           subtitle={widget.description}
           icon={widget.icon}
+          legacy={widget.legacyOn?.includes(pageType)}
         />
       ))}
     </div>
@@ -100,7 +104,7 @@ const WidgetLibrary = ({ pageType }) => {
         {WIDGET_GROUPS.map((group) => {
           const groupWidgets = pageWidgets.filter(group.match);
           return groupWidgets.length > 0 && (
-            <WidgetGroup key={group.key} group={group} widgets={groupWidgets} />
+            <WidgetGroup key={group.key} group={group} widgets={groupWidgets} pageType={pageType} />
           );
         })}
       </div>

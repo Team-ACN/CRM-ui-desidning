@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Plus, ArrowUpDown, LayoutTemplate, Activity, Users, Layers, Lock, MessageSquareDashed, Check } from 'lucide-react';
+import { Plus, ArrowUpDown, LayoutTemplate, Activity, Users, Layers, Lock, MessageSquareDashed, Check, Rows3 } from 'lucide-react';
 import CohortCard from './CohortCard';
 import CreateCohortModal from './CreateCohortModal';
 import LiveOverview from './LiveOverview';
@@ -15,12 +15,15 @@ import PopupBuilder from '../Popups/PopupBuilder';
 import PopupPriorityManager from '../Popups/PopupPriorityManager';
 import PopupViewModal from '../Popups/PopupViewModal';
 import { usePopups, createEmptyPopup } from '../Popups/usePopups';
+import HomeFeedTab from '../HomeFeed/HomeFeedTab';
+import { useHomeFeed } from '../HomeFeed/useHomeFeed';
 import { Button, SegmentedControl, SearchField, ListGroup, pageTitleClass } from '../cms-ui';
 import { mockCohorts as initialCohorts, mockTemplates as initialTemplates, mockComponents as initialComponents } from '../../data/mockCohorts';
 
 const TABS = [
   { id: 'templates', label: 'Templates', icon: <LayoutTemplate size={16} strokeWidth={1.75} /> },
   { id: 'components', label: 'Components', icon: <Layers size={16} strokeWidth={1.75} /> },
+  { id: 'homeFeed', label: 'Home Feed', icon: <Rows3 size={16} strokeWidth={1.75} /> },
   { id: 'popups', label: 'Popups', icon: <MessageSquareDashed size={16} strokeWidth={1.75} /> },
   { id: 'cohorts', label: 'Cohorts', icon: <Users size={16} strokeWidth={1.75} /> },
   { id: 'overview', label: 'Overview', icon: <Activity size={16} strokeWidth={1.75} />, locked: true },
@@ -50,6 +53,8 @@ const CohortsPage = () => {
   const [editingPopup, setEditingPopup] = useState(null);
   const [priorityPopups, setPriorityPopups] = useState([]);
   const [viewingPopup, setViewingPopup] = useState(null);
+
+  const homeFeed = useHomeFeed();
   
   // Ref to communicate back to the template builder active widget
   const onInlineComponentCreatedRef = useRef(null);
@@ -265,6 +270,7 @@ const CohortsPage = () => {
           pageType={pageType}
           initialSelectedType={selectedBaseWidget}
           existingComponents={components}
+          cohorts={cohorts}
           onSave={(newComponent) => {
             setComponents((prev) => [...prev, newComponent]);
             setIsComponentModalOpen(false);
@@ -353,7 +359,7 @@ const CohortsPage = () => {
       {/* Main Content Area */}
       <main className="max-w-6xl mx-auto mt-8">
         {/* In-page toolbar: Page Switcher + Actions — the Popups tab brings its own */}
-        {activeTab !== 'popups' && (
+        {activeTab !== 'popups' && activeTab !== 'homeFeed' && (
         <div className="px-8 mb-6 flex items-center justify-between gap-4">
           {/* Page Context Switcher (Segmented Control) — hidden on Cohorts tab */}
           {activeTab !== 'cohorts' ? (
@@ -414,6 +420,8 @@ const CohortsPage = () => {
             onSetStatus={setStatus}
           />
         )}
+
+        {activeTab === 'homeFeed' && <HomeFeedTab feed={homeFeed} onToast={showToast} />}
 
         {activeTab === 'overview' && (
           <LiveOverview
@@ -495,6 +503,7 @@ const CohortsPage = () => {
         onClose={() => setCurrentView('tabs')}
         pageType={pageType}
         existingComponents={components}
+        cohorts={cohorts}
         onSave={(newComponent) => {
           setComponents((prev) => [...prev, newComponent]);
           setCurrentView('tabs');

@@ -131,6 +131,19 @@ const WidgetInner = ({ widget }) => {
         </div>
       );
 
+    case 'auto_property_feed':
+      return (
+        <div className="p-2 space-y-1.5">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-fill rounded-md p-1.5">
+              <div className="w-20 h-2 bg-fill-strong rounded-full mb-1" />
+              <div className="w-14 h-1.5 bg-fill-strong rounded-full" />
+            </div>
+          ))}
+          <p className="text-[8px] text-tertiary text-center">10–12 sections, generated per agent</p>
+        </div>
+      );
+
     default:
       return (
         <div className="h-12 bg-fill rounded-md flex items-center justify-center m-2">
