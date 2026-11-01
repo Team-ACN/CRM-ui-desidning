@@ -129,9 +129,8 @@ function ComboSelect({ label, value, onChange, optionsList, placeholder }) {
                 key={o}
                 type="button"
                 onClick={() => select(o)}
-                className={`w-full text-left px-3 py-2 text-[13px] transition-colors flex items-center justify-between ${
-                  value === o ? 'bg-neutral-50 font-semibold text-neutral-900' : 'text-neutral-700 hover:bg-neutral-50'
-                }`}
+                className={`w-full text-left px-3 py-2 text-[13px] transition-colors flex items-center justify-between ${value === o ? 'bg-neutral-50 font-semibold text-neutral-900' : 'text-neutral-700 hover:bg-neutral-50'
+                  }`}
               >
                 {o}
                 {value === o && <Check size={13} className="text-emerald-600" />}
@@ -329,10 +328,9 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
               <span>
                 {loanCase.referralSource ? (
                   <span
-                    className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                      LOAN_REFERRAL_SOURCE_STYLES[loanCase.referralSource] ||
+                    className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${LOAN_REFERRAL_SOURCE_STYLES[loanCase.referralSource] ||
                       'bg-neutral-50 text-neutral-600 border border-neutral-200'
-                    }`}
+                      }`}
                   >
                     {loanCase.referralSource}
                   </span>
@@ -377,9 +375,8 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Stage</span>
                 <span
-                  className={`inline-flex px-2.5 py-1 rounded-full text-[12px] font-medium ${
-                    LOAN_CASE_STAGE_STYLES[loanCase.stage] || 'bg-neutral-100 text-neutral-600'
-                  }`}
+                  className={`inline-flex px-2.5 py-1 rounded-full text-[12px] font-medium ${LOAN_CASE_STAGE_STYLES[loanCase.stage] || 'bg-neutral-100 text-neutral-600'
+                    }`}
                 >
                   {loanCase.stage || 'Login'}
                 </span>
@@ -406,11 +403,10 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
                         key={st}
                         type="button"
                         onClick={() => setDraftStage(st)}
-                        className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${
-                          isSelected
-                            ? LOAN_CASE_STAGE_STYLES[st] || 'bg-neutral-900 text-white'
-                            : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
-                        }`}
+                        className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors cursor-pointer ${isSelected
+                          ? LOAN_CASE_STAGE_STYLES[st] || 'bg-neutral-900 text-white'
+                          : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+                          }`}
                       >
                         {st}
                       </button>
@@ -489,9 +485,8 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
                         <div key={i} className="border border-neutral-200 rounded-2xl p-4">
                           <div className="flex items-center justify-between gap-2 flex-wrap">
                             <span
-                              className={`inline-flex px-2.5 py-1 rounded-full text-[12px] font-medium ${
-                                LOAN_CASE_STAGE_STYLES[n.stage] || 'bg-neutral-100 text-neutral-600'
-                              }`}
+                              className={`inline-flex px-2.5 py-1 rounded-full text-[12px] font-medium ${LOAN_CASE_STAGE_STYLES[n.stage] || 'bg-neutral-100 text-neutral-600'
+                                }`}
                             >
                               {n.stage}
                             </span>
@@ -667,11 +662,10 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
                           : [...f.topics, o.value],
                       }))
                     }
-                    className={`px-3 py-1.5 rounded-full text-[12px] border transition-colors ${
-                      isSelected
-                        ? `${c.bg} ${c.text} ${c.border} font-semibold`
-                        : 'bg-white text-neutral-500 border-neutral-200 font-medium hover:bg-neutral-100'
-                    }`}
+                    className={`px-3 py-1.5 rounded-full text-[12px] border transition-colors ${isSelected
+                      ? `${c.bg} ${c.text} ${c.border} font-semibold`
+                      : 'bg-white text-neutral-500 border-neutral-200 font-medium hover:bg-neutral-100'
+                      }`}
                   >
                     {topicLabel(o.value)}
                   </button>
@@ -706,11 +700,10 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
               <button
                 type="button"
                 onClick={() => setOnlyWithNotes((v) => !v)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-medium transition-colors ${
-                  onlyWithNotes
-                    ? 'bg-white border-neutral-900 text-neutral-900 font-semibold'
-                    : 'bg-neutral-100 border-transparent text-neutral-500 hover:bg-neutral-200'
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-medium transition-colors ${onlyWithNotes
+                  ? 'bg-white border-neutral-900 text-neutral-900 font-semibold'
+                  : 'bg-neutral-100 border-transparent text-neutral-500 hover:bg-neutral-200'
+                  }`}
               >
                 <StickyNote size={11} /> {onlyWithNotes ? 'Calls with notes' : 'All calls'}
               </button>
@@ -741,8 +734,8 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
                             {entryStatus === 'rnr' || (typeof entryStatus === 'string' && entryStatus.startsWith('rnr'))
                               ? `RNR ${rnrOrdinals.get(entry) || entryStatus.replace('rnr', '') || ''}`
                               : entryStatus === 'call_back' || entryStatus === 'call back'
-                              ? 'Call Back'
-                              : 'Connected'}
+                                ? 'Call Back'
+                                : 'Connected'}
                           </span>
                           <span className="flex items-center justify-center w-8 h-8 rounded-full bg-neutral-100 text-neutral-500 shrink-0">
                             {entry.connectMedium === 'on whatsapp' ? <WhatsAppLogo size={18} /> : <Phone size={15} />}
