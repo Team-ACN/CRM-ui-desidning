@@ -80,3 +80,12 @@
     backdrop-filter: none !important;
   }
 }
+
+/* Keeps a container scrollable (vertically and horizontally) without showing the scrollbar track. */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -27,6 +27,9 @@ import LegalDocQualifyPage from './components/LegalDoc/LegalDocQualifyPage';
 import LegalDocServicePage from './components/LegalDoc/LegalDocServicePage';
 import LegalDocHomePage from './components/LegalDoc/LegalDocHomePage';
 import LegalDocPage from './components/LegalDoc/LegalDocPage';
+import LoanAgentsPage from './components/Loan/LoanAgentsPage';
+import LoanLeadsPage from './components/Loan/LoanLeadsPage';
+import LoanCasesPage from './components/Loan/LoanCasesPage';
 
 function App() {
   return (
@@ -64,6 +67,10 @@ function App() {
           <Route path="/legal-doc/service" element={<LegalDocServicePage />} />
           <Route path="/legal-doc/agent/:id" element={<LegalDocPage />} />
           <Route path="/legal-doc/:stage" element={<LegalDocListPage />} />
+          <Route path="/loan" element={<Navigate to="/loan/agents" replace />} />
+          <Route path="/loan/agents" element={<LoanAgentsPage />} />
+          <Route path="/loan/leads" element={<LoanLeadsPage />} />
+          <Route path="/loan/cases" element={<LoanCasesPage />} />
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </Layout>

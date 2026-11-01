@@ -29,7 +29,7 @@ const STATUS_PICKER_OPTIONS = [
 // Pass `status` to show the badge; pass `onUpdateStatus(newStatus, noteText)` too to make it
 // editable in place — picking a status no longer commits immediately, it just stages a draft;
 // Save commits the status plus whatever note was typed alongside it in one call.
-const AgentIdentityCard = ({ name, agentId, contact, kam, status, onUpdateStatus, children }) => {
+const AgentIdentityCard = ({ name, agentId, contact, kam, status, onUpdateStatus, statusLabel = 'Legal Status', children }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draftStatus, setDraftStatus] = useState(status);
   const [noteText, setNoteText] = useState('');
@@ -62,7 +62,7 @@ const AgentIdentityCard = ({ name, agentId, contact, kam, status, onUpdateStatus
       {status && (
         <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="text-[12px] font-medium text-neutral-500">Legal Status</span>
+            <span className="text-[12px] font-medium text-neutral-500">{statusLabel}</span>
             <span className={`px-3 py-1 rounded-full text-[13px] font-semibold capitalize ${STATUS_CLASS[status] || 'bg-neutral-100 text-neutral-500'}`}>
               {STATUS_LABEL[status] || status}
             </span>

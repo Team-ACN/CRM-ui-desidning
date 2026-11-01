@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Users, User, Building2, FileText, MessageSquare, LayoutDashboard, ChevronDown, IndianRupee, Layers, Upload, Zap, Scale } from 'lucide-react';
+import { Home, Users, User, Building2, FileText, MessageSquare, LayoutDashboard, ChevronDown, IndianRupee, Layers, Upload, Zap, Scale, Landmark } from 'lucide-react';
 
 const Sidebar = () => {
   return (
-    <div className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col">
+    <div className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col overflow-hidden">
       {/* Header Profile */}
-      <div className="p-4 border-b border-gray-100">
+      <div className="p-4 border-b border-gray-100 shrink-0">
         <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
           <div className="w-10 h-10 bg-emerald-800 rounded-lg flex items-center justify-center text-white font-bold">
             ACN
@@ -20,7 +20,7 @@ const Sidebar = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
         <NavItem to="/legal-doc/home" icon={<Home size={20} />} label="Home" />
         <NavItem to="/home" icon={<Home size={20} />} label="Home - Samarth" />
         <NavItem to="/agents" icon={<Users size={20} />} label="Agents" />
@@ -30,6 +30,7 @@ const Sidebar = () => {
         <NavItem to="/requirements" icon={<FileText size={20} />} label="Requirements" />
         <NavItem to="/enquiries" icon={<MessageSquare size={20} />} label="Enquiries" />
         <LegalDocNavGroup />
+        <LoanNavGroup />
         <NavItem to="/qc-dashboard" icon={<LayoutDashboard size={20} />} label="QC Dashboard" />
         <NavItem to="/finance" icon={<IndianRupee size={20} />} label="Finance" />
         <NavItem to="/cms" icon={<Layers size={20} />} label="CMS" />
@@ -71,6 +72,58 @@ const LegalDocNavGroup = () => {
       {open && (
         <div className="mt-1 ml-8 space-y-1">
           {LEGAL_DOC_SUB_ITEMS.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                }`
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const LOAN_SUB_ITEMS = [
+  { to: '/loan/agents', label: 'Agents' },
+  { to: '/loan/leads', label: 'Leads' },
+  { to: '/loan/cases', label: 'Cases' },
+];
+
+const LoanNavGroup = () => {
+  const location = useLocation();
+  const isInGroup = LOAN_SUB_ITEMS.some((item) => location.pathname.startsWith(item.to));
+  const [open, setOpen] = useState(isInGroup);
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
+          isInGroup ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+        }`}
+      >
+        <span className={isInGroup ? 'text-gray-900' : 'text-gray-500'}>
+          <Landmark size={20} />
+        </span>
+        Home Loan
+        <ChevronDown
+          size={16}
+          className={`ml-auto text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {open && (
+        <div className="mt-1 ml-8 space-y-1">
+          {LOAN_SUB_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
