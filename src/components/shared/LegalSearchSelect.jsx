@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
-import { SERVICE_NAME_OPTIONS } from '../../data/mockLegalDoc';
+import { SERVICE_NAME_OPTIONS, SERVICE_PRICES } from '../../data/mockLegalDoc';
 
 const serviceLabel = (value) => SERVICE_NAME_OPTIONS.find((s) => s.value === value)?.label || value;
+const formatINR = (n) => `₹${n.toLocaleString('en-IN')}`;
 
 // Swiggy / Zomato style legal-service selector — search to add, +/- counter on the same
 // chip. Shared by the Agent Connect panel's "Legal Lead" section and the Qualify page's
@@ -86,7 +87,7 @@ const LegalSearchSelect = ({ items = [], onAdd, onIncrement, onDecrement, placeh
           {isDropdownOpen && filtered.length > 0 && (
             <div className="absolute z-30 mt-1 w-full border border-neutral-200 rounded-xl bg-white shadow-md max-h-48 overflow-y-auto py-1 divide-y divide-neutral-100">
               {filtered.map((o) => {
-                const existing = items.find((i) => i.name === o.value);
+                const price = SERVICE_PRICES[o.value];
                 return (
                   <button
                     key={o.value}
@@ -96,15 +97,11 @@ const LegalSearchSelect = ({ items = [], onAdd, onIncrement, onDecrement, placeh
                       setQuery('');
                       setIsDropdownOpen(false);
                     }}
-                    className="w-full text-left px-3.5 py-2 text-[13px] hover:bg-neutral-50 flex items-center justify-between text-neutral-800 transition-colors cursor-pointer"
+                    className="w-full text-left px-3.5 py-2 text-[13px] hover:bg-neutral-50 flex items-center justify-between gap-3 text-neutral-800 transition-colors cursor-pointer"
                   >
                     <span className="font-medium text-neutral-900">{o.label}</span>
-                    {existing ? (
-                      <span className="text-[11.5px] font-semibold text-neutral-900 bg-neutral-100 px-2 py-0.5 rounded-md">
-                        Qty: {existing.qty} (+)
-                      </span>
-                    ) : (
-                      <span className="text-[11.5px] text-neutral-400">+ Add</span>
+                    {price?.clientPrice != null && (
+                      <span className="text-[11.5px] text-neutral-400 whitespace-nowrap shrink-0">{formatINR(price.clientPrice)}</span>
                     )}
                   </button>
                 );

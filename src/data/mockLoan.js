@@ -52,7 +52,7 @@ export const LOAN_LEAD_STATUS_STYLES = {
 };
 
 // Cases page — the loan application itself, once a lead converts.
-export const LOAN_CASE_STAGE_OPTIONS = ['Login', 'Sanctioned', 'Loan Agreement', 'Disbursement', 'Rejected'];
+export const LOAN_CASE_STAGE_OPTIONS = ['Case', 'Login', 'Sanctioned', 'Loan Agreement', 'Disbursement', 'Rejected'];
 
 // Searchable dropdown options for the Case panel — seeded from real case data. Both arrays are
 // mutable so the user can add new entries from within the panel (they persist for the session).
@@ -84,7 +84,8 @@ export const LOAN_BANK_OPTIONS = [
   'LIC Housing Finance',
 ];
 export const LOAN_CASE_STAGE_STYLES = {
-  Login: 'bg-neutral-100 text-neutral-600',
+  Case: 'bg-neutral-100 text-neutral-600',
+  Login: 'bg-indigo-100 text-indigo-700',
   Sanctioned: 'bg-blue-100 text-blue-700',
   'Loan Agreement': 'bg-amber-100 text-amber-600',
   Disbursement: 'bg-emerald-100 text-emerald-700',
@@ -1087,7 +1088,8 @@ export const mockLoanCases = [
 // addLoanCaseStageLog's entries below — so the Stage History list isn't empty for pre-existing
 // cases.
 const CASE_STAGE_NOTE_TEMPLATES = {
-  Login: 'Case logged into the pipeline, document collection started.',
+  Case: 'Case created in pipeline, initial file preparation underway.',
+  Login: 'Case logged with the bank, document collection and processing started.',
   Sanctioned: 'Bank sanctioned the loan after document and credit checks.',
   'Loan Agreement': 'Loan agreement signed by the client.',
   Disbursement: 'Loan amount disbursed to the builder/seller account.',
@@ -1096,7 +1098,10 @@ const CASE_STAGE_NOTE_TEMPLATES = {
 mockLoanCases.forEach((c) => {
   const kam = c.connectHistory?.[0]?.kamName || 'User';
   const history = [];
-  if (c.stage !== 'Login') {
+  if (c.stage !== 'Case') {
+    history.push({ stage: 'Case', text: CASE_STAGE_NOTE_TEMPLATES.Case, time: c.stageTime - 4 * 86400000, user: kam });
+  }
+  if (c.stage !== 'Case' && c.stage !== 'Login') {
     history.push({ stage: 'Login', text: CASE_STAGE_NOTE_TEMPLATES.Login, time: c.stageTime - 3 * 86400000, user: kam });
   }
   history.push({ stage: c.stage, text: CASE_STAGE_NOTE_TEMPLATES[c.stage] || '', time: c.stageTime, user: kam });
@@ -1260,6 +1265,21 @@ export function findLoanLeadByPhone(phone) {
   return digits.length === 10 ? mockLoanLeads.find((l) => digitsOf(l.number) === digits) || null : null;
 }
 
+// Looks up a Loan agent by CPID — the id the rest of the app (mockAgents.js's roster, the Legal &
+// Doc module) identifies an agent by, as opposed to this module's own internal numeric `id`.
+export function findLoanAgentByCpid(cpid) {
+  if (!cpid) return null;
+  return mockLoanAgents.find((a) => a.cpid === cpid) || null;
+}
+
+// The Agent Connect panel's "Loan Lead" section works against this module's own agent record,
+// which may not exist yet for an agent the Loan module has never seen — this finds it by CPID, or
+// seeds one on first use (e.g. the first client added from that panel) so the rest of the Loan
+// Lead flow (addLoanAgentClient, addLoanLeadsFromAgentClients, ...) has a record to operate on.
+export function getOrCreateLoanAgentByCpid(cpid, defaults = {}) {
+  return findLoanAgentByCpid(cpid) || addLoanAgent({ cpid, ...defaults });
+}
+
 export function addLoanLead(data) {
   const lead = {
     id: Math.max(0, ...mockLoanLeads.map((l) => l.id)) + 1,
@@ -1354,7 +1374,7 @@ export function addLoanCase(data) {
     referralNumber: data.referralNumber || '—',
     referralName: data.referralName || '',
     referralSource: data.referralSource || LOAN_REFERRAL_SOURCE_OPTIONS[0],
-    stage: data.stage || 'Login',
+    stage: data.stage || 'Case',
     stageTime: Date.now(),
     date: data.date || new Date().toLocaleDateString('en-GB'),
     project: data.project || '',

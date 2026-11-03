@@ -18,6 +18,8 @@ import {
   Plus,
   User,
   Users,
+  Landmark,
+  RotateCcw,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CONNECT_TOPIC_OPTIONS, addConnectHistoryEntry, resolveCallback } from '../../data/mockAgents';
@@ -37,6 +39,16 @@ import {
   updateRequestStatus,
   currentStatus,
 } from '../../data/mockLegalDoc';
+import {
+  findLoanAgentByCpid,
+  getOrCreateLoanAgentByCpid,
+  addLoanAgentClient,
+  removeLoanAgentClient,
+  addLoanLeadsFromAgentClients,
+  setLoanAgentStatus,
+  setLoanAgentQuality,
+  findLoanLeadByPhone,
+} from '../../data/mockLoan';
 
 const ICON_SIZE = 14;
 const DEFAULT_LEAD_SOURCE = 'app';
@@ -328,6 +340,75 @@ const AgentConnectPanel = ({ agent, onClose }) => {
     const kam = KAM_OPTIONS.some((k) => k.value === agent?.kam) ? agent.kam : KAM_OPTIONS[0].value;
     setAgentLegalStatus(agent.agentId, { agentName: agent.name, contact: agent.contact || '', kam }, newStatus, kam, noteText);
     setLeadVersion((v) => v + 1);
+  };
+
+  // Loan Status + Loan Lead — mirrors the Legal Lead section above, but against the Loan
+  // module's own data store (mockLoan.js), keyed by this agent's CPID.
+  const [loanVersion, setLoanVersion] = useState(0);
+  const loanAgentRecord = findLoanAgentByCpid(agent?.agentId);
+  const loanStatus = (loanAgentRecord?.agentStatus || 'Maybe').toLowerCase();
+  const loanClients = loanAgentRecord?.clients || [];
+  const pendingLoanClientsCount = loanClients.filter((c) => c.status === 'pending').length;
+
+  const handleUpdateLoanStatus = (newStatus) => {
+    const kam = KAM_OPTIONS.some((k) => k.value === agent?.kam) ? agent.kam : KAM_OPTIONS[0].value;
+    const record = getOrCreateLoanAgentByCpid(agent.agentId, { name: agent.name, number: agent.contact || '', kam });
+    const capitalized = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+    setLoanAgentQuality(record.id, capitalized, kam);
+    setLoanVersion((v) => v + 1);
+  };
+
+  const [loanOpen, setLoanOpen] = useState(false);
+  const [loanLeadSaved, setLoanLeadSaved] = useState(false);
+  const [loanClientName, setLoanClientName] = useState('');
+  const [loanClientNumber, setLoanClientNumber] = useState('');
+  const canAddLoanClient = loanClientNumber.replace(/\D/g, '').length >= 5;
+
+  // If the typed number already belongs to an active Loan Lead, adding it again would just
+  // create a duplicate — surface the existing lead instead so the KAM can go straight to it.
+  const loanClientDigits = loanClientNumber.replace(/\D/g, '');
+  const matchedLoanLead = loanClientDigits.length >= 10 ? findLoanLeadByPhone(loanClientNumber) : null;
+
+  const handleAddLoanClient = () => {
+    if (!canAddLoanClient || matchedLoanLead) return;
+    const kam = KAM_OPTIONS.some((k) => k.value === agent?.kam) ? agent.kam : KAM_OPTIONS[0].value;
+    const record = getOrCreateLoanAgentByCpid(agent.agentId, { name: agent.name, number: agent.contact || '', kam });
+    addLoanAgentClient(record.id, { name: loanClientName.trim() || '—', number: loanClientNumber.trim() });
+    setLoanClientName('');
+    setLoanClientNumber('');
+    setLoanVersion((v) => v + 1);
+  };
+
+  const handleViewMatchedLoanLead = () => {
+    onClose?.();
+    navigate('/loan/leads');
+  };
+
+  const handleRemoveLoanClient = (clientId) => {
+    if (!loanAgentRecord) return;
+    removeLoanAgentClient(loanAgentRecord.id, clientId);
+    setLoanVersion((v) => v + 1);
+  };
+
+  const handleAddLoanLeadOverall = () => {
+    if (!loanAgentRecord || pendingLoanClientsCount === 0) return;
+    addLoanLeadsFromAgentClients(loanAgentRecord.id);
+    setLoanOpen(false);
+    setLoanLeadSaved(true);
+    setLoanVersion((v) => v + 1);
+    setTimeout(() => setLoanLeadSaved(false), 3000);
+  };
+
+  const handleMarkLoanLost = () => {
+    if (!loanAgentRecord) return;
+    setLoanAgentStatus(loanAgentRecord.id, 'Lost');
+    setLoanVersion((v) => v + 1);
+  };
+
+  const handleReopenLoan = () => {
+    if (!loanAgentRecord) return;
+    setLoanAgentStatus(loanAgentRecord.id, 'New');
+    setLoanVersion((v) => v + 1);
   };
 
   // Toggle for legal lead section (collapsed by default)
@@ -668,21 +749,9 @@ const AgentConnectPanel = ({ agent, onClose }) => {
             kam={agent?.kam}
             status={legalStatus}
             onUpdateStatus={handleUpdateLegalStatus}
-          >
-            {(() => {
-              const notes = (existingLeadRecord?.legalAndLoan?.notes || []).filter((n) => n.text);
-              const entry = notes.length ? notes[notes.length - 1] : null;
-              if (!entry) return null;
-              return (
-                <div className="pt-3 border-t border-neutral-100">
-                  <p className="text-neutral-500 text-[13px]">{entry.text}</p>
-                  <span className="text-neutral-400 text-[11px]">
-                    {relativeTime(entry.time) || '—'} by {entry.user || '—'}
-                  </span>
-                </div>
-              );
-            })()}
-          </AgentIdentityCard>
+            secondaryStatus={{ label: 'Loan Status', value: loanStatus }}
+            onUpdateSecondaryStatus={handleUpdateLoanStatus}
+          />
 
           {/* Legal Lead (Only shown for leads in LEAD stage) */}
           <div className="border border-neutral-200 rounded-2xl p-5 space-y-4">
@@ -902,6 +971,141 @@ const AgentConnectPanel = ({ agent, onClose }) => {
                     )}
                   </button>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Loan Lead */}
+          <div className="border border-neutral-200 rounded-2xl p-5 space-y-4">
+            <button type="button" onClick={() => setLoanOpen((v) => !v)} className="flex items-center justify-between w-full text-left">
+              <div className="flex items-center gap-2 text-[13px] font-semibold text-neutral-900">
+                <Landmark size={ICON_SIZE} className="text-neutral-400" />
+                <span>Loan Lead</span>
+                {loanClients.length > 0 && (
+                  <span className="text-[12px] font-medium text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
+                    {loanClients.length}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {loanLeadSaved && (
+                  <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Check size={11} /> Lead Added
+                  </span>
+                )}
+                {loanOpen ? <ChevronUp size={14} className="text-neutral-400" /> : <ChevronDown size={14} className="text-neutral-400" />}
+              </div>
+            </button>
+
+            {loanOpen && (
+              <div className="space-y-4">
+                {loanClients.length > 0 && (
+                  <div className="space-y-2">
+                    {loanClients.map((c) => (
+                      <div key={c.id} className="flex items-center justify-between gap-2 border border-neutral-100 rounded-xl px-3 py-2.5">
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-medium text-neutral-800 truncate">{c.name}</p>
+                          <p className="text-[12px] text-neutral-400 truncate">{c.number}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {c.status === 'lead_added' ? (
+                            <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-700">Lead Added</span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveLoanClient(c.id)}
+                              title="Remove client"
+                              className="p-1 text-neutral-300 hover:text-neutral-600 rounded transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {(!loanAgentRecord || loanAgentRecord.status === 'New') && (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Client name"
+                        value={loanClientName}
+                        onChange={(e) => setLoanClientName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddLoanClient()}
+                        className="w-full bg-neutral-50 hover:bg-white focus:bg-white border border-neutral-200 rounded-xl px-3 py-1.5 text-[13px] text-neutral-800 placeholder:text-neutral-400 focus:border-neutral-400 outline-none transition-all"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Phone number"
+                        value={loanClientNumber}
+                        onChange={(e) => setLoanClientNumber(maskPhoneInput(e.target.value))}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddLoanClient()}
+                        className="w-full bg-neutral-50 hover:bg-white focus:bg-white border border-neutral-200 rounded-xl px-3 py-1.5 text-[13px] text-neutral-800 placeholder:text-neutral-400 focus:border-neutral-400 outline-none transition-all"
+                      />
+                    </div>
+
+                    {matchedLoanLead && (
+                      <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-[12px] text-red-700 flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-semibold">Already exists as a lead</p>
+                          <p className="text-[11px] text-red-600 mt-0.5 truncate">
+                            {matchedLoanLead.name} ({matchedLoanLead.leadId})
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleViewMatchedLoanLead}
+                          className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
+                        >
+                          View Lead
+                        </button>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleAddLoanClient}
+                      disabled={!canAddLoanClient || !!matchedLoanLead}
+                      className="flex items-center gap-1.5 px-3 py-2.5 rounded-full bg-white border border-neutral-200 text-neutral-500 hover:border-neutral-400 hover:text-neutral-800 text-[13px] w-full justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Plus size={13} /> Add client
+                    </button>
+
+                    <div className="pt-3 border-t border-neutral-100 flex items-center gap-2">
+                      {pendingLoanClientsCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleAddLoanLeadOverall}
+                          className="flex-1 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-medium text-[13px] transition-colors"
+                        >
+                          Add Lead
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleMarkLoanLost}
+                        className="flex-1 py-2.5 border border-neutral-200 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50 rounded-xl font-medium text-[13px] transition-colors"
+                      >
+                        Lost
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {loanAgentRecord?.status === 'Lost' && (
+                  <div className="pt-3 border-t border-neutral-100">
+                    <button
+                      type="button"
+                      onClick={handleReopenLoan}
+                      className="w-full flex items-center justify-center gap-1.5 py-2.5 border border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl font-medium text-[13px] transition-colors"
+                    >
+                      <RotateCcw size={14} /> Reopen
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

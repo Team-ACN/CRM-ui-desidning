@@ -160,37 +160,43 @@ export const SERVICE_NAME_OPTIONS = [
   { group: 'Legal', value: 'will_deed', label: 'Will Deed' },
 ];
 
-// Current price list — docs/legal-doc-prd.md §5. Not yet linked to SERVICE_NAME_OPTIONS by id;
-// matched by display name until a shared service-id scheme is settled on.
-export const CATALOGUE = [
-  { service: 'E-Khata (BBMP)', category: 'Documentation', agentPrice: 4500, clientPrice: 6000, referral: 1271 },
-  { service: 'New Khata', category: 'Documentation', agentPrice: 15000, clientPrice: 20000, referral: 4237 },
-  { service: 'Khata Transfer', category: 'Documentation', agentPrice: 12000, clientPrice: 16000, referral: 3390 },
-  { service: 'BESCOM name change', category: 'Documentation', agentPrice: 5000, clientPrice: 7500, referral: 1589 },
-  { service: 'Rental agreement', category: 'Documentation', agentPrice: 1000, clientPrice: 1500, referral: null },
-  { service: 'Sale deed / release deed draft', category: 'Documentation', agentPrice: 7500, clientPrice: 10000, referral: 2119 },
-  { service: 'Sale agreement draft', category: 'Documentation', agentPrice: 5000, clientPrice: 7000, referral: 1483 },
-  { service: 'Gift deed draft', category: 'Documentation', agentPrice: 5000, clientPrice: 7000, referral: 1483 },
-  { service: 'MODT cancellation', category: 'Legal', agentPrice: 8000, clientPrice: 10500, referral: 2225 },
-  { service: 'Due diligence / legal opinion', category: 'Legal', agentPrice: 10500, clientPrice: 13500, referral: 2860 },
-  { service: 'Tax name change', category: 'Legal', agentPrice: 1000, clientPrice: 1500, referral: 318 },
-  { service: 'EC', category: 'Legal', agentPrice: 1500, clientPrice: 2000, referral: 424 },
-  { service: 'Family tree', category: 'Legal', agentPrice: 25000, clientPrice: 30000, referral: 6356 },
-  { service: 'MoU', category: 'Legal', agentPrice: 2000, clientPrice: 3000, referral: 636 },
-  { service: 'Registration', category: 'Legal', agentPrice: 25000, clientPrice: 33500, referral: 7097 },
-  { service: 'Registration package', category: 'Legal', agentPrice: 40000, clientPrice: 53500, referral: 10000 },
-  { service: 'Gram Panchayat khata', category: 'Legal', agentPrice: 25000, clientPrice: 30000, referral: 6356 },
-  { service: 'Khata correction', category: 'Legal', agentPrice: 3000, clientPrice: 4000, referral: 847 },
-  { service: 'Assignment agreement', category: 'Legal', agentPrice: 10000, clientPrice: 13500, referral: 2860 },
-  { service: 'Will deed draft', category: 'Legal', agentPrice: 5000, clientPrice: 7000, referral: 1483 },
-  { service: 'GPA draft', category: 'Legal', agentPrice: 5000, clientPrice: 7000, referral: 1483 },
-  { service: 'GPA registration', category: 'Legal', agentPrice: 30000, clientPrice: null, referral: 0 },
-  { service: 'BDA khata', category: 'Legal', agentPrice: 25000, clientPrice: 30000, referral: 6356 },
-  { service: 'Certified copy', category: 'Legal', agentPrice: 2500, clientPrice: null, referral: 0 },
-  { service: 'DNV', category: 'Legal', agentPrice: 8000, clientPrice: 9000, referral: 1907 },
-  { service: 'Doc review (sale agreement)', category: 'Legal', agentPrice: 1500, clientPrice: null, referral: 0 },
-  { service: 'Sale agreement registration', category: 'Legal', agentPrice: null, clientPrice: 25000, referral: 5297 },
-];
+// Price list (agent price / client price / agent referral) — keyed by SERVICE_NAME_OPTIONS
+// `value` so it can be looked up directly instead of matched by display name. Source: the
+// docs/legal-doc-prd.md §5 catalogue. Services with no row there (loan products, e_to_e_khata,
+// b_to_a_khata, legal_consultation, partition_deed, other) are intentionally left out — callers
+// should treat a missing entry as "no price on file" rather than assuming 0.
+// A few catalogue rows didn't have a clean 1:1 match to an existing service and were folded into
+// the closest one rather than added as new service types: "sale deed draft, release deed draft"
+// is priced the same for both `sale_deed` and `release_deed`; `gpa` uses the GPA *draft* price
+// (5000/7000) rather than the pricier GPA *registration* row (30000, client price n/a), since the
+// option is just labeled "GPA". Rows with no matching service at all (Registration Package, GPA
+// registration, DNV, Doc review, Gruha Jyothi, BESCOM + Gruha Jyothi, Sale agreement
+// registration) are not modeled here.
+export const SERVICE_PRICES = {
+  e_khata: { agentPrice: 4500, clientPrice: 6000, referral: 1271 },
+  new_khata: { agentPrice: 15000, clientPrice: 20000, referral: 4237 },
+  khata_transfer: { agentPrice: 12000, clientPrice: 16000, referral: 3390 },
+  bescom: { agentPrice: 5000, clientPrice: 7500, referral: 1589 },
+  rental_agreement: { agentPrice: 1000, clientPrice: 1500, referral: null },
+  sale_deed: { agentPrice: 7500, clientPrice: 10000, referral: 2119 },
+  release_deed: { agentPrice: 7500, clientPrice: 10000, referral: 2119 },
+  sale_agreement: { agentPrice: 5000, clientPrice: 7000, referral: 1483 },
+  gift_deed: { agentPrice: 5000, clientPrice: 7000, referral: 1483 },
+  modt_cancellation: { agentPrice: 8000, clientPrice: 10500, referral: 2225 },
+  due_diligence: { agentPrice: 10500, clientPrice: 13500, referral: 2860 },
+  tax_name_change: { agentPrice: 1000, clientPrice: 1500, referral: 318 },
+  ec: { agentPrice: 1500, clientPrice: 2000, referral: 424 },
+  family_tree: { agentPrice: 25000, clientPrice: 30000, referral: 6356 },
+  mou: { agentPrice: 2000, clientPrice: 3000, referral: 636 },
+  registration: { agentPrice: 25000, clientPrice: 33500, referral: 7097 },
+  panchayat_khata: { agentPrice: 25000, clientPrice: 30000, referral: 6356 },
+  khata_correction: { agentPrice: 3000, clientPrice: 4000, referral: 847 },
+  assignment_agreement: { agentPrice: 10000, clientPrice: 13500, referral: 2860 },
+  will_deed: { agentPrice: 5000, clientPrice: 7000, referral: 1483 },
+  gpa: { agentPrice: 5000, clientPrice: 7000, referral: 1483 },
+  bda: { agentPrice: 25000, clientPrice: 30000, referral: 6356 },
+  certified_copy: { agentPrice: 2500, clientPrice: null, referral: 0 },
+};
 
 // Real KAM roster — matches src/data/mockHome.js's kamList (minus the synthetic "All KAMs" row).
 // Used both as the agent-level `kam` and as the userId values for leadBy/qualifiedBy/salesPoc/user.

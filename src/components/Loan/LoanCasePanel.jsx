@@ -165,13 +165,13 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
   const [savedCase, setSavedCase] = useState(false);
 
   // Stage section — collapsed by default, pick stage + optional note, Save appends history entry
-  const [draftStage, setDraftStage] = useState(loanCase.stage || 'Login');
+  const [draftStage, setDraftStage] = useState(loanCase.stage || 'Case');
   const [stageNote, setStageNote] = useState('');
   const [savedStage, setSavedStage] = useState(false);
   const [stageOpen, setStageOpen] = useState(false);
   const [customStageInput, setCustomStageInput] = useState('');
 
-  const hasStageChanges = draftStage !== (loanCase.stage || 'Login') || stageNote.trim() !== '';
+  const hasStageChanges = draftStage !== (loanCase.stage || 'Case') || stageNote.trim() !== '';
   const stageHistory = (loanCase.stageHistory || []).slice().sort((a, b) => (b.time || 0) - (a.time || 0));
   // Most recent history entry that has a note — shown below the stage pill even when collapsed.
   const lastStageNote = stageHistory.find((n) => n.text)?.text || null;
@@ -378,7 +378,7 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
                   className={`inline-flex px-2.5 py-1 rounded-full text-[12px] font-medium ${LOAN_CASE_STAGE_STYLES[loanCase.stage] || 'bg-neutral-100 text-neutral-600'
                     }`}
                 >
-                  {loanCase.stage || 'Login'}
+                  {loanCase.stage || 'Case'}
                 </span>
               </div>
               <ChevronDown

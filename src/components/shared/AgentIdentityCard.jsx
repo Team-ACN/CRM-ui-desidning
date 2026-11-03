@@ -23,25 +23,69 @@ const STATUS_PICKER_OPTIONS = [
   { value: 'bad', label: 'Bad', activeClass: 'bg-red-600 text-white' },
 ];
 
+// The good/maybe/bad pill-picker row — shared between the primary and secondary status editors
+// below so editing either one looks identical.
+function StatusPicker({ value, onChange }) {
+  return (
+    <div className="inline-flex p-1 bg-neutral-100 rounded-full gap-0.5">
+      {STATUS_PICKER_OPTIONS.map((opt) => {
+        const isSel = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
+              isSel ? opt.activeClass : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/60'
+            }`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // Avatar + name + "{agentId} · {contact} · KAM {kam}" subtitle, with an optional Legal Status row
 // — the identity header shared by the Agent Connect panel and every Legal Doc side panel (Leads /
 // Qualify / Service), so an agent's identity AND status look and edit the same way everywhere.
 // Pass `status` to show the badge; pass `onUpdateStatus(newStatus, noteText)` too to make it
 // editable in place — picking a status no longer commits immediately, it just stages a draft;
 // Save commits the status plus whatever note was typed alongside it in one call.
-const AgentIdentityCard = ({ name, agentId, contact, kam, status, onUpdateStatus, statusLabel = 'Legal Status', children }) => {
+// Pass `secondaryStatus={{ label, value }}` to show a second status badge (e.g. Loan Status)
+// alongside the primary one; pass `onUpdateSecondaryStatus(newStatus)` too so the same Edit
+// button and Save action update both statuses in one go (the Agent Connect panel uses this to
+// edit Legal and Loan status together).
+const AgentIdentityCard = ({
+  name,
+  agentId,
+  contact,
+  kam,
+  status,
+  onUpdateStatus,
+  statusLabel = 'Legal Status',
+  secondaryStatus,
+  onUpdateSecondaryStatus,
+  children,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draftStatus, setDraftStatus] = useState(status);
+  const [draftSecondaryStatus, setDraftSecondaryStatus] = useState(secondaryStatus?.value);
   const [noteText, setNoteText] = useState('');
 
   const openEditor = () => {
     setDraftStatus(status);
+    setDraftSecondaryStatus(secondaryStatus?.value);
     setNoteText('');
     setIsEditing(true);
   };
 
+  const canEditSecondary = !!(secondaryStatus && onUpdateSecondaryStatus);
+
   const handleSave = () => {
     onUpdateStatus(draftStatus, noteText.trim());
+    if (canEditSecondary) onUpdateSecondaryStatus(draftSecondaryStatus);
     setIsEditing(false);
   };
 
@@ -60,19 +104,32 @@ const AgentIdentityCard = ({ name, agentId, contact, kam, status, onUpdateStatus
       </div>
 
       {status && (
-        <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="text-[12px] font-medium text-neutral-500">{statusLabel}</span>
-            <span className={`px-3 py-1 rounded-full text-[13px] font-semibold capitalize ${STATUS_CLASS[status] || 'bg-neutral-100 text-neutral-500'}`}>
-              {STATUS_LABEL[status] || status}
-            </span>
+        <div className="pt-4 border-t border-neutral-100 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <span className="text-[12px] font-medium text-neutral-500">{statusLabel}</span>
+              <span className={`px-3 py-1 rounded-full text-[13px] font-semibold capitalize ${STATUS_CLASS[status] || 'bg-neutral-100 text-neutral-500'}`}>
+                {STATUS_LABEL[status] || status}
+              </span>
+            </div>
+
+            {secondaryStatus && (
+              <div className="flex items-center gap-2.5 pl-4 border-l border-neutral-100">
+                <span className="text-[12px] font-medium text-neutral-500">{secondaryStatus.label}</span>
+                <span
+                  className={`px-3 py-1 rounded-full text-[13px] font-semibold capitalize ${STATUS_CLASS[secondaryStatus.value] || 'bg-neutral-100 text-neutral-500'}`}
+                >
+                  {STATUS_LABEL[secondaryStatus.value] || secondaryStatus.value}
+                </span>
+              </div>
+            )}
           </div>
 
           {onUpdateStatus && (
             <button
               type="button"
               onClick={() => (isEditing ? setIsEditing(false) : openEditor())}
-              className="text-[12px] font-medium text-neutral-500 hover:text-neutral-900 flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-neutral-100 transition-colors"
+              className="text-[12px] font-medium text-neutral-500 hover:text-neutral-900 flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-neutral-100 transition-colors shrink-0"
             >
               {isEditing ? <X size={12} /> : <Edit2 size={12} />}
               {!isEditing && <span>Edit</span>}
@@ -84,25 +141,16 @@ const AgentIdentityCard = ({ name, agentId, contact, kam, status, onUpdateStatus
       {status && onUpdateStatus && isEditing && (
         <div className="pt-3 border-t border-neutral-100 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[12px] text-neutral-500 font-medium">Update status</span>
-            <div className="inline-flex p-1 bg-neutral-100 rounded-full gap-0.5">
-              {STATUS_PICKER_OPTIONS.map((opt) => {
-                const isSel = draftStatus === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setDraftStatus(opt.value)}
-                    className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
-                      isSel ? opt.activeClass : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/60'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
+            <span className="text-[12px] text-neutral-500 font-medium">{canEditSecondary ? statusLabel : 'Update status'}</span>
+            <StatusPicker value={draftStatus} onChange={setDraftStatus} />
           </div>
+
+          {canEditSecondary && (
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] text-neutral-500 font-medium">{secondaryStatus.label}</span>
+              <StatusPicker value={draftSecondaryStatus} onChange={setDraftSecondaryStatus} />
+            </div>
+          )}
 
           <textarea
             value={noteText}
@@ -115,7 +163,7 @@ const AgentIdentityCard = ({ name, agentId, contact, kam, status, onUpdateStatus
           <button
             type="button"
             onClick={handleSave}
-            disabled={draftStatus === status && !noteText.trim()}
+            disabled={draftStatus === status && draftSecondaryStatus === secondaryStatus?.value && !noteText.trim()}
             className="w-full py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-medium text-[13px] transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-neutral-900"
           >
             Save
