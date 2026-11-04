@@ -107,7 +107,7 @@ const LoanCasesPage = () => {
     },
     {
       key: 'referralSource',
-      label: 'Referral Source',
+      label: 'Source',
       allLabel: 'All Sources',
       value: referralSourceFilter,
       onChange: setReferralSourceFilter,
@@ -127,9 +127,9 @@ const LoanCasesPage = () => {
       <th className="px-4 py-4 whitespace-nowrap">LAN</th>
       <th className="px-4 py-4 whitespace-nowrap">Sanctioned</th>
       <th className="px-4 py-4 whitespace-nowrap">Disbursed</th>
-      <th className="px-4 py-4 whitespace-nowrap">Referral Source</th>
-      <th className="pl-4 pr-2 py-4 whitespace-nowrap">Referral Name</th>
-      <th className="pl-2 pr-6 py-4 whitespace-nowrap">Referral Number</th>
+      <th className="px-4 py-4 whitespace-nowrap">Source</th>
+      <th className="pl-4 pr-2 py-4 whitespace-nowrap">Referrer</th>
+      <th className="pl-2 pr-6 py-4 whitespace-nowrap">Referrer Mobile</th>
       <th className="sticky right-0 z-10 bg-white px-4 py-4 text-center border-l border-neutral-300 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
         <MessageSquare size={13} className="inline text-neutral-300" />
       </th>
@@ -243,7 +243,7 @@ const LoanCasesPage = () => {
                 {formatCurrency(c.disbursedAmount)}
               </td>
 
-              {/* 12. Referral Source */}
+              {/* 12. Source */}
               <td className="px-4 py-3 whitespace-nowrap">
                 <span
                   className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
@@ -255,12 +255,12 @@ const LoanCasesPage = () => {
                 </span>
               </td>
 
-              {/* 13. Referral Name */}
+              {/* 13. Referrer */}
               <td className="pl-4 pr-2 py-3 whitespace-nowrap text-neutral-800">
                 {c.referralName || '—'}
               </td>
 
-              {/* 14. Referral Number */}
+              {/* 14. Referrer Mobile */}
               <td className="pl-2 pr-6 py-3 whitespace-nowrap text-neutral-400">
                 {c.referralNumber || '—'}
               </td>

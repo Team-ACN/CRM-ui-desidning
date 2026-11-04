@@ -18,13 +18,6 @@ import LoanInlineKamSelect from './LoanInlineKamSelect';
 
 const PAGE_SIZE = 20;
 
-// "4500000" -> "45.00 L", "12500000" -> "1.25 Cr" — Indian lakh/crore shorthand instead of raw digits.
-function formatCurrency(amount) {
-  if (!amount) return '—';
-  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
-  return `₹${(amount / 100000).toFixed(2)} L`;
-}
-
 function relativeTime(ts) {
   if (!ts) return null;
   const diffDays = Math.floor((Date.now() - ts) / 86400000);
@@ -109,7 +102,7 @@ const LoanLeadsPage = () => {
     { key: 'status', label: 'Status', allLabel: 'All Status', value: statusFilter, onChange: setStatusFilter, options: countOptions('status', LOAN_LEAD_STATUS_OPTIONS, (l) => l.status) },
     {
       key: 'referralSource',
-      label: 'Referral Source',
+      label: 'Source',
       allLabel: 'All Sources',
       value: referralSourceFilter,
       onChange: setReferralSourceFilter,
@@ -126,10 +119,9 @@ const LoanLeadsPage = () => {
       <th className="px-4 py-4">Status</th>
       <th className="px-4 py-4">KAM</th>
       <th className="px-4 py-4">Connection</th>
-      <th className="px-4 py-4">Loan Amount</th>
-      <th className="px-4 py-4">Referral Source</th>
-      <th className="pl-4 pr-2 py-4">Referral Name</th>
-      <th className="pl-2 pr-6 py-4">Referral Number</th>
+      <th className="px-4 py-4">Source</th>
+      <th className="pl-4 pr-2 py-4">Referrer</th>
+      <th className="pl-2 pr-6 py-4">Referrer Mobile</th>
       <th className="sticky right-0 z-10 bg-white px-4 py-4 text-center border-l border-neutral-300 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
         <MessageSquare size={13} className="inline text-neutral-300" />
       </th>
@@ -202,7 +194,6 @@ const LoanLeadsPage = () => {
                   <span className="text-neutral-400">—</span>
                 )}
               </td>
-              <td className="px-4 py-3 font-medium text-neutral-900">{formatCurrency(l.loanAmount)}</td>
               <td className="px-4 py-3">
                 <span
                   className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${LOAN_REFERRAL_SOURCE_STYLES[l.referralSource] || 'bg-neutral-50 text-neutral-600 border border-neutral-200'}`}

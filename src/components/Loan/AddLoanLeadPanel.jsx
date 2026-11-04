@@ -33,16 +33,6 @@ function maskPhoneInput(raw) {
   return `${digits.slice(0, 5)} ${digits.slice(5)}`;
 }
 
-// Shorthand Indian currency formatter for previewing loan amounts (e.g., "₹45.00 L", "₹1.25 Cr")
-function formatCurrencyPreview(amount) {
-  if (!amount) return '';
-  const num = Number(String(amount).replace(/[^0-9]/g, ''));
-  if (!num || isNaN(num)) return '';
-  if (num >= 10000000) return `₹${(num / 10000000).toFixed(2)} Cr`;
-  if (num >= 100000) return `₹${(num / 100000).toFixed(2)} L`;
-  return `₹${num.toLocaleString('en-IN')}`;
-}
-
 // Custom interactive dropdown for KAM (with optional unassign support)
 function CustomDropdown({
   value,
@@ -125,7 +115,6 @@ function parseBulkText(text) {
     phone: cols[1] || '',
     source: cols[2] || 'Agent',
     kam: cols[3] || '',
-    loanAmount: cols[4] || '',
   }));
 }
 
@@ -136,7 +125,6 @@ const AddLoanLeadPanel = ({ onClose, onCreated }) => {
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [kam, setKam] = useState(''); // Optional KAM
-  const [loanAmount, setLoanAmount] = useState('');
   const [referralSource, setReferralSource] = useState(LOAN_REFERRAL_SOURCE_OPTIONS[0]); // 'Agent'
   const [referralName, setReferralName] = useState('');
   const [referralNumber, setReferralNumber] = useState('');
@@ -180,7 +168,6 @@ const AddLoanLeadPanel = ({ onClose, onCreated }) => {
     if (!canSubmit) return;
     const cleanDigits = digits;
     const formattedPhone = `+91 ${phone.trim()}`;
-    const parsedAmount = loanAmount ? Number(String(loanAmount).replace(/[^0-9]/g, '')) || null : null;
 
     if (!matchedAgent) {
       addLead({
@@ -205,7 +192,6 @@ const AddLoanLeadPanel = ({ onClose, onCreated }) => {
       name: name.trim(),
       number: formattedPhone,
       kam: kam || '—',
-      loanAmount: parsedAmount,
       referralSource: referralSource,
       referralName: finalReferralName,
       referralNumber: finalReferralNumber,
@@ -274,7 +260,6 @@ const AddLoanLeadPanel = ({ onClose, onCreated }) => {
       matchedAgent: agent,
       matchedLead: lead,
       kam: kamValue,
-      loanAmount: row.loanAmount ? Number(String(row.loanAmount).replace(/[^0-9]/g, '')) || null : null,
       referralSource,
       referralName: refName,
       referralNumber: refNum,
@@ -303,7 +288,6 @@ const AddLoanLeadPanel = ({ onClose, onCreated }) => {
           name: (row.name || '').trim() || row.matchedAgent?.name || '',
           number: `+91 ${row.digits}`,
           kam: row.kam || '—',
-          loanAmount: row.loanAmount,
           referralSource: row.referralSource,
           referralName: row.referralName,
           referralNumber: row.referralNumber,
@@ -325,8 +309,6 @@ const AddLoanLeadPanel = ({ onClose, onCreated }) => {
     if (r.status === 'new') return 'New';
     return 'Error';
   }
-
-  const amountPreview = formatCurrencyPreview(loanAmount);
 
   return (
     <div className="fixed inset-0 bg-black/30 z-50 flex justify-end" onClick={onClose}>
@@ -413,45 +395,20 @@ const AddLoanLeadPanel = ({ onClose, onCreated }) => {
                 </div>
               </div>
 
-              {/* 3. KAM & Loan Amount row */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* KAM - Optional */}
-                <div>
-                  <label className={labelCls}>KAM</label>
-                  <CustomDropdown
-                    value={kam}
-                    onChange={setKam}
-                    options={['None', ...LOAN_KAM_OPTIONS]}
-                    placeholder="Select KAM"
-                  />
-                </div>
-
-                {/* Loan Amount */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className={labelCls.replace('mb-1', '')}>Loan Amount</label>
-                    {amountPreview && (
-                      <span className="text-[11px] font-semibold text-emerald-600">{amountPreview}</span>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 font-medium text-[13px] pointer-events-none">
-                      ₹
-                    </span>
-                    <input
-                      type="text"
-                      value={loanAmount}
-                      onChange={(e) => setLoanAmount(e.target.value)}
-                      placeholder="e.g. 50,00,000"
-                      className={`${inputCls} pl-7`}
-                    />
-                  </div>
-                </div>
+              {/* 3. KAM - Optional */}
+              <div>
+                <label className={labelCls}>KAM</label>
+                <CustomDropdown
+                  value={kam}
+                  onChange={setKam}
+                  options={['None', ...LOAN_KAM_OPTIONS]}
+                  placeholder="Select KAM"
+                />
               </div>
 
-              {/* 4. Referral Source - Rounded-full Pills matching Connect Panel Topic style */}
+              {/* 4. Source - Rounded-full Pills matching Connect Panel Topic style */}
               <div>
-                <label className={labelCls}>Referral Source *</label>
+                <label className={labelCls}>Source *</label>
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {LOAN_REFERRAL_SOURCE_OPTIONS.map((source) => {
                     const isSelected = referralSource === source;
@@ -474,10 +431,10 @@ const AddLoanLeadPanel = ({ onClose, onCreated }) => {
                 </div>
               </div>
 
-              {/* 5. Referral Name & Number */}
+              {/* 5. Referrer & Number */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>Referral Name</label>
+                  <label className={labelCls}>Referrer</label>
                   <input
                     type="text"
                     value={referralName}
@@ -496,7 +453,7 @@ const AddLoanLeadPanel = ({ onClose, onCreated }) => {
                 </div>
 
                 <div>
-                  <label className={labelCls}>Referral Number</label>
+                  <label className={labelCls}>Referrer Mobile</label>
                   <input
                     type="text"
                     value={referralNumber}

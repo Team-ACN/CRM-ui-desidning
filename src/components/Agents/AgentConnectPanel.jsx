@@ -335,6 +335,7 @@ const AgentConnectPanel = ({ agent, onClose }) => {
   // Legal Status — derived straight from the live record (no local state to keep in sync):
   // handleUpdateLegalStatus writes the mock data then bumps leadVersion to force a re-render.
   const legalStatus = existingLeadRecord?.legalAndLoan?.status || 'maybe';
+  const legalStatusHistory = existingLeadRecord?.legalAndLoan?.notes || [];
 
   const handleUpdateLegalStatus = (newStatus, noteText) => {
     const kam = KAM_OPTIONS.some((k) => k.value === agent?.kam) ? agent.kam : KAM_OPTIONS[0].value;
@@ -347,14 +348,15 @@ const AgentConnectPanel = ({ agent, onClose }) => {
   const [loanVersion, setLoanVersion] = useState(0);
   const loanAgentRecord = findLoanAgentByCpid(agent?.agentId);
   const loanStatus = (loanAgentRecord?.agentStatus || 'Maybe').toLowerCase();
+  const loanStatusHistory = loanAgentRecord?.notes || [];
   const loanClients = loanAgentRecord?.clients || [];
   const pendingLoanClientsCount = loanClients.filter((c) => c.status === 'pending').length;
 
-  const handleUpdateLoanStatus = (newStatus) => {
+  const handleUpdateLoanStatus = (newStatus, noteText) => {
     const kam = KAM_OPTIONS.some((k) => k.value === agent?.kam) ? agent.kam : KAM_OPTIONS[0].value;
     const record = getOrCreateLoanAgentByCpid(agent.agentId, { name: agent.name, number: agent.contact || '', kam });
     const capitalized = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
-    setLoanAgentQuality(record.id, capitalized, kam);
+    setLoanAgentQuality(record.id, capitalized, kam, noteText);
     setLoanVersion((v) => v + 1);
   };
 
@@ -748,8 +750,9 @@ const AgentConnectPanel = ({ agent, onClose }) => {
             contact={agent?.contact}
             kam={agent?.kam}
             status={legalStatus}
+            statusHistory={legalStatusHistory}
             onUpdateStatus={handleUpdateLegalStatus}
-            secondaryStatus={{ label: 'Loan Status', value: loanStatus }}
+            secondaryStatus={{ label: 'Loan Status', value: loanStatus, history: loanStatusHistory }}
             onUpdateSecondaryStatus={handleUpdateLoanStatus}
           />
 
@@ -1026,7 +1029,7 @@ const AgentConnectPanel = ({ agent, onClose }) => {
                   </div>
                 )}
 
-                {(!loanAgentRecord || loanAgentRecord.status === 'New') && (
+                {(!loanAgentRecord || loanAgentRecord.status !== 'Lost') && (
                   <>
                     <div className="grid grid-cols-2 gap-2">
                       <input

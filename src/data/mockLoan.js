@@ -52,7 +52,7 @@ export const LOAN_LEAD_STATUS_STYLES = {
 };
 
 // Cases page — the loan application itself, once a lead converts.
-export const LOAN_CASE_STAGE_OPTIONS = ['Case', 'Login', 'Sanctioned', 'Loan Agreement', 'Disbursement', 'Rejected'];
+export const LOAN_CASE_STAGE_OPTIONS = ['Case', 'Login', 'Sanctioned', 'Loan Agreement', 'Disbursement', 'Rejected', 'Lost'];
 
 // Searchable dropdown options for the Case panel — seeded from real case data. Both arrays are
 // mutable so the user can add new entries from within the panel (they persist for the session).
@@ -90,6 +90,7 @@ export const LOAN_CASE_STAGE_STYLES = {
   'Loan Agreement': 'bg-amber-100 text-amber-600',
   Disbursement: 'bg-emerald-100 text-emerald-700',
   Rejected: 'bg-red-100 text-red-700',
+  Lost: 'bg-rose-100 text-rose-700',
 };
 
 export const mockLoanAgents = [
@@ -206,7 +207,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 11301',
     loan: 'Home Loan',
     referralSource: 'Agent',
-    loanAmount: 4500000,
     status: 'New',
     kam: 'Sandeep',
     connectionSource: 'On Call',
@@ -221,7 +221,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'Vault',
-    loanAmount: 6200000,
     status: 'New',
     kam: 'Samarth',
     connectionSource: 'WhatsApp',
@@ -236,7 +235,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 00011',
     loan: 'Home Loan',
     referralSource: 'Banker',
-    loanAmount: 3800000,
     status: 'New',
     kam: 'Rasranjan',
     connectionSource: 'On Call',
@@ -251,7 +249,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'All Doors',
-    loanAmount: 5100000,
     status: 'New',
     kam: 'Siddharth',
     connectionSource: 'App',
@@ -266,7 +263,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 11448',
     loan: 'Home Loan',
     referralSource: 'Agent',
-    loanAmount: 7200000,
     status: 'New',
     kam: 'Samarth',
     connectionSource: 'On Call',
@@ -281,7 +277,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'Vault',
-    loanAmount: 2900000,
     status: 'Lost',
     kam: 'Qalandar',
     connectionSource: 'WhatsApp',
@@ -296,7 +291,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 00022',
     loan: 'Home Loan',
     referralSource: 'Banker',
-    loanAmount: 5600000,
     status: 'New',
     kam: 'Qalandar',
     connectionSource: 'On Call',
@@ -311,7 +305,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 11301',
     loan: 'Home Loan',
     referralSource: 'Agent',
-    loanAmount: 4100000,
     status: 'New',
     kam: 'Sandeep',
     connectionSource: 'On Call',
@@ -326,7 +319,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'Direct',
-    loanAmount: 5900000,
     status: 'New',
     kam: 'Surendra',
     connectionSource: 'WhatsApp',
@@ -341,7 +333,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 00033',
     loan: 'Home Loan',
     referralSource: 'Banker',
-    loanAmount: 6700000,
     status: 'New',
     kam: 'Rasranjan',
     connectionSource: 'On Call',
@@ -356,7 +347,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'All Doors',
-    loanAmount: 3400000,
     status: 'Lost',
     kam: 'Siddharth',
     connectionSource: 'App',
@@ -371,7 +361,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 11410',
     loan: 'Home Loan',
     referralSource: 'Agent',
-    loanAmount: 8200000,
     status: 'New',
     kam: 'Samarth',
     connectionSource: 'On Call',
@@ -386,7 +375,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'Vault',
-    loanAmount: 4800000,
     status: 'New',
     kam: 'Qalandar',
     connectionSource: 'WhatsApp',
@@ -401,7 +389,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 00011',
     loan: 'Home Loan',
     referralSource: 'Banker',
-    loanAmount: 5300000,
     status: 'New',
     kam: 'Sandeep',
     connectionSource: 'On Call',
@@ -416,7 +403,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'Lead',
-    loanAmount: 2700000,
     status: 'New',
     kam: 'Surendra',
     connectionSource: 'App',
@@ -431,7 +417,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 11448',
     loan: 'Home Loan',
     referralSource: 'Agent',
-    loanAmount: 6100000,
     status: 'New',
     kam: 'Rasranjan',
     connectionSource: 'On Call',
@@ -446,7 +431,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 00022',
     loan: 'Home Loan',
     referralSource: 'Banker',
-    loanAmount: 7400000,
     status: 'Lost',
     kam: 'Siddharth',
     connectionSource: 'On Call',
@@ -461,7 +445,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'Vault',
-    loanAmount: 3900000,
     status: 'New',
     kam: 'Samarth',
     connectionSource: 'WhatsApp',
@@ -476,7 +459,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'All Doors',
-    loanAmount: 5000000,
     status: 'New',
     kam: 'Qalandar',
     connectionSource: 'App',
@@ -491,7 +473,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 11301',
     loan: 'Home Loan',
     referralSource: 'Agent',
-    loanAmount: 4600000,
     status: 'New',
     kam: 'Sandeep',
     connectionSource: 'On Call',
@@ -506,7 +487,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 00033',
     loan: 'Home Loan',
     referralSource: 'Banker',
-    loanAmount: 6300000,
     status: 'New',
     kam: 'Surendra',
     connectionSource: 'On Call',
@@ -521,7 +501,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'Lead',
-    loanAmount: 3200000,
     status: 'Lost',
     kam: 'Rasranjan',
     connectionSource: 'WhatsApp',
@@ -536,7 +515,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'All Doors',
-    loanAmount: 5800000,
     status: 'New',
     kam: 'Siddharth',
     connectionSource: 'App',
@@ -551,7 +529,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 11410',
     loan: 'Home Loan',
     referralSource: 'Agent',
-    loanAmount: 7900000,
     status: 'New',
     kam: 'Samarth',
     connectionSource: 'On Call',
@@ -566,7 +543,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 00011',
     loan: 'Home Loan',
     referralSource: 'Banker',
-    loanAmount: 4400000,
     status: 'New',
     kam: 'Qalandar',
     connectionSource: 'On Call',
@@ -581,7 +557,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'Vault',
-    loanAmount: 5500000,
     status: 'New',
     kam: 'Sandeep',
     connectionSource: 'WhatsApp',
@@ -596,7 +571,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 11448',
     loan: 'Home Loan',
     referralSource: 'Agent',
-    loanAmount: 6900000,
     status: 'New',
     kam: 'Surendra',
     connectionSource: 'On Call',
@@ -611,7 +585,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'Direct',
-    loanAmount: 3700000,
     status: 'Lost',
     kam: 'Rasranjan',
     connectionSource: 'App',
@@ -626,7 +599,6 @@ export const mockLoanLeads = [
     referralNumber: '+91 98450 00022',
     loan: 'Home Loan',
     referralSource: 'Banker',
-    loanAmount: 5200000,
     status: 'New',
     kam: 'Siddharth',
     connectionSource: 'On Call',
@@ -641,7 +613,6 @@ export const mockLoanLeads = [
     referralNumber: '—',
     loan: 'Home Loan',
     referralSource: 'Vault',
-    loanAmount: 4900000,
     status: 'New',
     kam: 'Samarth',
     connectionSource: 'WhatsApp',
@@ -1149,8 +1120,15 @@ export function setLoanAgentStatus(id, status) {
   return updateLoanAgent(id, { status, statusTime: Date.now() });
 }
 
-export function setLoanAgentQuality(id, agentStatus, by = '') {
-  return updateLoanAgent(id, { agentStatus, agentStatusTime: Date.now(), agentStatusBy: by });
+// Logs a status-tagged note alongside the change (mirrors mockLegalDoc.js's setAgentLegalStatus)
+// so the Loan Status badge has the same "who changed it, with what note" history as Legal Status.
+export function setLoanAgentQuality(id, agentStatus, by = '', noteText = '') {
+  const agent = updateLoanAgent(id, { agentStatus, agentStatusTime: Date.now(), agentStatusBy: by });
+  if (agent) {
+    const note = { text: noteText || `Status set to ${agentStatus}`, status: agentStatus, time: Date.now(), user: by };
+    agent.notes = [...(agent.notes || []), note];
+  }
+  return agent;
 }
 
 export function addLoanAgentNote(id, text, user = '') {
@@ -1291,7 +1269,6 @@ export function addLoanLead(data) {
     referralNumber: data.referralNumber || '—',
     loan: 'Home Loan',
     referralSource: data.referralSource || LOAN_REFERRAL_SOURCE_OPTIONS[0],
-    loanAmount: data.loanAmount || null,
     status: data.status || 'New',
     statusTime: Date.now(),
     kam: data.kam || '—',

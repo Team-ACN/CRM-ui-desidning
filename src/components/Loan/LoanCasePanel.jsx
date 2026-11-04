@@ -169,7 +169,6 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
   const [stageNote, setStageNote] = useState('');
   const [savedStage, setSavedStage] = useState(false);
   const [stageOpen, setStageOpen] = useState(false);
-  const [customStageInput, setCustomStageInput] = useState('');
 
   const hasStageChanges = draftStage !== (loanCase.stage || 'Case') || stageNote.trim() !== '';
   const stageHistory = (loanCase.stageHistory || []).slice().sort((a, b) => (b.time || 0) - (a.time || 0));
@@ -287,7 +286,9 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
             <span className="font-mono text-[12px] bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded">
               {loanCase.caseId}
             </span>
-            <span className="text-neutral-400 text-[13px]">{loanCase.date}</span>
+            <span className="text-neutral-400 text-[13px]">
+              {typeof loanCase.date === 'string' ? loanCase.date.replace(/\/\d{4}$/, '') : loanCase.date}
+            </span>
           </div>
           <button
             type="button"
@@ -324,7 +325,7 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
                 <span className="text-neutral-700">—</span>
               )}
 
-              <span className="text-neutral-400">Referral Source</span>
+              <span className="text-neutral-400">Source</span>
               <span>
                 {loanCase.referralSource ? (
                   <span
@@ -339,12 +340,12 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
                 )}
               </span>
 
-              <span className="text-neutral-400">Referral Name</span>
+              <span className="text-neutral-400">Referrer</span>
               <span className="text-neutral-700 font-medium">{loanCase.referralName || '—'}</span>
 
               {loanCase.referralNumber && loanCase.referralNumber !== '—' && (
                 <>
-                  <span className="text-neutral-400">Referral Number</span>
+                  <span className="text-neutral-400">Referrer Mobile</span>
                   <div className="flex items-center gap-1.5">
                     <span className="text-neutral-700">{loanCase.referralNumber}</span>
                     <button
@@ -394,7 +395,7 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
 
             {stageOpen && (
               <div className="mt-4 space-y-4">
-                {/* Stage pills + custom "Add stage" input */}
+                {/* Stage pills — fixed set, no manual/custom stage entry */}
                 <div className="flex flex-wrap gap-1.5 items-center">
                   {LOAN_CASE_STAGE_OPTIONS.map((st) => {
                     const isSelected = draftStage === st;
@@ -412,41 +413,6 @@ const LoanCasePanel = ({ loanCase, onClose, onUpdated }) => {
                       </button>
                     );
                   })}
-                  {/* Inline "add new stage" — type a name and press Enter or + */}
-                  <div className="flex items-center gap-1 bg-neutral-100 rounded-full px-2 py-1">
-                    <input
-                      type="text"
-                      value={customStageInput}
-                      onChange={(e) => setCustomStageInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const trimmed = customStageInput.trim();
-                          if (trimmed && !LOAN_CASE_STAGE_OPTIONS.includes(trimmed)) {
-                            LOAN_CASE_STAGE_OPTIONS.push(trimmed);
-                            setDraftStage(trimmed);
-                            setCustomStageInput('');
-                          }
-                        }
-                      }}
-                      placeholder="Add stage..."
-                      className="bg-transparent outline-none text-[12px] text-neutral-700 placeholder:text-neutral-400 w-24"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const trimmed = customStageInput.trim();
-                        if (trimmed && !LOAN_CASE_STAGE_OPTIONS.includes(trimmed)) {
-                          LOAN_CASE_STAGE_OPTIONS.push(trimmed);
-                          setDraftStage(trimmed);
-                          setCustomStageInput('');
-                        }
-                      }}
-                      className="text-neutral-400 hover:text-neutral-700 transition-colors"
-                      title="Add stage"
-                    >
-                      <Plus size={13} />
-                    </button>
-                  </div>
                 </div>
 
                 {/* Note for this stage update */}
