@@ -10,7 +10,7 @@ const Switch = ({ checked, onChange, label, disabled = false }) => (
     disabled={disabled}
     onClick={(e) => { e.stopPropagation(); onChange(!checked); }}
     className={`relative inline-flex shrink-0 w-[42px] h-[26px] rounded-full transition-colors duration-200 disabled:opacity-40 ${
-      checked ? 'bg-positive-dot' : 'bg-fill-strong'
+      checked ? 'bg-neutral-900' : 'bg-fill-strong'
     }`}
   >
     <span

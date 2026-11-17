@@ -9,7 +9,7 @@ const SearchField = ({ value, onChange, placeholder = 'Search', className = 'w-6
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full h-9 pl-8 pr-8 rounded-[10px] bg-fill text-[14px] text-label placeholder:text-tertiary outline-none border border-transparent transition-colors focus:bg-surface focus:border-accent/40 focus:ring-4 focus:ring-accent/10 [&::-webkit-search-cancel-button]:hidden"
+      className="w-full h-9 pl-8 pr-8 rounded-full bg-white text-[14px] text-label placeholder:text-tertiary outline-none border border-neutral-200 transition-colors focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100 [&::-webkit-search-cancel-button]:hidden"
     />
     {value && (
       <button

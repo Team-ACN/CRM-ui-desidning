@@ -1,0 +1,21 @@
+<svg preserveAspectRatio="none" width="466.722" height="317.114" viewBox="0 0 466.722 317.114" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="head  bg">
+<rect id="Rectangle 240648554" x="29.7949" y="68.8906" width="399" height="119" fill="url(#paint0_linear_0_26)"/>
+<circle id="Ellipse 38187" opacity="0.3" cx="395.764" cy="70.9578" r="70.9578" fill="url(#paint1_radial_0_26)"/>
+<ellipse id="Ellipse 38188" opacity="0.3" cx="144.413" cy="229.515" rx="144.413" ry="87.5994" fill="url(#paint2_linear_0_26)"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_26" x1="52.4648" y1="76.5326" x2="375.136" y2="253.349" gradientUnits="userSpaceOnUse">
+<stop stop-color="#F43F5E"/>
+<stop offset="1" stop-color="#9F1239"/>
+</linearGradient>
+<radialGradient id="paint1_radial_0_26" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(338.413 119.637) rotate(-31.1303) scale(52.4935 226.006)">
+<stop stop-color="#FB7185"/>
+<stop offset="1" stop-color="#881337" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="paint2_linear_0_26" x1="120.112" y1="157.831" x2="119.142" y2="256.108" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FB7185"/>
+<stop offset="1" stop-color="#881337" stop-opacity="0"/>
+</linearGradient>
+</defs>
+</svg>

@@ -7,7 +7,11 @@ import RequirementsPage from './components/Requirements/RequirementsPage';
 import EnquiriesPage from './components/Enquiries/EnquiriesPage';
 import QCDashboardPage from './components/QCDashboard/QCDashboardPage';
 import FinancePage from './components/Finance/FinancePage';
-import CohortsPage from './components/Cohorts/CohortsPage';
+import CmsShell from './components/CMS/CmsShell';
+import CmsCohortsPage from './components/CMS/CmsCohortsPage';
+import CmsComponentsPage from './components/CMS/CmsComponentsPage';
+import CmsTemplatesPage from './components/CMS/CmsTemplatesPage';
+import CmsPopupsPage from './components/CMS/CmsPopupsPage';
 import HomePage from './components/Home/HomePage';
 import AgentDetailsPage from './components/Agents/AgentDetailsPage';
 import BulkUploadPage from './components/BulkUpload/BulkUploadPage';
@@ -48,7 +52,13 @@ function App() {
           <Route path="/enquiries" element={<EnquiriesPage />} />
           <Route path="/qc-dashboard" element={<QCDashboardPage />} />
           <Route path="/finance" element={<FinancePage />} />
-          <Route path="/cms" element={<CohortsPage />} />
+          <Route path="/cms" element={<CmsShell />}>
+            <Route index element={<Navigate to="cohorts" replace />} />
+            <Route path="cohorts" element={<CmsCohortsPage />} />
+            <Route path="components" element={<CmsComponentsPage />} />
+            <Route path="templates" element={<CmsTemplatesPage />} />
+            <Route path="popups" element={<CmsPopupsPage />} />
+          </Route>
           <Route path="/edge" element={<EdgeDashboardPage />} />
           <Route path="/edge/home" element={<EdgeHomeFeedPage />} />
           <Route path="/edge/posts" element={<EdgePostsPage />} />

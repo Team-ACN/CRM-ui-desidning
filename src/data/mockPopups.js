@@ -1,327 +1,110 @@
-// Mock popup records for the CMS popup system prototype.
-// Shape mirrors the PRD data model, flattened into one object per popup
-// (popup + buttons + trigger + frequency + rolled-up stats).
+// Popups: App and Web are separate lists, ranked by list order — only one shows per view, the highest rank wins.
 
-// The delist popup ships inside the app, not through this CMS. It appears here so it
-// can be ranked against CMS popups in the same slot — nothing else about it is editable.
-export const mockPopups = [
-  {
-    id: 'POP000',
-    name: 'Delist inventory popup',
-    managedExternally: true,
-    externalNote:
-      'Built into the app — creative, copy and behaviour ship with the app release. Only its priority is set here.',
-    surface: 'app',
-    imageUrl: '',
-    imageUrlDesktop: '',
-    templateKey: 'single_button',
-    backdropOpacity: 0.6,
-    closeCorner: 'top_right',
-    actionBarColor: '#0F172A',
-    matchPosterColor: true,
-    dividerLabel: 'TRY IT YOURSELF',
-    toastMessage: '',
-    priority: 1,
-    status: 'Live',
-    isActive: true,
-    cohortIncludeIds: [],
-    cohortExcludeIds: [],
-    buttons: [],
-    trigger: { type: 'page', pageKey: 'home', scrollDepthPct: null, eventKey: null },
-    frequency: { maxImpressions: 1, minGapHours: 24 },
-    stats: {
-      impressions: 18240,
-      closes: 9110,
-      buttonClicks: {},
-      byDevice: { mobile: 18240, desktop: 0 },
-    },
-  },
-  {
-    id: 'POP001',
-    name: 'Whitefield Premium — Book a demo',
-    surface: 'app',
-    imageUrl: 'https://placehold.co/1080x1350/065F46/FFFFFF/png?text=Premium+Demo',
-    imageUrlDesktop: '',
-    templateKey: 'single_button',
-    backdropOpacity: 0.6,
-    closeCorner: 'top_right',
-    actionBarColor: '#04352A',
-    matchPosterColor: true,
-    dividerLabel: 'TRY IT YOURSELF',
-    toastMessage: '',
-    priority: 1,
-    status: 'Live',
-    isActive: true,
-    cohortIncludeIds: ['COH001'],
-    cohortExcludeIds: [],
-    buttons: [
-      {
-        id: 'POP001-b0',
-        slotIndex: 0,
-        label: 'Book a demo',
-        bgColor: '#047857',
-        textColor: '#FFFFFF',
-        redirectUrl: 'https://acn.example.com/demo',
-        openInNewTab: false,
-        analyticsKey: 'book_demo',
-      },
-    ],
-    trigger: { type: 'session', pageKey: null, scrollDepthPct: null, eventKey: null },
-    frequency: { maxImpressions: 2, minGapHours: 12 },
-    stats: {
-      impressions: 12840,
-      closes: 7620,
-      buttonClicks: { book_demo: 1932 },
-      byDevice: { mobile: 12840, desktop: 0 },
-    },
-  },
-  {
-    id: 'POP002',
-    name: 'Rental drive — Upgrade or Explore',
-    surface: 'app',
-    imageUrl: 'https://placehold.co/1080x1350/1E3A8A/FFFFFF/png?text=Rental+Drive',
-    imageUrlDesktop: '',
-    templateKey: 'two_button',
-    backdropOpacity: 0.65,
-    closeCorner: 'top_right',
-    actionBarColor: '#111C3A',
-    matchPosterColor: true,
-    dividerLabel: 'TRY IT YOURSELF',
-    toastMessage: '',
-    priority: 2,
-    status: 'Live',
-    isActive: true,
-    cohortIncludeIds: ['COH002'],
-    cohortExcludeIds: ['COH008'],
-    buttons: [
-      {
-        id: 'POP002-b0',
-        slotIndex: 0,
-        label: 'Upgrade plan',
-        bgColor: '#1D4ED8',
-        textColor: '#FFFFFF',
-        redirectUrl: 'https://acn.example.com/plans',
-        openInNewTab: false,
-        analyticsKey: 'upgrade_plan',
-      },
-      {
-        id: 'POP002-b1',
-        slotIndex: 1,
-        label: 'Explore rentals',
-        bgColor: '#FFFFFF',
-        textColor: '#1F2937',
-        redirectUrl: 'https://acn.example.com/rentals',
-        openInNewTab: false,
-        analyticsKey: 'explore_rentals',
-      },
-    ],
-    trigger: { type: 'page', pageKey: 'properties', scrollDepthPct: null, eventKey: null },
-    frequency: { maxImpressions: 3, minGapHours: 6 },
-    stats: {
-      impressions: 8410,
-      closes: 5980,
-      buttonClicks: { upgrade_plan: 742, explore_rentals: 1105 },
-      byDevice: { mobile: 8410, desktop: 0 },
-    },
-  },
-  {
-    id: 'POP003',
-    name: 'New launch announcement',
-    surface: 'web',
-    imageUrl: '',
-    imageUrlDesktop: 'https://placehold.co/1820x872/7C2D12/FFFFFF/png?text=New+Launch',
-    templateKey: 'full_tap',
-    backdropOpacity: 0.7,
-    closeCorner: 'top_right',
-    actionBarColor: '#3B1206',
-    matchPosterColor: true,
-    dividerLabel: 'TRY IT YOURSELF',
-    toastMessage: '',
-    priority: 1,
-    status: 'Live',
-    isActive: true,
-    cohortIncludeIds: ['COH005'],
-    cohortExcludeIds: [],
-    buttons: [
-      {
-        id: 'POP003-b0',
-        slotIndex: 0,
-        label: '',
-        bgColor: '#000000',
-        textColor: '#FFFFFF',
-        redirectUrl: 'https://acn.example.com/launch/prestige-park',
-        openInNewTab: true,
-        analyticsKey: 'launch_card',
-      },
-    ],
-    trigger: { type: 'page', pageKey: 'home', scrollDepthPct: null, eventKey: null },
-    frequency: { maxImpressions: 1, minGapHours: null },
-    stats: {
-      impressions: 5210,
-      closes: 3980,
-      buttonClicks: { launch_card: 968 },
-      byDevice: { mobile: 1240, desktop: 3970 },
-    },
-  },
-  {
-    id: 'POP004',
-    name: 'Delist reminder — scroll nudge',
-    surface: 'web',
-    imageUrl: '',
-    imageUrlDesktop: 'https://placehold.co/1820x872/9A3412/FFFFFF/png?text=Delist+Nudge',
-    templateKey: 'single_button',
-    backdropOpacity: 0.55,
-    closeCorner: 'top_left',
-    actionBarColor: '#4A1806',
-    matchPosterColor: true,
-    dividerLabel: 'TRY IT YOURSELF',
-    toastMessage: '',
-    priority: 3,
-    status: 'Not Live',
-    isActive: false,
-    cohortIncludeIds: [],
-    cohortExcludeIds: ['COH008'],
-    buttons: [
-      {
-        id: 'POP004-b0',
-        slotIndex: 0,
-        label: 'Review my listings',
-        bgColor: '#B45309',
-        textColor: '#FFFFFF',
-        redirectUrl: 'https://acn.example.com/my-business/listings',
-        openInNewTab: false,
-        analyticsKey: 'review_listings',
-      },
-    ],
-    trigger: { type: 'scroll', pageKey: 'my_business', scrollDepthPct: 50, eventKey: null },
-    frequency: { maxImpressions: 1, minGapHours: 72 },
-    stats: { impressions: 0, closes: 0, buttonClicks: {}, byDevice: {} },
-  },
-  {
-    id: 'POP005',
-    name: 'Post add-inventory — boost listing',
-    surface: 'app',
-    imageUrl: 'https://placehold.co/1080x1350/4C1D95/FFFFFF/png?text=Boost+Listing',
-    imageUrlDesktop: '',
-    templateKey: 'two_button',
-    backdropOpacity: 0.6,
-    closeCorner: 'top_right',
-    actionBarColor: '#241046',
-    matchPosterColor: true,
-    dividerLabel: 'TRY IT YOURSELF',
-    toastMessage: '',
-    priority: 1,
-    status: 'Live',
-    isActive: true,
-    cohortIncludeIds: [],
-    cohortExcludeIds: [],
-    buttons: [
-      {
-        id: 'POP005-b0',
-        slotIndex: 0,
-        label: 'Boost now',
-        bgColor: '#6D28D9',
-        textColor: '#FFFFFF',
-        redirectUrl: 'https://acn.example.com/boost',
-        openInNewTab: false,
-        analyticsKey: 'boost_now',
-      },
-      {
-        id: 'POP005-b1',
-        slotIndex: 1,
-        label: 'Maybe later',
-        bgColor: '#F3F4F6',
-        textColor: '#374151',
-        redirectUrl: 'https://acn.example.com/my-business',
-        openInNewTab: false,
-        analyticsKey: 'boost_later',
-      },
-    ],
-    trigger: {
-      type: 'event',
-      pageKey: null,
-      scrollDepthPct: null,
-      eventKey: 'add_inventory_success',
-    },
-    frequency: { maxImpressions: 4, minGapHours: 2 },
-    stats: {
-      impressions: 3120,
-      closes: 1490,
-      buttonClicks: { boost_now: 806, boost_later: 640 },
-      byDevice: { mobile: 3120, desktop: 0 },
-    },
-  },
-  {
-    id: 'POP006',
-    name: 'Commercial webinar invite',
-    surface: 'web',
-    imageUrl: '',
-    imageUrlDesktop: 'https://placehold.co/1820x872/0F766E/FFFFFF/png?text=Webinar',
-    templateKey: 'single_button',
-    backdropOpacity: 0.6,
-    closeCorner: 'top_right',
-    actionBarColor: '#07332F',
-    matchPosterColor: true,
-    dividerLabel: 'TRY IT YOURSELF',
-    toastMessage: '',
-    priority: 2,
-    status: 'Draft',
-    isActive: false,
-    cohortIncludeIds: ['COH007'],
-    cohortExcludeIds: [],
-    buttons: [
-      {
-        id: 'POP006-b0',
-        slotIndex: 0,
-        label: 'Reserve a seat',
-        bgColor: '#FDE68A',
-        textColor: '#FFFFFF',
-        redirectUrl: '',
-        openInNewTab: true,
-        analyticsKey: 'reserve_seat',
-      },
-    ],
-    trigger: { type: 'page', pageKey: 'service', scrollDepthPct: null, eventKey: null },
-    frequency: { maxImpressions: 1, minGapHours: null },
-    stats: { impressions: 0, closes: 0, buttonClicks: {}, byDevice: {} },
-  },
-  {
-    id: 'POP007',
-    name: 'Dormant win-back (paused)',
-    surface: 'web',
-    imageUrl: '',
-    imageUrlDesktop: 'https://placehold.co/1820x872/374151/FFFFFF/png?text=Win+Back',
-    templateKey: 'single_button',
-    backdropOpacity: 0.6,
-    closeCorner: 'top_right',
-    actionBarColor: '#1B2027',
-    matchPosterColor: true,
-    dividerLabel: 'TRY IT YOURSELF',
-    toastMessage: '',
-    priority: 4,
-    status: 'Off',
-    isActive: false,
-    cohortIncludeIds: ['COH008'],
-    cohortExcludeIds: [],
-    buttons: [
-      {
-        id: 'POP007-b0',
-        slotIndex: 0,
-        label: 'Come back',
-        bgColor: '#111827',
-        textColor: '#FFFFFF',
-        redirectUrl: 'https://acn.example.com/welcome-back',
-        openInNewTab: false,
-        analyticsKey: 'win_back',
-      },
-    ],
-    trigger: { type: 'session', pageKey: null, scrollDepthPct: null, eventKey: null },
-    frequency: { maxImpressions: 2, minGapHours: 24 },
-    stats: {
-      impressions: 940,
-      closes: 880,
-      buttonClicks: { win_back: 41 },
-      byDevice: { mobile: 180, desktop: 760 },
-    },
-  },
+// Creative size per surface (the surface decides the creative).
+export const POPUP_CREATIVE = {
+  app: { ratio: '39:50', label: 'App poster', size: '780×1000' },
+  web: { ratio: '910:436', label: 'Web creative', size: '1820×872' },
+};
+
+const img = (seed, w, h) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
+
+const base = (o) => ({
+  status: 'paused',
+  appManaged: false,
+  audience: [], // cohort ids; empty = all users
+  audienceLabel: 'All users',
+  maxShows: 1,
+  minGapH: '',
+  startDate: '',
+  endDate: '',
+  layout: 'one', // none | one | two
+  dividerLabel: '',
+  colorMode: 'manual', // matched | manual
+  bg: '#0F766E',
+  text: '#FAFAFA',
+  ctas: [{ label: 'Know more', url: 'https://acnonline.in' }],
+  destination: 'https://acnonline.in', // the whole creative is a link
+  triggerEvent: 'add_inventory_success', // event the app raises to fire this popup
+  appendCpid: true,
+  closeCorner: 'top_right', // top_right | top_left
+  hideAfterClick: false, // don't show again to a user who already clicked
+  toast: '',
+  impressions: 0,
+  ctr: 0,
+  dismiss: 0,
+  ...o,
+});
+
+const app = (id, page, name, o) => base({ id, surface: 'app', page, name, creative: { url: img(id, 780, 1000) }, ...o });
+const web = (id, page, name, o) => base({ id, surface: 'web', page, name, creative: { url: img(id, 1820, 872) }, ...o });
+
+export const mockPopupList = [
+  app('PA01', 'home', 'Demante Event', { status: 'live', maxShows: 3, impressions: 180, ctr: 8.9, dismiss: 61, dividerLabel: 'TRY IT YOURSELF', ctas: [{ label: 'Book a demo', url: 'https://acnonline.in/demo' }] }),
+  app('PA02', 'home', 'e-khata', { maxShows: 2, impressions: 675, ctr: 2.8, dismiss: 74 }),
+  app('PA03', 'home', 'Registration case referal', { maxShows: 2, impressions: 461, ctr: 2.6, dismiss: 80 }),
+  app('PA04', 'home', 'Primary Orlean', { maxShows: 5, impressions: 648, ctr: 3.4, dismiss: 68 }),
+  app('PA05', 'home', 'Client sharing 2', { maxShows: 5, impressions: 134, ctr: 3.7, dismiss: 72 }),
+  app('PA06', 'home', 'client sharing', { maxShows: 5, impressions: 359, ctr: 10.9, dismiss: 66 }),
+  app('PA07', 'home', 'Delist inventory popup', { appManaged: true, creative: null }),
+  app('PA08', 'home', 'Masal prompt', { appManaged: true, creative: null }),
+  app('PA09', 'home', 'Ruchira', { audienceLabel: 'All Agents', maxShows: 5, impressions: 109, ctr: 8.3, dismiss: 58 }),
+  app('PA10', 'properties', 'Whatsapp Bot', { maxShows: 5, impressions: 232, ctr: 5.6, dismiss: 63 }),
+  app('PA11', 'services', 'Test POP UP', { audienceLabel: 'Yash', maxShows: 100000, impressions: 7, ctr: 85.7, dismiss: 14 }),
+  web('PW01', 'home', 'Web demo banner', { maxShows: 3, impressions: 300, ctr: 4.0, dismiss: 88 }),
+  web('PW02', 'home', 'App download nudge', { maxShows: 2, impressions: 117, ctr: 5.1, dismiss: 95 }),
+  web('PW03', 'home', 'Agent meetup invite', { status: 'live', maxShows: 3, impressions: 412, ctr: 6.2, dismiss: 71 }),
+  web('PW04', 'properties', 'List your property', { status: 'live', maxShows: 2, impressions: 268, ctr: 4.7, dismiss: 83 }),
+  web('PW05', 'services', 'Legal desk offer', { maxShows: 2, impressions: 96, ctr: 3.1, dismiss: 90 }),
+  web('PW06', 'home', 'Festive brokerage offer', { maxShows: 4, impressions: 189, ctr: 7.4, dismiss: 64 }),
 ];
+
+import { MOCK_DIRECTORY } from './mockCms';
+
+// Fake but stable CPID lists for who saw / clicked a popup (real data comes from the backend).
+export function popupCpids(p) {
+  let seed = 0;
+  for (const ch of p.id) seed = (seed * 31 + ch.charCodeAt(0)) % 100003;
+  const clicks = Math.round((p.impressions * p.ctr) / 100);
+  const pick = (n) => [...new Set(Array.from({ length: Math.min(n, MOCK_DIRECTORY.length) }, (_, j) => MOCK_DIRECTORY[(seed + j) % MOCK_DIRECTORY.length].cpid))];
+  const viewers = pick(p.impressions);
+  return { viewers, clickers: viewers.slice(0, Math.min(clicks, viewers.length)) };
+}
+
+// CPIDs behind one button's clicks: the clickers are split across the buttons.
+export function popupButtonCpids(p, i, n) {
+  return popupCpids(p).clickers.filter((_, k) => k % Math.max(n, 1) === i);
+}
+
+export function getPopups(surface) {
+  return mockPopupList.filter((p) => p.surface === surface);
+}
+
+export function getPopup(id) {
+  return mockPopupList.find((p) => p.id === id) || null;
+}
+
+export function createPopup(data) {
+  const popup = base({ ...data, id: `PX${Date.now()}` });
+  mockPopupList.push(popup);
+  return popup;
+}
+
+export function updatePopup(id, patch) {
+  const popup = getPopup(id);
+  if (popup) Object.assign(popup, patch);
+  return popup;
+}
+
+export function setPopupStatus(id, status) {
+  return updatePopup(id, { status });
+}
+
+// Priority = order on the surface. `ids` is the new order; anything not listed keeps its place after.
+export function reorderSurfacePopups(surface, ids) {
+  const group = mockPopupList.filter((p) => p.surface === surface);
+  const rest = mockPopupList.filter((p) => p.surface !== surface);
+  const ordered = ids.map((id) => group.find((p) => p.id === id)).filter(Boolean);
+  const leftover = group.filter((p) => !ids.includes(p.id));
+  mockPopupList.length = 0;
+  mockPopupList.push(...rest, ...ordered, ...leftover);
+}
