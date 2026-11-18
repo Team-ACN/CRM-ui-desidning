@@ -189,18 +189,19 @@ const PopupEditor = ({ id, surface = 'app', onClose, onChanged }) => {
               { value: 'disabled', label: 'Disabled' },
             ]}
           />
-          <div className="flex items-center gap-2">
-            <span className="text-[12px] text-secondary">Close</span>
-            <SegmentedControl
-              size="sm"
-              value={form.closeCorner}
-              onChange={(v) => set({ closeCorner: v })}
-              options={[
-                { value: 'top_left', label: 'Top left' },
-                { value: 'top_right', label: 'Top right' },
-              ]}
-            />
-          </div>
+          {form.surface === 'web' && (
+            <div className="flex items-center gap-2">
+              <SegmentedControl
+                size="sm"
+                value={form.closeCorner}
+                onChange={(v) => set({ closeCorner: v })}
+                options={[
+                  { value: 'top_left', label: 'Top left' },
+                  { value: 'top_right', label: 'Top right' },
+                ]}
+              />
+            </div>
+          )}
         </div>
         <div className={form.surface === 'app' ? 'w-[45%]' : 'w-full'}>
           <UploadZone label="" ratio={spec.ratio} value={form.creative} onChange={(v) => set({ creative: v })} />
@@ -357,7 +358,7 @@ const PopupEditor = ({ id, surface = 'app', onClose, onChanged }) => {
         <PopupSheetPreview
           surface={form.surface}
           ratio={spec.ratio}
-          closeCorner={form.closeCorner}
+          closeCorner={form.surface === 'web' ? form.closeCorner : 'top_right'}
           image={form.creative?.url}
           bg={form.bg}
           text={textOn(form.bg)}
