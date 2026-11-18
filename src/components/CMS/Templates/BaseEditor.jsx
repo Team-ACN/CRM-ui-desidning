@@ -48,8 +48,8 @@ function BaseRow({ row, page, tpl, moved, active, onEdit, onRemove, onChanged })
       ref={setNodeRef}
       id={`base-row-${row.id}`}
       style={highlight ? { boxShadow: '0 0 0 1px #171717' } : undefined}
-      onClick={onEdit}
-      className={`rounded-xl border overflow-hidden flex items-stretch cursor-pointer ${isDragging ? 'opacity-40 ' : ''}${hidden ? 'border-red-300 bg-red-50' : row.onlyFor && !isBase ? 'border-neutral-200 bg-green-50' : `${highlight ? 'border-neutral-900' : locked ? 'border-neutral-400' : 'border-neutral-200'} ${locked ? 'bg-neutral-100' : 'bg-surface'}`}`}
+      onClick={sys ? undefined : onEdit}
+      className={`rounded-xl border overflow-hidden flex items-stretch ${sys ? '' : 'cursor-pointer'} ${isDragging ? 'opacity-40 ' : ''}${hidden ? 'border-red-300 bg-red-50' : row.onlyFor && !isBase ? 'border-neutral-200 bg-green-50' : `${highlight ? 'border-neutral-900' : locked ? 'border-neutral-400' : 'border-neutral-200'} ${locked ? 'bg-neutral-100' : 'bg-surface'}`}`}
     >
       <div className="w-1/2 shrink-0 min-w-0 p-3 flex gap-2.5 min-h-[84px]">
         {locked ? (
@@ -69,16 +69,22 @@ function BaseRow({ row, page, tpl, moved, active, onEdit, onRemove, onChanged })
           <div className="flex items-center gap-1.5 flex-wrap">
             {inherited && <span className={`shrink-0 px-2.5 h-6 inline-flex items-center rounded-full border text-[11px] font-semibold tracking-wide ${TAGS.base.cls}`}>{TAGS.base.label}</span>}
             {tag && <span className={`shrink-0 px-2.5 h-6 inline-flex items-center rounded-full border text-[11px] font-semibold tracking-wide ${tag.cls}`}>{tag.label}</span>}
-            {isBase && !locked && total > 0 && (
-              <button type="button" title="Shown in this many templates" onClick={(e) => { e.stopPropagation(); onEdit(); }} className="shrink-0 h-6 px-2.5 rounded-full border border-neutral-200 bg-white text-[11px] font-semibold text-neutral-600 tabular-nums hover:border-neutral-400">
-                {shown}/{total}
-              </button>
-            )}
+            {isBase && !locked && total > 0 &&
+              (sys ? (
+                <span title="Shown in this many templates" className="shrink-0 h-6 px-2.5 rounded-full border border-neutral-200 bg-white inline-flex items-center text-[11px] font-semibold text-neutral-600 tabular-nums">
+                  {shown}/{total}
+                </span>
+              ) : (
+                <button type="button" title="Shown in this many templates" onClick={(e) => { e.stopPropagation(); onEdit(); }} className="shrink-0 h-6 px-2.5 rounded-full border border-neutral-200 bg-white text-[11px] font-semibold text-neutral-600 tabular-nums hover:border-neutral-400">
+                  {shown}/{total}
+                </button>
+              ))}
             {inherited && !sys?.fixed && (
               <button
                 type="button"
                 title={hidden ? 'Hidden in this template · click to show' : 'Shown in this template · click to hide'}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setCellState(page.key, tpl.id, row.id, hidden ? 'inherit' : 'hide');
                   onChanged();
                 }}

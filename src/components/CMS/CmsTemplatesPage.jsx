@@ -6,7 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button, EmptyState, useToast } from './index';
 import { SearchCircle, ArchiveCircle } from './ToolbarIcons';
 import BaseEditor from './Templates/BaseEditor';
-import { PAGES, SYSTEM_WIDGETS, resolvePage, createTemplate, getPageMatrix, reorderTemplates, updateTemplate } from '../../data/mockCms';
+import { PAGES, SYSTEM_WIDGETS, getCohorts, resolvePage, createTemplate, getPageMatrix, reorderTemplates, updateTemplate } from '../../data/mockCms';
 
 
 function SortableRow({ id, disabled, children, ...rest }) {
@@ -22,6 +22,7 @@ const iconAct = 'w-7 h-7 rounded-full flex items-center justify-center text-neut
 
 const CmsTemplatesPage = () => {
   const [, forceRender] = useState(0);
+  const cohortById = Object.fromEntries(getCohorts().map((c) => [c.id, c]));
   const bump = () => forceRender((v) => v + 1);
   const toast = useToast();
 
@@ -120,6 +121,7 @@ const CmsTemplatesPage = () => {
                   <th className="pl-5 pr-2 py-3 w-20 font-medium">Priority</th>
                   <th className="px-4 py-3 font-medium">Template</th>
                   <th className="px-4 py-3 font-medium w-28 text-center">Components</th>
+                  <th className="px-4 py-3 font-medium w-28 text-center">People</th>
                   <th className="px-4 py-3 font-medium w-28 text-center">Status</th>
                   <th className="pl-4 pr-6 py-3 w-40 font-medium text-left">Action</th>
                 </tr>
@@ -150,7 +152,7 @@ const CmsTemplatesPage = () => {
                           ) : (
                             t.cohorts.map((id) => (
                               <span key={id} className="inline-flex items-center h-5 px-2 rounded-full bg-neutral-100 text-[11px] text-neutral-600">
-                                {id}
+                                {cohortById[id]?.name || id}
                               </span>
                             ))
                           )}
@@ -158,6 +160,9 @@ const CmsTemplatesPage = () => {
                       </td>
                       <td className="px-4 py-3.5 text-center text-label tabular-nums">
                         {resolvePage(pageKey, t.id).filter((i) => !i.hidden && !SYSTEM_WIDGETS[i.row.widget]?.fixed).length}
+                      </td>
+                      <td className="px-4 py-3.5 text-center text-label tabular-nums">
+                        {t.isBase ? <span className="text-tertiary">—</span> : t.cohorts.reduce((n, id) => n + (cohortById[id]?.userCount || 0), 0).toLocaleString('en-IN')}
                       </td>
                       <td className="px-4 py-3.5 text-center">
                         {t.isBase ? (

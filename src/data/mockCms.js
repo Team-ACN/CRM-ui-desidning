@@ -688,11 +688,10 @@ export function reorderComponentItems(id, orderedIds) {
 // ─── Pages & templates ────────────────────────────────────────────────────
 // App only. Each page (Home, Properties, Services) is an ordered list of widgets from one
 // template, exactly like the app's `/app/page-layout`. Rows = widgets, columns = templates.
-// A row is one of: the page's single top banner, a system widget (with an optional heading),
+// A row is one of: the page's single top banner, a system widget,
 // or a CMS component. Nothing is "fixed": every widget is just template content.
 
-// The 11 system widgets the app registers. `heading` = the app shows widgetData.sectionHeading
-// (falling back to defaultHeading) for it.
+// The system widgets the app registers. They are switched on or off per template, not edited.
 // Carousels have no name of their own (each post does): show the first post's name + post count.
 export function componentTitle(c) {
   if (!c) return '';
@@ -704,25 +703,25 @@ export function componentTitle(c) {
 }
 
 export const SYSTEM_WIDGETS = {
-  DELIST_INVENTORIES: { label: 'Delist Inventories', description: 'Quickly delist inventories', heading: false },
-  PROPERTY_EDGE_CARDS: { label: 'Property & Edge Cards', description: 'Stat cards for Property and Edge', heading: false },
-  ENQUIRY_RECEIVED: { label: 'Enquiry Received', description: 'Summary of incoming enquiries', heading: true, defaultHeading: 'Enquiry Received' },
-  ENQUIRY_FEEDBACK: { label: 'Enquiry Feedback', description: 'Review the enquiries you made', heading: true, defaultHeading: 'Made Enquiries? Review Them' },
-  RESALE_INVENTORY: { label: 'Resale Inventory', description: 'New resale properties', heading: true, defaultHeading: 'Resale Properties' },
-  RENTAL_INVENTORY: { label: 'Rental Inventory', description: 'New rental properties', heading: true, defaultHeading: 'Rental Properties' },
-  EDGE_WIDGET: { label: 'Edge Widget', description: 'Latest Edge posts', heading: false },
-  SEARCH: { label: 'Search', description: 'Property search bar', heading: false },
+  DELIST_INVENTORIES: { label: 'Delist Inventories', description: 'Quickly delist inventories' },
+  PROPERTY_EDGE_CARDS: { label: 'Property & Edge Cards', description: 'Stat cards for Property and Edge' },
+  ENQUIRY_RECEIVED: { label: 'Enquiry Received', description: 'Summary of incoming enquiries' },
+  ENQUIRY_FEEDBACK: { label: 'Enquiry Feedback', description: 'Review the enquiries you made' },
+  RESALE_INVENTORY: { label: 'Resale Inventory', description: 'New resale properties' },
+  RENTAL_INVENTORY: { label: 'Rental Inventory', description: 'New rental properties' },
+  EDGE_WIDGET: { label: 'Edge Widget', description: 'Latest Edge posts' },
+  SEARCH: { label: 'Search', description: 'Property search bar' },
   // Edge page sections
-  EDGE_HERO: { label: 'Hero Section', description: 'Edge hero banner', heading: false },
-  EDGE_VISUAL_STORIES: { label: 'Visual Stories', description: 'Story reels', heading: false },
-  EDGE_PROJECT_UPDATES: { label: 'Latest Project Updates', description: 'Newest project updates', heading: false },
-  EDGE_LAST_48: { label: 'Last 48 Hours', description: 'Posts from the last 48 hours', heading: false },
-  EDGE_LOCATION_SORT: { label: 'Location wise sort', description: 'Posts grouped by location', heading: false },
+  EDGE_HERO: { label: 'Hero Section', description: 'Edge hero banner' },
+  EDGE_VISUAL_STORIES: { label: 'Visual Stories', description: 'Story reels' },
+  EDGE_PROJECT_UPDATES: { label: 'Latest Project Updates', description: 'Newest project updates' },
+  EDGE_LAST_48: { label: 'Last 48 Hours', description: 'Posts from the last 48 hours' },
+  EDGE_LOCATION_SORT: { label: 'Location wise sort', description: 'Posts grouped by location' },
   // Fixed sections: always on the page (not in the library, can't be removed), content comes later.
   ...Object.fromEntries(
     Array.from({ length: 10 }, (_, i) => [
       `PROPERTY_SECTION_${i + 1}`,
-      { label: `Property section ${i + 1}`, description: 'Fixed section', heading: true, defaultHeading: `Property section ${i + 1}`, fixed: true },
+      { label: `Property section ${i + 1}`, description: 'Fixed section', fixed: true },
     ])
   ),
 };
@@ -827,6 +826,20 @@ mockPages.edge_desktop = buildMatrix(
   [topRow('CMP090'), sysRow('EDGE_HERO'), sysRow('EDGE_VISUAL_STORIES'), sysRow('EDGE_PROJECT_UPDATES'), sysRow('EDGE_LAST_48'), sysRow('EDGE_LOCATION_SORT'), cmsRow('CMP092')],
   { 'TPLE2:top': { state: 'override', override: { componentId: 'CMP091' } } }
 );
+
+// Carousel rows are built from cards, like the ones added in the editor: turn every carousel that
+// was seeded as a standalone component into a row made of its cards (same order, same cards).
+Object.values(mockPages).forEach((matrix) => {
+  matrix.rows.forEach((row) => {
+    const old = row.kind === 'cms' ? mockComponents.find((c) => c.id === row.componentId) : null;
+    if (!old || old.cardComponent || !COMPONENT_TYPES[old.type]?.carousel) return;
+    const cardIds = old.items.map((it) => it.cardId).filter(Boolean);
+    if (!cardIds.length) return;
+    const made = createCardRow(cardIds);
+    made.status = old.status;
+    row.componentId = made.id;
+  });
+});
 
 export function getPageMatrix(pageKey) {
   return mockPages[pageKey];

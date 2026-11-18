@@ -17,7 +17,7 @@ const CmsShell = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [insightsOpen, setInsightsOpen] = useState(false);
-  const activePage = PAGES.find((p) => location.pathname.startsWith(`/cms/${p.value}`))?.value || 'cohorts';
+  const activePage = PAGES.find((p) => location.pathname.startsWith(`/cms/${p.value}`))?.value || 'popups';
 
   return (
     <ToastProvider>

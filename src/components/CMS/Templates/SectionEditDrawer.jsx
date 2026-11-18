@@ -51,7 +51,7 @@ const SectionEditDrawer = ({ page, tpl, row, onClose, onChanged }) => {
   const { shown, total } = rowTemplateUsage(page.key, row.id);
   const meta = baseComponent ? COMPONENT_TYPES[baseComponent.type] : null;
 
-  const cardRow = !!baseComponent?.cardComponent && (!tpl || !!row.onlyFor);
+  const cardRow = !!baseComponent?.cardComponent;
   const setItems = (items) => {
     updateComponent(baseComponent.id, { items, internalName: items[0]?.name || baseComponent.internalName });
     onChanged();
@@ -98,22 +98,6 @@ const SectionEditDrawer = ({ page, tpl, row, onClose, onChanged }) => {
                 );
               })}
             </div>
-          </div>
-        )}
-
-        {tpl && sys?.heading && (
-          <div>
-            <p className="text-[13px] font-semibold text-label mb-2">Heading</p>
-            <input
-              type="text"
-              value={cell.override?.heading ?? row.heading ?? ''}
-              placeholder={sys.defaultHeading}
-              onChange={(e) => {
-                setCellState(page.key, tpl.id, row.id, 'override', { ...(cell.override || {}), heading: e.target.value });
-                onChanged();
-              }}
-              className="w-full h-9 px-3 rounded-[10px] bg-neutral-100 text-[14px] text-label placeholder:text-tertiary border border-transparent outline-none focus:bg-white focus:border-neutral-400"
-            />
           </div>
         )}
 

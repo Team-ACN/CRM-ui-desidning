@@ -53,7 +53,7 @@ function App() {
           <Route path="/qc-dashboard" element={<QCDashboardPage />} />
           <Route path="/finance" element={<FinancePage />} />
           <Route path="/cms" element={<CmsShell />}>
-            <Route index element={<Navigate to="cohorts" replace />} />
+            <Route index element={<Navigate to="popups" replace />} />
             <Route path="cohorts" element={<CmsCohortsPage />} />
             <Route path="components" element={<CmsComponentsPage />} />
             <Route path="templates" element={<CmsTemplatesPage />} />
