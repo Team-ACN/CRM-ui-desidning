@@ -1,4 +1,5 @@
-// Popups: App and Web are separate lists, ranked by list order — only one shows per view, the highest rank wins.
+// One popup can run on the app, the website or both (`on`), with a creative per surface.
+// Priority is the list order — only one shows per view, the highest rank wins.
 
 // Creative size per surface (the surface decides the creative).
 export const POPUP_CREATIVE = {
@@ -22,9 +23,12 @@ const base = (o) => ({
   colorMode: 'manual', // matched | manual
   bg: '#0F766E',
   text: '#FAFAFA',
-  ctas: [{ label: 'Know more', url: 'https://acnonline.in' }],
+  ctas: [{ label: 'Know more', url: 'https://acnonline.in', sendCpId: true }],
   destination: 'https://acnonline.in', // the whole creative is a link
-  triggerEvent: 'add_inventory_success', // event the app raises to fire this popup
+  triggerType: 'page', // page | scroll | event
+  triggerPage: 'home',
+  triggerScroll: 50,
+  triggerEvent: '', // event the app raises to fire this popup
   appendCpid: true,
   closeCorner: 'top_right', // top_right | top_left
   hideAfterClick: false, // don't show again to a user who already clicked
@@ -35,25 +39,27 @@ const base = (o) => ({
   ...o,
 });
 
-const app = (id, page, name, o) => base({ id, surface: 'app', page, name, creative: { url: img(id, 780, 1000) }, ...o });
-const web = (id, page, name, o) => base({ id, surface: 'web', page, name, creative: { url: img(id, 1820, 872) }, ...o });
+const app = (id, page, name, o) => base({ id, page, name, on: { app: true, web: false }, creatives: { app: { url: img(id, 780, 1000) }, web: { url: img(id, 1820, 872) } }, ...o });
+const web = (id, page, name, o) => base({ id, page, name, on: { app: false, web: true }, creatives: { app: { url: img(id, 780, 1000) }, web: { url: img(id, 1820, 872) } }, ...o });
+const both = (id, page, name, o) => base({ id, page, name, on: { app: true, web: true }, creatives: { app: { url: img(id, 780, 1000) }, web: { url: img(id, 1820, 872) } }, ...o });
+const managed = (id, name) => base({ id, page: 'home', name, appManaged: true, on: { app: true, web: false }, creatives: { app: null, web: null } });
 
 export const mockPopupList = [
-  app('PA01', 'home', 'Demante Event', { status: 'live', maxShows: 3, impressions: 180, ctr: 8.9, dismiss: 61, dividerLabel: 'TRY IT YOURSELF', ctas: [{ label: 'Book a demo', url: 'https://acnonline.in/demo' }] }),
+  both('PA01', 'home', 'Demante Event', { status: 'live', maxShows: 3, impressions: 480, ctr: 7.9, dismiss: 61, dividerLabel: 'TRY IT YOURSELF', ctas: [{ label: 'Book a demo', url: 'https://acnonline.in/demo', sendCpId: true }] }),
+  both('PW03', 'home', 'Agent meetup invite', { status: 'live', maxShows: 3, impressions: 412, ctr: 6.2, dismiss: 71 }),
+  web('PW04', 'properties', 'List your property', { status: 'live', maxShows: 2, impressions: 268, ctr: 4.7, dismiss: 83 }),
+  managed('PA07', 'Delist inventory popup'),
+  managed('PA08', 'Masal prompt'),
   app('PA02', 'home', 'e-khata', { maxShows: 2, impressions: 675, ctr: 2.8, dismiss: 74 }),
   app('PA03', 'home', 'Registration case referal', { maxShows: 2, impressions: 461, ctr: 2.6, dismiss: 80 }),
-  app('PA04', 'home', 'Primary Orlean', { maxShows: 5, impressions: 648, ctr: 3.4, dismiss: 68 }),
+  both('PA04', 'home', 'Primary Orlean', { maxShows: 5, impressions: 648, ctr: 3.4, dismiss: 68 }),
   app('PA05', 'home', 'Client sharing 2', { maxShows: 5, impressions: 134, ctr: 3.7, dismiss: 72 }),
   app('PA06', 'home', 'client sharing', { maxShows: 5, impressions: 359, ctr: 10.9, dismiss: 66 }),
-  app('PA07', 'home', 'Delist inventory popup', { appManaged: true, creative: null }),
-  app('PA08', 'home', 'Masal prompt', { appManaged: true, creative: null }),
   app('PA09', 'home', 'Ruchira', { audienceLabel: 'All Agents', maxShows: 5, impressions: 109, ctr: 8.3, dismiss: 58 }),
   app('PA10', 'properties', 'Whatsapp Bot', { maxShows: 5, impressions: 232, ctr: 5.6, dismiss: 63 }),
   app('PA11', 'services', 'Test POP UP', { audienceLabel: 'Yash', maxShows: 100000, impressions: 7, ctr: 85.7, dismiss: 14 }),
   web('PW01', 'home', 'Web demo banner', { maxShows: 3, impressions: 300, ctr: 4.0, dismiss: 88 }),
-  web('PW02', 'home', 'App download nudge', { maxShows: 2, impressions: 117, ctr: 5.1, dismiss: 95 }),
-  web('PW03', 'home', 'Agent meetup invite', { status: 'live', maxShows: 3, impressions: 412, ctr: 6.2, dismiss: 71 }),
-  web('PW04', 'properties', 'List your property', { status: 'live', maxShows: 2, impressions: 268, ctr: 4.7, dismiss: 83 }),
+  both('PW02', 'home', 'App download nudge', { maxShows: 2, impressions: 117, ctr: 5.1, dismiss: 95 }),
   web('PW05', 'services', 'Legal desk offer', { maxShows: 2, impressions: 96, ctr: 3.1, dismiss: 90 }),
   web('PW06', 'home', 'Festive brokerage offer', { maxShows: 4, impressions: 189, ctr: 7.4, dismiss: 64 }),
 ];
@@ -75,8 +81,9 @@ export function popupButtonCpids(p, i, n) {
   return popupCpids(p).clickers.filter((_, k) => k % Math.max(n, 1) === i);
 }
 
-export function getPopups(surface) {
-  return mockPopupList.filter((p) => p.surface === surface);
+// view: 'all' | 'app' | 'web'
+export function getPopups(view = 'all') {
+  return view === 'all' ? [...mockPopupList] : mockPopupList.filter((p) => p.on?.[view]);
 }
 
 export function getPopup(id) {
@@ -99,12 +106,12 @@ export function setPopupStatus(id, status) {
   return updatePopup(id, { status });
 }
 
-// Priority = order on the surface. `ids` is the new order; anything not listed keeps its place after.
-export function reorderSurfacePopups(surface, ids) {
-  const group = mockPopupList.filter((p) => p.surface === surface);
-  const rest = mockPopupList.filter((p) => p.surface !== surface);
-  const ordered = ids.map((id) => group.find((p) => p.id === id)).filter(Boolean);
-  const leftover = group.filter((p) => !ids.includes(p.id));
-  mockPopupList.length = 0;
-  mockPopupList.push(...rest, ...ordered, ...leftover);
+// Priority = list order. `ids` is the new order of a subset (e.g. one view); those popups take the
+// same slots they held before, so popups outside the subset keep their place.
+export function reorderPopups(ids) {
+  const slots = mockPopupList.map((p, i) => (ids.includes(p.id) ? i : -1)).filter((i) => i >= 0);
+  const moved = ids.map((id) => getPopup(id)).filter(Boolean);
+  slots.forEach((slot, k) => {
+    mockPopupList[slot] = moved[k];
+  });
 }
