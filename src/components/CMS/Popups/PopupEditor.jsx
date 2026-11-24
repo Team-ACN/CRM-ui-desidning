@@ -47,7 +47,7 @@ const BLANK = {
   closeCorner: "top_right",
   dividerLabel: "",
   bg: "#1E40AF",
-  appendCpid: true,
+  appendCpid: false,
   hideAfterClick: true,
   audience: [],
   maxShows: 1,
@@ -75,7 +75,7 @@ const TRIGGER_EVENTS = [
 const BTN_DEFAULT = {
   label: "",
   url: "",
-  sendCpId: true,
+  sendCpId: false,
   bg: "#E5E5E5",
   text: "#171717",
 };

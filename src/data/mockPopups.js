@@ -23,13 +23,13 @@ const base = (o) => ({
   colorMode: 'manual', // matched | manual
   bg: '#0F766E',
   text: '#FAFAFA',
-  ctas: [{ label: 'Know more', url: 'https://acnonline.in', sendCpId: true }],
+  ctas: [{ label: 'Know more', url: 'https://acnonline.in', sendCpId: false }],
   destination: 'https://acnonline.in', // the whole creative is a link
   triggerType: 'page', // page | scroll | event
   triggerPage: 'home',
   triggerScroll: 50,
   triggerEvent: '', // event the app raises to fire this popup
-  appendCpid: true,
+  appendCpid: false,
   closeCorner: 'top_right', // top_right | top_left
   hideAfterClick: false, // don't show again to a user who already clicked
   toast: '',
@@ -45,7 +45,7 @@ const both = (id, page, name, o) => base({ id, page, name, on: { app: true, web:
 const managed = (id, name) => base({ id, page: 'home', name, appManaged: true, on: { app: true, web: false }, creatives: { app: null, web: null } });
 
 export const mockPopupList = [
-  both('PA01', 'home', 'Demante Event', { status: 'live', maxShows: 3, impressions: 480, ctr: 7.9, dismiss: 61, dividerLabel: 'TRY IT YOURSELF', ctas: [{ label: 'Book a demo', url: 'https://acnonline.in/demo', sendCpId: true }] }),
+  both('PA01', 'home', 'Demante Event', { status: 'live', maxShows: 3, impressions: 480, ctr: 7.9, dismiss: 61, dividerLabel: 'TRY IT YOURSELF', ctas: [{ label: 'Book a demo', url: 'https://acnonline.in/demo', sendCpId: false }] }),
   both('PW03', 'home', 'Agent meetup invite', { status: 'live', maxShows: 3, impressions: 412, ctr: 6.2, dismiss: 71 }),
   web('PW04', 'properties', 'List your property', { status: 'live', maxShows: 2, impressions: 268, ctr: 4.7, dismiss: 83 }),
   managed('PA07', 'Delist inventory popup'),
