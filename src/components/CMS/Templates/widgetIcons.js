@@ -10,6 +10,7 @@ export const WIDGET_ICONS = {
   SUGGESTED_PROPERTIES: Sparkles,
   EDGE_WIDGET: Newspaper,
   SERVICE_WIDGET: ConciergeBell,
+  POPULAR_SERVICES: ConciergeBell,
   POPUP: Layers,
   SEARCH: Search,
   EDGE_HERO: Image,

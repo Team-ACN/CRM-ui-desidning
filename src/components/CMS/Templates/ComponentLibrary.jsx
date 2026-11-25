@@ -101,7 +101,8 @@ const ComponentLibrary = ({ page, templateId, onAdd, replace, onPick, selected, 
       const sameType = cur.every((id) => getCard(id)?.type === card.type);
       return sameType ? [...cur, card.id] : [card.id];
     });
-  const [opened, setOpened] = useState({});
+  // Services pages open on their widgets (Popular services).
+  const [opened, setOpened] = useState(() => ({ widgets: !!page.widgets?.includes('POPULAR_SERVICES') }));
   const toggle = (key) => setOpened((cur) => ({ ...cur, [key]: !cur[key] }));
   const matrix = getPageMatrix(page.key);
   const topRowHere = matrix.rows.find((r) => r.kind === 'top' && (r.onlyFor ? r.onlyFor === templateId : true));

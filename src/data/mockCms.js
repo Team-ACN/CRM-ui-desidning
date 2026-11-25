@@ -702,7 +702,35 @@ export function componentTitle(c) {
   return c.internalName;
 }
 
+// The app's service catalogue (ACN app: src/components/services/servicesData.ts), by key.
+export const SERVICES_CATALOG = [
+  ['e-khata', 'E-Khata'],
+  ['khata-transfer', 'Khata Transfer'],
+  ['gruha-jyothi', 'Gruha Jyothi Registration'],
+  ['bescom-name-change', 'BESCOM Name Change'],
+  ['tax-name-change', 'Tax Name Change'],
+  ['legal-consultation', 'Legal Consultation'],
+  ['panchayat-khata', 'Panchayat Khata'],
+  ['new-khata', 'New Khata'],
+  ['bda-khata', 'BDA Khata'],
+  ['deed-drafting', 'Deed Drafting'],
+  ['modt-cancellation', 'MODT Cancellation'],
+  ['due-diligence', 'Due Diligence'],
+  ['registry-of-property', 'Registry of Property'],
+  ['family-tree', 'Family Tree'],
+  ['property-conveyancing', 'Property Conveyancing'],
+  ['rental-lease-agreement', 'Rental and Lease Agreement'],
+  ['mou', 'MOU'],
+  ['encumbrance-certificate', 'Encumbrance Certificate (EC)'],
+  ['property-tax-assistance', 'Property Tax Payment Assistance'],
+  ['tds', 'TDS (Tax Deducted at Source)'],
+].map(([key, label]) => ({ key, label }));
+
+export const POPULAR_SERVICES_MAX = 8;
+
 export const SYSTEM_WIDGETS = {
+  // Services page: a grid of hand-picked services (up to 8), picked per section.
+  POPULAR_SERVICES: { label: 'Popular services', description: 'Up to 8 hand-picked services', services: true },
   DELIST_INVENTORIES: { label: 'Delist Inventories', description: 'Quickly delist inventories' },
   PROPERTY_EDGE_CARDS: { label: 'Property & Edge Cards', description: 'Stat cards for Property and Edge' },
   ENQUIRY_RECEIVED: { label: 'Enquiry Received', description: 'Summary of incoming enquiries' },
@@ -731,7 +759,8 @@ export const PAGES = [
   { key: 'home_desktop', label: 'Home', platform: 'web', topType: 'desktop_top_banner' },
   // Properties only has the Resale and Rental widgets; everything else on it is CMS components.
   { key: 'properties', label: 'Properties', platform: 'app', topType: 'mobile_top_banner', widgets: ['RESALE_INVENTORY', 'RENTAL_INVENTORY'] },
-  { key: 'services', label: 'Services', platform: 'app', topType: 'mobile_top_banner', widgets: [] },
+  { key: 'services', label: 'Services', platform: 'app', topType: 'mobile_top_banner', widgets: ['POPULAR_SERVICES'] },
+  { key: 'services_desktop', label: 'Services', platform: 'web', topType: 'desktop_top_banner', widgets: ['POPULAR_SERVICES'] },
   // Edge has its own feed widget; everything else is CMS components.
   { key: 'edge', label: 'Edge', platform: 'app', topType: 'mobile_top_banner', widgets: ['EDGE_HERO', 'EDGE_VISUAL_STORIES', 'EDGE_PROJECT_UPDATES', 'EDGE_LAST_48', 'EDGE_LOCATION_SORT'] },
   { key: 'edge_desktop', label: 'Edge', platform: 'web', topType: 'desktop_top_banner', widgets: ['EDGE_HERO', 'EDGE_VISUAL_STORIES', 'EDGE_PROJECT_UPDATES', 'EDGE_LAST_48', 'EDGE_LOCATION_SORT'] },
@@ -811,11 +840,15 @@ export const mockPages = {
   ),
   services: buildMatrix(
     [base(), { id: 'S2', name: 'S2', cohorts: ['COH002'], status: 'live', isBase: false }],
-    [topRow('CMP037'), cmsRow('CMP015'), cmsRow('CMP032')],
+    [topRow('CMP037'), { ...sysRow('POPULAR_SERVICES'), services: ['e-khata', 'khata-transfer', 'legal-consultation', 'deed-drafting', 'due-diligence', 'rental-lease-agreement', 'encumbrance-certificate', 'registry-of-property'] }, cmsRow('CMP015'), cmsRow('CMP032')],
     { 'S2:top': { state: 'override', override: { componentId: 'CMP038' } } }
   ),
 };
 
+mockPages.services_desktop = buildMatrix(
+  [base()],
+  [topRow('CMP090'), { ...sysRow('POPULAR_SERVICES'), services: ['e-khata', 'khata-transfer', 'new-khata', 'legal-consultation', 'deed-drafting', 'due-diligence'] }, cmsRow('CMP092')]
+);
 mockPages.edge = buildMatrix(
   [base(), { id: 'TPLE1', name: 'Edge B', cohorts: ['COH007'], status: 'live', isBase: false }],
   [topRow('CMP037'), sysRow('EDGE_HERO'), sysRow('EDGE_VISUAL_STORIES'), sysRow('EDGE_PROJECT_UPDATES'), sysRow('EDGE_LAST_48'), sysRow('EDGE_LOCATION_SORT'), cmsRow('CMP031'), cmsRow('CMP034')],
@@ -984,7 +1017,7 @@ export function setCellState(pageKey, templateId, rowId, state, override) {
 export function addMatrixRow(pageKey, item, afterRowId, templateIds = null) {
   const matrix = getPageMatrix(pageKey);
   const row = item.widget
-    ? { id: `s_${item.widget}_${Date.now()}`, kind: 'system', widget: item.widget, heading: item.heading || '' }
+    ? { id: `s_${item.widget}_${Date.now()}`, kind: 'system', widget: item.widget, heading: item.heading || '', ...(SYSTEM_WIDGETS[item.widget]?.services ? { services: [] } : {}) }
     : { id: `r_${item.componentId}_${Date.now()}`, kind: 'cms', componentId: item.componentId };
   // item.only = a section that exists for just one template (hidden for Base and the others).
   if (item.only) row.onlyFor = item.only;
@@ -999,6 +1032,13 @@ export function addMatrixRow(pageKey, item, afterRowId, templateIds = null) {
     matrix.cells[t.id][row.id] = { state: t.isBase ? 'base' : shown ? 'inherit' : 'hide' };
   });
   syncAll();
+  return row;
+}
+
+// Popular services: the service keys a section shows, in order (max 8).
+export function setRowServices(pageKey, rowId, keys) {
+  const row = getPageMatrix(pageKey).rows.find((r) => r.id === rowId);
+  if (row) row.services = keys.slice(0, POPULAR_SERVICES_MAX);
   return row;
 }
 

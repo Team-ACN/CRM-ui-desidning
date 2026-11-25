@@ -10,6 +10,7 @@ import { componentName, rowLabel, typeLine } from './rowLabel';
 import PreviewModal from './PreviewModal';
 import ComponentStrip from './ComponentStrip';
 import SectionEditDrawer from './SectionEditDrawer';
+import ServicesDrawer from './ServicesDrawer';
 
 const TAGS = {
   base: { label: 'BASE', cls: 'bg-neutral-300 text-neutral-800 border-neutral-400' },
@@ -42,14 +43,16 @@ function BaseRow({ row, page, tpl, moved, active, onEdit, onRemove, onChanged })
   const { shown, total } = rowTemplateUsage(page.key, row.id);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `row:${row.id}`, data: { rowId: row.id }, disabled: locked });
   const highlight = moved || active;
+  // Popular services opens its own picker (where the row can be edited).
+  const picker = !!sys?.services && !locked;
   const poster = component && !COMPONENT_TYPES[component.type]?.inventory;
   return (
     <div
       ref={setNodeRef}
       id={`base-row-${row.id}`}
       style={highlight ? { boxShadow: '0 0 0 1px #171717' } : undefined}
-      onClick={sys ? undefined : onEdit}
-      className={`rounded-xl border overflow-hidden flex items-stretch ${sys ? '' : 'cursor-pointer'} ${isDragging ? 'opacity-40 ' : ''}${hidden ? 'border-red-300 bg-red-50' : row.onlyFor && !isBase ? 'border-neutral-200 bg-green-50' : `${highlight ? 'border-neutral-900' : locked ? 'border-neutral-400' : 'border-neutral-200'} ${locked ? 'bg-neutral-100' : 'bg-surface'}`}`}
+      onClick={sys && !picker ? undefined : onEdit}
+      className={`rounded-xl border overflow-hidden flex items-stretch ${sys && !picker ? '' : 'cursor-pointer'} ${isDragging ? 'opacity-40 ' : ''}${hidden ? 'border-red-300 bg-red-50' : row.onlyFor && !isBase ? 'border-neutral-200 bg-green-50' : `${highlight ? 'border-neutral-900' : locked ? 'border-neutral-400' : 'border-neutral-200'} ${locked ? 'bg-neutral-100' : 'bg-surface'}`}`}
     >
       <div className="w-1/2 shrink-0 min-w-0 p-3 flex gap-2.5 min-h-[84px]">
         {locked ? (
@@ -163,8 +166,9 @@ const BaseEditor = ({ page, template, onClose, onChanged, startSettings = false 
     }
     const after = afterRowId || rows.slice(-1)[0].id;
     if (preset.widget) {
-      addMatrixRow(page.key, { widget: preset.widget, heading: '', ...(tpl.isBase ? {} : { only: tpl.id }) }, after, null);
+      const added = addMatrixRow(page.key, { widget: preset.widget, heading: '', ...(tpl.isBase ? {} : { only: tpl.id }) }, after, null);
       toast(`Added ${SYSTEM_WIDGETS[preset.widget].label}`);
+      if (SYSTEM_WIDGETS[preset.widget].services) setEditRowId(added.id);
     } else {
       addMatrixRow(page.key, { componentId: preset.componentId, ...(tpl.isBase ? {} : { only: tpl.id }) }, after, null);
       toast(`Added ${getComponent(preset.componentId)?.cardComponent ? typeLine(getComponent(preset.componentId)) : `'${componentTitle(getComponent(preset.componentId))}'`}`);
@@ -292,7 +296,10 @@ const BaseEditor = ({ page, template, onClose, onChanged, startSettings = false 
         </div>
 
       </div>
-      {editRowId && matrix.rows.find((r) => r.id === editRowId) && (
+      {editRowId && SYSTEM_WIDGETS[matrix.rows.find((r) => r.id === editRowId)?.widget]?.services && (
+        <ServicesDrawer key={editRowId} page={page} row={matrix.rows.find((r) => r.id === editRowId)} onClose={() => setEditRowId(null)} onChanged={bump} />
+      )}
+      {editRowId && matrix.rows.find((r) => r.id === editRowId) && !SYSTEM_WIDGETS[matrix.rows.find((r) => r.id === editRowId)?.widget]?.services && (
         <SectionEditDrawer page={page} tpl={tpl.isBase ? null : tpl} row={matrix.rows.find((r) => r.id === editRowId)} onClose={() => setEditRowId(null)} onChanged={bump} />
       )}
       {previewOpen && <PreviewModal page={page} template={tpl} onClose={() => setPreviewOpen(false)} />}
